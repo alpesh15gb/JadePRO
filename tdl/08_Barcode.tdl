@@ -1,0 +1,719 @@
+; =============================================================================
+;  JadePro  ::  08_Barcode.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Barcode and jewellery tag management.
+;            * Generates a unique barcode for every jewellery item.
+;            * Prints the jewellery tag with shop details, weights and MRP.
+;            * Scanner support inside the Sales voucher.
+;            * Barcode register report for reconciliation.
+;
+;  BARCODE SCHEME
+;    JPL-<Category3>-<Design6>-<Weight3mm>-<Running3>
+;    Example: JPL-RNG-D012345-012-004
+;      RNG        category prefix, 3 chars, keeps tags readable
+;      D012345    design number, so the tag is sortable by design
+;      012        gross weight in grams, milligram precision
+;      004        running serial from the shop's item sequence; The scheme is DATA - change the four constants below and the rest of the
+; system follows. The generated value is stored on the item so it never has
+; to be regenerated (and therefore never changes once printed).
+;
+;  LOAD    : After 00_Core, 02_ItemMaster.
+;  REQUIRES : 00_Core.tdl, 02_ItemMaster.tdl
+; =============================================================================
+
+[Function: JpBcPrefix]
+    Returns: String : Any
+    JpBcPrefix = "JPL"
+[Function: JpBcCatLen]
+    Returns: String : Any
+    JpBcCatLen = "3"
+[Function: JpBcDesLen]
+    Returns: String : Any
+    JpBcDesLen = "6"
+[Function: JpBcWtLen]
+    Returns: String : Any
+    JpBcWtLen = "3"
+[Function: JpBcSerLen]
+    Returns: String : Any
+    JpBcSerLen = "3"
+
+; =============================================================================
+;  SECTION A - BARCODE GENERATION  (the single source of truth)
+;
+;  Every barcode in JadePro is produced HERE, once, and then only ever READ.
+;  08a_BarcodeTally.tdl (Tally-native Code 128) and 08b_BarcodeZPL.tdl (Zebra
+;  thermal) both render the item's stored JwlBarcode and neither regenerates it,
+;  so a label printed by Tally and a label printed by a Zebra printer can never
+;  disagree. Each module's "Mint Barcode" button calls JpBarcodeEnsure() to fill
+;  a MISSING value; printing itself never writes data.
+; =============================================================================
+
+; Returns the item's barcode, GENERATING IT ONLY IF IT DOES NOT YET EXIST.
+; Idempotent by design: calling it twice returns the same value and never
+; rewrites the stored one, which is what keeps the two printers in step.
+;   vItem   : item name
+;   vSerial : running serial used only when a barcode must be minted
+[Function: JpBarcodeEnsure]
+    Param: vItem : String : Optional, vSerial : Number : Optional
+    Returns: String : Any
+    Var: n : String, bc : String
+    n = JpBlankIfNull(Param(0))
+    If (n = "") Then
+    {
+        JpBarcodeEnsure = ""
+        Exit
+    }
+    ; 1. already assigned - always wins, never overwritten
+    bc = JpGetUDFStr(n, "JwlBarcode")
+    If (JpBarcodeOk(bc) = 1) Then
+    {
+        JpBarcodeEnsure = bc
+        Exit
+    }
+    ; 2. mint one now and store it on the item
+    bc = JpBarcodeMake(JpGetUDFStr(n, "JwlCategory"), JpGetUDFStr(n, "JwlDesignNo"),
+        JpGetUDFQty(n, "JwlGrossWt"), Param(1))
+    Alter: n
+    Modify Group: JpBcEnsureGroup
+        Add: Field-id: JwlBarcode
+            Set: Value: bc
+    Accept: JpBcEnsureDone
+    JpBarcodeEnsure = bc
+
+; Category prefix - first 3 letters of the category, padded.
+[Function: JpBcCatCode]
+    Param: vCategory : String : Optional
+    Returns: String : Any
+    Var: c : String, s : String
+    c = JpBlankIfNull(Param(0))
+    If (c = "") Then
+    {
+        JpBcCatCode = "GEN"
+        Exit
+    }
+    c = Upr(c)
+    s = ""
+    If (Len(c) >= Number(JpBcCatLen())) Then
+    {
+        s = Left(c, Number(JpBcCatLen()))
+        JpBcCatCode = s
+        Exit
+    }
+    s = c
+    While (Len(s) < Number(JpBcCatLen()))
+    {
+        s = s + "X"
+    }
+    JpBcCatCode = s
+
+; Design segment - up to 6 characters of the design number.
+[Function: JpBcDesignCode]
+    Param: vDesign : String : Optional
+    Returns: String : Any
+    Var: d : String, s : String
+    d = Upr(JpBlankIfNull(Param(0)))
+    If (d = "") Then
+    {
+        JpBcDesignCode = "NODEGN"
+        Exit
+    }
+    If (Len(d) >= Number(JpBcDesLen())) Then
+    {
+        JpBcDesignCode = Left(d, Number(JpBcDesLen()))
+        Exit
+    }
+    s = "D" + d
+    While (Len(s) < Number(JpBcDesLen()))
+    {
+        s = s + "0"
+    }
+    JpBcDesignCode = s
+
+; Weight segment - gross weight in grams with milligram precision.
+[Function: JpBcWeightCode]
+    Param: vGrossWt : Quantity : Optional
+    Returns: String : Any
+    Var: g : Quantity, s : String, i : Number
+    g = Param(0)
+    If (g is null) Then { g = 0; }
+    s = String(g, "000.000")
+    i = 0
+    While (i < 6)
+    {
+        s = Replace(s, ".", "")
+        i = i + 1
+    }
+    If (Len(s) < Number(JpBcWtLen())) Then
+    {
+        JpBcDesignCode = "000"
+        JpBcWeightCode = "000"
+        Exit
+    }
+    JpBcWeightCode = Right(s, Number(JpBcWtLen()))
+
+; Full barcode for an item. The serial is supplied by the caller so it can come
+; from Tally's item list position when tags are generated in bulk.
+[Function: JpBarcodeMake]
+    Param: vCategory : String : Optional, vDesign : String : Optional, vGrossWt : Quantity : Optional, vSerial : Number : Optional
+    Returns: String : Any
+    Var: w : String
+    w = String(JpNz(Param(3)), "000")
+    If (Len(w) > Number(JpBcSerLen())) Then
+    {
+        w = Right(w, Number(JpBcSerLen()))
+    }
+    While (Len(w) < Number(JpBcSerLen()))
+    {
+        w = "0" + w
+    }
+    JpBarcodeMake = JpBcPrefix() + "-" + JpBcCatCode(Param(0)) + "-" + JpBcDesignCode(Param(1)) + "-" + JpBcWeightCode(Param(2)) + "-" + w
+
+; Sanity check used by the validations: a barcode must be non-empty and unique.
+[Function: JpBarcodeOk]
+    Param: vBarcode : String : Optional
+    Returns: Integer : Any
+    Var: b : String
+    b = JpBlankIfNull(Param(0))
+    If (b = "") Then
+    {
+        JpBarcodeOk = 0
+        Exit
+    }
+    If (Len(b) < 8) Then
+    {
+        JpBarcodeOk = 0
+        Exit
+    }
+    JpBarcodeOk = 1
+
+; =============================================================================
+;  SECTION B - JEWELLERY TAG
+;  A 4cm x 6cm hanging tag - the classic showroom tag. Everything the customer
+;  needs at the counter, plus the HUID the law requires on hallmarked metal.
+; =============================================================================
+[Variable: JpTagItem  : String]
+[Variable: JpTagCount : Number]
+[Variable: JpTagSerial: Number]
+[Variable: JpTagMsg   : String]
+
+[Screen: JpTagScreen]
+    Caption: "JadePro  ::  Jewellery Tag Printing"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           JEWELLERY TAG  /  BARCODE"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Tags carry shop details, barcode, design, purity, gross / net / stone weight and MRP."
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1, 1, 1
+    Field: <Field-Id: JpTagItem, Label: "Item Name">
+        Width: 300
+        Style: UseFormCtrl
+    Field: <Field-Id: JpTagCount, Label: "Number of Tags">
+        Width: 200
+        Style: UseFormCtrl
+    Field: <Field-Id: JpTagSerial, Label: "Starting Serial">
+        Width: 200
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1, 1
+    Field: <Field-Id: JpTagMsg, Label: " ">
+        Width: 100
+        Style: JpWarn
+    Text: "Scheme: " + JpBcPrefix() + "-CATEGORY-DESIGN-WEIGHT-SERIAL"
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Button: <Generate & Store Barcode (F7), Key: F7, Action: JpTagGenerate>
+    Button: <Print Tag (F2), Key: F2, Action: JpTagPrint>
+    Button: <Barcode Register (F8), Key: F8, Action: JpTagRegister>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+[Function: JpTagGenerate]
+    Returns: Integer : Any
+    Var: n : String, bc : String
+    n = JpBlankIfNull($$JpTagItem)
+    JpTagMsg = ""
+    If (n = "") Then
+    {
+        JpTagMsg = "Select an item first."
+        JpTagGenerate = 0
+        Exit
+    }
+    bc = JpGetUDFStr(n, "JwlBarcode")
+    If (JpBarcodeOk(bc) = 1) Then
+    {
+        JpTagMsg = "Barcode already present: " + bc
+        JpTagGenerate = 1
+        Exit
+    }
+    bc = JpBarcodeMake(JpGetUDFStr(n, "JwlCategory"), JpGetUDFStr(n, "JwlDesignNo"), JpGetUDFQty(n, "JwlGrossWt"), $$JpTagSerial)
+    Alter: n
+    Modify Group: JpTagStoreGroup
+        Add: Field-id: JwlBarcode
+            Set: Value: bc
+    Accept: JpTagStored
+    JpTagGenerate = 1
+
+[Function: JpTagStored]
+    Returns: Integer : Any
+    JpTagMsg = "Barcode stored: " + ##JwlBarcode
+    JpTagStored = 1
+
+[Function: JpTagPrint]
+    Returns: Integer : Any
+    If (JpBlankIfNull($$JpTagItem) = "") Then
+    {
+        JpTagMsg = "Select an item first."
+        JpTagPrint = 0
+        Exit
+    }
+    Alter: JpTagPrintFormat
+    JpTagPrint = 1
+
+[Function: JpTagRegister]
+    Returns: Integer : Any
+    If (JpHasRight(JpRtReports()) = 0) Then
+    {
+        JpTagMsg = JpDeniedMsg
+        JpTagRegister = 0
+        Exit
+    }
+    Alter: JpBarcodeReg
+    JpTagRegister = 1
+
+; =============================================================================
+;  SECTION C - TAG PRINT FORMAT
+; =============================================================================
+[Report: JpTagPrintFormat]
+    Title: <1000, "Jewellery Tag">
+    Print: JpTagPrintLayout
+
+
+; [Print: JpTagPrintLayout] -> [Form: JpTagPrintLayout] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+
+[Form: JpTagPrintLayout]
+    Height : 16
+    Parts : JpTagPrintLayoutLines
+
+[Part: JpTagPrintLayoutLines]
+    Lines : JpTagPrintLayoutLine1, JpTagPrintLayoutLine2, JpTagPrintLayoutLine3, JpTagPrintLayoutLine4, JpTagPrintLayoutLine5, JpTagPrintLayoutLine6, JpTagPrintLayoutLine7, JpTagPrintLayoutLine8, JpTagPrintLayoutLine9, JpTagPrintLayoutLine10, JpTagPrintLayoutLine11, JpTagPrintLayoutLine12, JpTagPrintLayoutLine13, JpTagPrintLayoutLine14, JpTagPrintLayoutLine15, JpTagPrintLayoutLine16, JpTagPrintLayoutLine17, JpTagPrintLayoutLine18, JpTagPrintLayoutLine19, JpTagPrintLayoutLine20
+
+[Line: JpTagPrintLayoutLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-left is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-top is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpTagPrintLayoutLine2]
+    Field: JpTagPrintLayoutLine2F1
+
+[Field: JpTagPrintLayoutLine2F1]
+    Set As : Upr(##JwlShopName)
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine3]
+    Field: JpTagPrintLayoutLine3F1
+
+[Field: JpTagPrintLayoutLine3F1]
+    Align : CENTRE
+[Line: JpTagPrintLayoutLine4]
+    Field: JpTagPrintLayoutLine4F1
+
+[Field: JpTagPrintLayoutLine4F1]
+    Set As : ##JwlShopAddress
+    Style : JpFontBold
+    Align : CENTRE
+[Line: JpTagPrintLayoutLine5]
+    Field: JpTagPrintLayoutLine5F1
+
+[Field: JpTagPrintLayoutLine5F1]
+    Set As : "GSTIN: " + ##JwlCompanyGSTIN + "     Ph: " + ##JwlCompanyPhone
+    Style : JpFontBold
+    Align : CENTRE
+[Line: JpTagPrintLayoutLine6]
+    Field: JpTagPrintLayoutLine6F1
+
+[Field: JpTagPrintLayoutLine6F1]
+    Set As : "---------------------------------------"
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine7]
+    Field: JpTagPrintLayoutLine7F1
+
+[Field: JpTagPrintLayoutLine7F1]
+    Set As : "Item Code  : " + ##JwlBarcode
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine8]
+    Field: JpTagPrintLayoutLine8F1
+
+[Field: JpTagPrintLayoutLine8F1]
+    Set As : "Design No  : " + ##JwlDesignNo
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine9]
+    Field: JpTagPrintLayoutLine9F1
+
+[Field: JpTagPrintLayoutLine9F1]
+    Set As : "Category   : " + ##JwlCategory
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine10]
+    Field: JpTagPrintLayoutLine10F1
+
+[Field: JpTagPrintLayoutLine10F1]
+    Set As : "Purity     : " + ##JwlPurity + "   Metal: " + ##JwlMetalType
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine11]
+    Field: JpTagPrintLayoutLine11F1
+
+[Field: JpTagPrintLayoutLine11F1]
+    Set As : "Gross Wt   : " + JpFmtWt(##JwlGrossWt) + " gms"
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine12]
+    Field: JpTagPrintLayoutLine12F1
+
+[Field: JpTagPrintLayoutLine12F1]
+    Set As : "Stone Wt   : " + JpFmtWt(##JwlStoneWt) + " gms"
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine13]
+    Field: JpTagPrintLayoutLine13F1
+
+[Field: JpTagPrintLayoutLine13F1]
+    Set As : "Net Weight : " + JpFmtWt(##JwlNetMetalWt) + " gms"
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine14]
+    Field: JpTagPrintLayoutLine14F1
+
+[Field: JpTagPrintLayoutLine14F1]
+    Set As : "Diamond    : " + JpFmtWt(##JwlDiamondCarat) + " ct"
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine15]
+    Field: JpTagPrintLayoutLine15F1
+
+[Field: JpTagPrintLayoutLine15F1]
+    Set As : "MRP        : Rs. " + JpFmtAmt(##JwlMRP)
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine16]
+    Field: JpTagPrintLayoutLine16F1
+
+[Field: JpTagPrintLayoutLine16F1]
+    Set As : "---------------------------------------"
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine17]
+    Field: JpTagPrintLayoutLine17F1
+
+[Field: JpTagPrintLayoutLine17F1]
+    Set As : "HUID: " + ##JwlHuid
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine18]
+    Field: JpTagPrintLayoutLine18F1
+
+[Field: JpTagPrintLayoutLine18F1]
+    Set As : "We certify the metal purity as stated. Hallmarked gold must carry a"
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine19]
+    Field: JpTagPrintLayoutLine19F1
+
+[Field: JpTagPrintLayoutLine19F1]
+    Set As : "valid BIS HUID. Price inclusive of all taxes shown on the invoice."
+    Style : JpFontBold
+[Line: JpTagPrintLayoutLine20]
+    Field: JpTagPrintLayoutLine20F1
+
+[Field: JpTagPrintLayoutLine20F1]
+    Set As : "Thank you for choosing us."
+    Style : JpFontBold
+[Collection: Report: JpBarcodeReg]
+    Source: JpBarcodeRegSQL
+    Var: JpFromDate, JpToDate, JpBarcodeCat
+    Title: <1000,###,#a##"  JEWELLERY BARCODE / TAG REGISTER">
+    Print: JpBarcodeRegPrint
+    Export: JpBarcodeRegExport
+    Key: JpBarcodeRegKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>, <JpBarcodeCat, <String, "Category">>
+
+[Variable: JpBarcodeRegSQL : String]
+    Type: String
+    Value: "SELECT * FROM $$ITEMS$$ WHERE $JwlIsJewellery$$ = 1 ORDER BY $JwlBarcode$$"
+
+[Variable: JpBarcodeRegKey : String]
+    Type: String
+    Value: "JwlBarcode"
+
+
+; [Print: JpBarcodeRegPrint] -> [Form: JpBarcodeRegPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpBarcodeRegPrint]
+    Parts : JpBarcodeRegPrintLines
+
+[Part: JpBarcodeRegPrintLines]
+    Lines : Spacing, JpBarcodeRegPrintLine1, JpBarcodeRegPrintLine2, JpBarcodeRegPrintLine3, JpBarcodeRegPrintLine4, JpBarcodeRegPrintLine5, JpBarcodeRegPrintLine6, JpBarcodeRegPrintLine7, JpBarcodeRegPrintLine8, JpBarcodeRegPrintLine9, JpBarcodeRegPrintLine10, JpBarcodeRegPrintLine11, JpBarcodeRegPrintLine12, JpBarcodeRegPrintLine13, JpBarcodeRegPrintLine14, JpBarcodeRegPrintLine15, JpBarcodeRegPrintLine16, JpBarcodeRegPrintLine17, JpBarcodeRegPrintLine18, JpBarcodeRegPrintLine19, JpBarcodeRegPrintLine20, JpBarcodeRegPrintLine21, JpBarcodeRegPrintLine22, JpBarcodeRegPrintLine23, JpBarcodeRegPrintLine24, JpBarcodeRegPrintLine25, JpBarcodeRegPrintLine26, JpBarcodeRegPrintLine27, JpBarcodeRegPrintLine28, JpBarcodeRegPrintLine29, JpBarcodeRegPrintLine30, JpBarcodeRegPrintLine31, JpBarcodeRegPrintLine32, JpBarcodeRegPrintLine33, JpBarcodeRegPrintLine34, JpBarcodeRegPrintLine35, JpBarcodeRegPrintLine36, JpBarcodeRegPrintLine37, JpBarcodeRegPrintLine38, JpBarcodeRegPrintLine39, JpBarcodeRegPrintLine40, JpBarcodeRegPrintLine41, JpBarcodeRegPrintLine42, JpBarcodeRegPrintLine43, JpBarcodeRegPrintLine44, JpBarcodeRegPrintLine45, JpBarcodeRegPrintLine46, JpBarcodeRegPrintLine47, JpBarcodeRegPrintLine48, JpBarcodeRegPrintLine49
+
+[Line: JpBarcodeRegPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpBarcodeRegPrintLine2]
+    Field: JpBarcodeRegPrintLine2F1
+
+[Field: JpBarcodeRegPrintLine2F1]
+    Set As : Upr(##JwlShopName) + "   -   Barcode / Tag Register"
+    Style : JpFontBold
+[Line: JpBarcodeRegPrintLine3]
+    Field: JpBarcodeRegPrintLine3F1
+
+[Field: JpBarcodeRegPrintLine3F1]
+    Set As : "Generated " + JpFmtDate(JpCacheDate) + "     Items with jewellery flag"
+[Line: JpBarcodeRegPrintLine4]
+    Field: JpBarcodeRegPrintLine4F1
+
+[Field: JpBarcodeRegPrintLine4F1]
+    Set As : "Barcode"
+[Line: JpBarcodeRegPrintLine5]
+    Field: JpBarcodeRegPrintLine5F1
+
+[Field: JpBarcodeRegPrintLine5F1]
+    Style : JpGridHead
+[Line: JpBarcodeRegPrintLine6]
+    Field: JpBarcodeRegPrintLine6F1
+
+[Field: JpBarcodeRegPrintLine6F1]
+    Set As : "Item"
+[Line: JpBarcodeRegPrintLine7]
+    Field: JpBarcodeRegPrintLine7F1
+
+[Field: JpBarcodeRegPrintLine7F1]
+    Style : JpGridHead
+[Line: JpBarcodeRegPrintLine8]
+    Field: JpBarcodeRegPrintLine8F1
+
+[Field: JpBarcodeRegPrintLine8F1]
+    Set As : "Design"
+[Line: JpBarcodeRegPrintLine9]
+    Field: JpBarcodeRegPrintLine9F1
+
+[Field: JpBarcodeRegPrintLine9F1]
+    Style : JpGridHead
+[Line: JpBarcodeRegPrintLine10]
+    Field: JpBarcodeRegPrintLine10F1
+
+[Field: JpBarcodeRegPrintLine10F1]
+    Set As : "Purity"
+[Line: JpBarcodeRegPrintLine11]
+    Field: JpBarcodeRegPrintLine11F1
+
+[Field: JpBarcodeRegPrintLine11F1]
+    Style : JpGridHead
+[Line: JpBarcodeRegPrintLine12]
+    Field: JpBarcodeRegPrintLine12F1
+
+[Field: JpBarcodeRegPrintLine12F1]
+    Set As : "Gross g"
+[Line: JpBarcodeRegPrintLine13]
+    Field: JpBarcodeRegPrintLine13F1
+
+[Field: JpBarcodeRegPrintLine13F1]
+    Style : JpGridHead
+[Line: JpBarcodeRegPrintLine14]
+    Field: JpBarcodeRegPrintLine14F1
+
+[Field: JpBarcodeRegPrintLine14F1]
+    Set As : "Net g"
+[Line: JpBarcodeRegPrintLine15]
+    Field: JpBarcodeRegPrintLine15F1
+
+[Field: JpBarcodeRegPrintLine15F1]
+    Style : JpGridHead
+[Line: JpBarcodeRegPrintLine16]
+    Field: JpBarcodeRegPrintLine16F1
+
+[Field: JpBarcodeRegPrintLine16F1]
+    Set As : "Stone g"
+[Line: JpBarcodeRegPrintLine17]
+    Field: JpBarcodeRegPrintLine17F1
+
+[Field: JpBarcodeRegPrintLine17F1]
+    Style : JpGridHead
+[Line: JpBarcodeRegPrintLine18]
+    Field: JpBarcodeRegPrintLine18F1
+
+[Field: JpBarcodeRegPrintLine18F1]
+    Set As : "HUID"
+[Line: JpBarcodeRegPrintLine19]
+    Field: JpBarcodeRegPrintLine19F1
+
+[Field: JpBarcodeRegPrintLine19F1]
+    Style : JpGridHead
+[Line: JpBarcodeRegPrintLine20]
+    Field: JpBarcodeRegPrintLine20F1
+
+[Field: JpBarcodeRegPrintLine20F1]
+    Set As : "MRP"
+[Line: JpBarcodeRegPrintLine21]
+    Field: JpBarcodeRegPrintLine21F1
+
+[Field: JpBarcodeRegPrintLine21F1]
+    Style : JpGridHead
+[Line: JpBarcodeRegPrintLine22]
+    Field: JpBarcodeRegPrintLine22F1
+
+[Field: JpBarcodeRegPrintLine22F1]
+    Set As : $JwlBarcode
+[Line: JpBarcodeRegPrintLine23]
+    Field: JpBarcodeRegPrintLine23F1
+
+[Field: JpBarcodeRegPrintLine23F1]
+    Style : JpGrid
+[Line: JpBarcodeRegPrintLine24]
+    Field: JpBarcodeRegPrintLine24F1
+
+[Field: JpBarcodeRegPrintLine24F1]
+    Set As : $$NAME
+[Line: JpBarcodeRegPrintLine25]
+    Field: JpBarcodeRegPrintLine25F1
+
+[Field: JpBarcodeRegPrintLine25F1]
+    Style : JpGrid
+[Line: JpBarcodeRegPrintLine26]
+    Field: JpBarcodeRegPrintLine26F1
+
+[Field: JpBarcodeRegPrintLine26F1]
+    Set As : $JwlDesignNo
+[Line: JpBarcodeRegPrintLine27]
+    Field: JpBarcodeRegPrintLine27F1
+
+[Field: JpBarcodeRegPrintLine27F1]
+    Style : JpGrid
+[Line: JpBarcodeRegPrintLine28]
+    Field: JpBarcodeRegPrintLine28F1
+
+[Field: JpBarcodeRegPrintLine28F1]
+    Set As : $JwlPurity
+[Line: JpBarcodeRegPrintLine29]
+    Field: JpBarcodeRegPrintLine29F1
+
+[Field: JpBarcodeRegPrintLine29F1]
+    Style : JpGrid
+[Line: JpBarcodeRegPrintLine30]
+    Field: JpBarcodeRegPrintLine30F1
+
+[Field: JpBarcodeRegPrintLine30F1]
+    Set As : $JwlGrossWt
+[Line: JpBarcodeRegPrintLine31]
+    Field: JpBarcodeRegPrintLine31F1
+
+[Field: JpBarcodeRegPrintLine31F1]
+    Style : JpWeight
+[Line: JpBarcodeRegPrintLine32]
+    Field: JpBarcodeRegPrintLine32F1
+
+[Field: JpBarcodeRegPrintLine32F1]
+    Set As : $JwlNetMetalWt
+[Line: JpBarcodeRegPrintLine33]
+    Field: JpBarcodeRegPrintLine33F1
+
+[Field: JpBarcodeRegPrintLine33F1]
+    Style : JpWeight
+[Line: JpBarcodeRegPrintLine34]
+    Field: JpBarcodeRegPrintLine34F1
+
+[Field: JpBarcodeRegPrintLine34F1]
+    Set As : $JwlStoneWt
+[Line: JpBarcodeRegPrintLine35]
+    Field: JpBarcodeRegPrintLine35F1
+
+[Field: JpBarcodeRegPrintLine35F1]
+    Style : JpWeight
+[Line: JpBarcodeRegPrintLine36]
+    Field: JpBarcodeRegPrintLine36F1
+
+[Field: JpBarcodeRegPrintLine36F1]
+    Set As : $JwlHuid
+[Line: JpBarcodeRegPrintLine37]
+    Field: JpBarcodeRegPrintLine37F1
+
+[Field: JpBarcodeRegPrintLine37F1]
+    Style : JpGrid
+[Line: JpBarcodeRegPrintLine38]
+    Field: JpBarcodeRegPrintLine38F1
+
+[Field: JpBarcodeRegPrintLine38F1]
+    Set As : $JwlMRP
+[Line: JpBarcodeRegPrintLine39]
+    Field: JpBarcodeRegPrintLine39F1
+
+[Field: JpBarcodeRegPrintLine39F1]
+    Style : JpMoney
+[Line: JpBarcodeRegPrintLine40]
+    Field: JpBarcodeRegPrintLine40F1
+
+[Field: JpBarcodeRegPrintLine40F1]
+    Set As : "TOTAL ITEMS"
+[Line: JpBarcodeRegPrintLine41]
+    Field: JpBarcodeRegPrintLine41F1
+
+[Field: JpBarcodeRegPrintLine41F1]
+    Style : JpTotal
+[Line: JpBarcodeRegPrintLine42]
+    Field: JpBarcodeRegPrintLine42F1
+
+[Field: JpBarcodeRegPrintLine42F1]
+    Set As : Count()
+[Line: JpBarcodeRegPrintLine43]
+    Field: JpBarcodeRegPrintLine43F1
+
+[Field: JpBarcodeRegPrintLine43F1]
+    Style : JpTotal
+[Line: JpBarcodeRegPrintLine44]
+    Field: JpBarcodeRegPrintLine44F1
+
+[Field: JpBarcodeRegPrintLine44F1]
+    Set As : Sum($JwlGrossWt)
+[Line: JpBarcodeRegPrintLine45]
+    Field: JpBarcodeRegPrintLine45F1
+
+[Field: JpBarcodeRegPrintLine45F1]
+    Style : JpTotal
+[Line: JpBarcodeRegPrintLine46]
+    Field: JpBarcodeRegPrintLine46F1
+
+[Field: JpBarcodeRegPrintLine46F1]
+    Set As : Sum($JwlNetMetalWt)
+[Line: JpBarcodeRegPrintLine47]
+    Field: JpBarcodeRegPrintLine47F1
+
+[Field: JpBarcodeRegPrintLine47F1]
+    Style : JpTotal
+[Line: JpBarcodeRegPrintLine48]
+    Field: JpBarcodeRegPrintLine48F1
+
+[Field: JpBarcodeRegPrintLine48F1]
+    Set As : Sum($JwlMRP)
+[Line: JpBarcodeRegPrintLine49]
+    Field: JpBarcodeRegPrintLine49F1
+
+[Field: JpBarcodeRegPrintLine49F1]
+    Style : JpTotal
+[Export: JpBarcodeRegExport]
+    Title: <1000, "Barcode Register">
+    Repeat: Over: JpBarcodeReg
+    Export Title: Detail
+    Export: Value: $JwlBarcode
+    Export: Value: $$NAME
+    Export: Value: $JwlDesignNo
+    Export: Value: $JwlPurity
+    Export: Value: $JwlGrossWt
+    Export: Value: $JwlNetMetalWt
+    Export: Value: $JwlStoneWt
+    Export: Value: $JwlHuid
+    Export: Value: $JwlMRP

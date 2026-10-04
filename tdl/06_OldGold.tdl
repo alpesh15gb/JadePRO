@@ -1,0 +1,435 @@
+; =============================================================================
+;  JadePro  ::  06_OldGold.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Old Gold / Gold Exchange module.
+;            Captures metal received from a customer, computes the fine weight,
+;            applies the shop's deduction, values it at the applicable purity
+;            rate and makes that value adjustable against the new jewellery
+;            purchase on the same invoice.
+;
+;  ARITHMETIC (exactly as specified)
+;    Net Weight     = Gross Weight - Stone Weight
+;    Fine Weight    = Net Weight x Purity Percentage
+;    Exchange Value = Fine Weight x Applicable Gold Rate
+;    Payout Value   = Exchange Value - Deduction % of Exchange Value
+;
+;  STORAGE : One JOURNAL per exchange, tagged JwlVchKind = "OldGold", posted
+;            Dr Old Gold Metal (asset) / Cr Customer (liability). The liability
+;            can then be settled either as cash or as an adjustment on a Sales
+;            voucher via the JwlPayOldGold field added in 04_Sales.
+;
+;  LOAD    : After 00_Core, 03_GoldRate, 04_Sales.
+;  REQUIRES : 00_Core.tdl, 03_GoldRate.tdl, 04_Sales.tdl
+; =============================================================================
+
+; =============================================================================
+;  SECTION A - OLD GOLD UDFs
+; =============================================================================
+    ; Label: "Exchange Reference"
+[System: UDF]
+JwlOgVchNo : String : 20136
+    ; Label: "Old Gold Customer"
+[System: UDF]
+JwlOgCustName : String : 20137
+    ; Label: "Old Metal Type"
+[System: UDF]
+JwlOgMetal : String : 20138
+    ; Label: "Old Purity"
+[System: UDF]
+JwlOgPurity : String : 20139
+    ; Label: "Purity Percentage"
+[System: UDF]
+JwlOgPurityPc : Number : 20140
+    ; Label: "Old Gross Weight"
+[System: UDF]
+JwlOgGrossWt : Quantity : 20141
+    ; Label: "Old Stone Weight"
+[System: UDF]
+JwlOgStoneWt : Quantity : 20142
+    ; Label: "Old Net Weight"
+[System: UDF]
+JwlOgNetWt : Quantity : 20143
+    ; Label: "Old Fine Weight"
+[System: UDF]
+JwlOgFineWt : Quantity : 20144
+    ; Label: "Applicable Gold Rate"
+[System: UDF]
+JwlOgRate : Number : 20145
+    ; Label: "Old Gold Deduction %"
+[System: UDF]
+JwlOgDedPc : Number : 20146
+    ; Label: "Old Gold Exchange Value"
+[System: UDF]
+JwlOgValue : Number : 20147
+    ; Label: "Adjusted Against Invoice"
+[System: UDF]
+JwlOgAdjAmt : Number : 20148
+    ; Label: "Balance Refundable"
+[System: UDF]
+JwlOgBalAmt : Number : 20149
+    ; Label: "Old Gold Payout Mode"
+[System: UDF]
+JwlOgPayMode : String : 20150
+    ; Label: "Old Gold Hallmark Stamp"
+[System: UDF]
+JwlOgHallmark : String : 20151
+    ; Label: "Old Gold Note"
+[System: UDF]
+JwlOgNote : String : 20152
+; =============================================================================
+;  SECTION B - ARITHMETIC
+; =============================================================================
+
+; Purity percentage for the label, falling back to the standard table. A user
+; who quotes an exact assay (916.5) gets exactly that, not the table value.
+[Function: JpOgPurityPc]
+    Param: vPurity : String : Optional, vQuoted : Number : Optional
+    Returns: Number : Any
+    Var: q : Number, f : Number
+    q = Param(1)
+    If (q is null) Then { q = 0; }
+    If (q > 0) Then
+    {
+        JpOgPurityPc = q
+        Exit
+    }
+    f = JpFineness(Param(0))
+    If (f > 0) Then
+    {
+        JpOgPurityPc = JpRound(f * 100)
+        Exit
+    }
+    JpOgPurityPc = 0
+
+; Net weight of the old piece.
+[Function: JpOgNet]
+    Param: vGross : Quantity : Optional, vStone : Quantity : Optional
+    Returns: Quantity : Any
+    JpOgNet = JpNetWeight(Param(0), Param(1))
+
+; Fine weight = Net Weight x Purity Percentage / 100
+[Function: JpOgFine]
+    Param: vNet : Quantity : Optional, vPurityPc : Number : Optional
+    Returns: Quantity : Any
+    Var: n : Quantity, p : Number
+    n = Param(0)
+    p = Param(1)
+    If (n is null) Then { n = 0; }
+    If (p is null) Then { p = 0; }
+    If (p <= 0) Then { JpOgFine = 0; Exit; }
+    If (p > 100) Then { p = 100; }
+    JpOgFine = JpRoundWt(n * p / 100)
+
+; Exchange value BEFORE deduction.
+[Function: JpOgValue]
+    Param: vFineWt : Quantity : Optional, vRate : Number : Optional
+    Returns: Number : Any
+    Var: f : Quantity, r : Number
+    f = Param(0)
+    r = Param(1)
+    If (f is null) Then { f = 0; }
+    If (r is null) Then { r = 0; }
+    If (r <= 0) Then { JpOgValue = 0; Exit; }
+    JpOgValue = JpRound(f * r)
+
+; Payout after the shop's deduction.
+[Function: JpOgPayout]
+    Param: vValue : Number : Optional, vDedPc : Number : Optional
+    Returns: Number : Any
+    Var: v : Number, d : Number
+    v = Param(0)
+    d = Param(1)
+    If (v is null) Then { v = 0; }
+    If (d is null) Then { d = 0; }
+    If (d < 0) Then { d = 0; }
+    If (d > 100) Then { d = 100; }
+    JpOgPayout = JpRound(v - (v * d / 100))
+
+; Still refundable in cash after the customer applied part of it to the bill.
+[Function: JpOgBalance]
+    Param: vValue : Number : Optional, vAdjusted : Number : Optional
+    Returns: Number : Any
+    Var: v : Number, a : Number
+    v = Param(0)
+    a = Param(1)
+    If (v is null) Then { v = 0; }
+    If (a is null) Then { a = 0; }
+    If (a > v) Then { a = v; }
+    If (a < 0) Then { a = 0; }
+    JpOgBalance = JpRound(v - a)
+
+; =============================================================================
+;  SECTION C - VALIDATION
+; =============================================================================
+[Function: JpOgValidationText]
+    Returns: String : Any
+    Var: m : String
+    m = ""
+    If (JpBlankIfNull($$JpOgCust) = "") Then
+    {
+        JpOgValidationText = "Customer is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($$JpOgMetal) = "") Then
+    {
+        JpOgValidationText = "Metal Type is mandatory."
+        Exit
+    }
+    If (JpPurityValid($$JpOgPurity) = 0) Then
+    {
+        JpOgValidationText = "Purity '" + JpBlankIfNull($$JpOgPurity) + "' is not valid."
+        Exit
+    }
+    If ($$JpOgPurityPc <= 0) Then
+    {
+        JpOgValidationText = "Purity percentage is mandatory."
+        Exit
+    }
+    If (JpWeightValid($$JpOgGross) = 0) Then
+    {
+        JpOgValidationText = "Gross Weight of the old piece is mandatory."
+        Exit
+    }
+    If ($$JpOgRate <= 0) Then
+    {
+        JpOgValidationText = "No daily rate for " + JpBlankIfNull($$JpOgMetal) + " " + JpBlankIfNull($$JpOgPurity) + " today. Enter the daily rate master first."
+        Exit
+    }
+    If ($$JpOgNet <= 0) Then
+    {
+        JpOgValidationText = "Stone weight is greater than or equal to gross weight."
+        Exit
+    }
+    If ($$JpOgAdjusted > $$JpOgPayout) Then
+    {
+        JpOgValidationText = "Amount adjusted against the invoice is MORE than the exchange value."
+        Exit
+    }
+    JpOgValidationText = ""
+
+; =============================================================================
+;  SECTION D - SCREEN
+; =============================================================================
+[Variable: JpOgCust        : String]
+[Variable: JpOgMetal       : String]
+[Variable: JpOgPurity      : String]
+[Variable: JpOgPurityPc    : Number]
+[Variable: JpOgGross       : Quantity]
+[Variable: JpOgStone       : Quantity]
+[Variable: JpOgNet         : Quantity]
+[Variable: JpOgFine        : Quantity]
+[Variable: JpOgRate        : Number]
+[Variable: JpOgDedPc       : Number]
+[Variable: JpOgGrossValue  : Number]
+[Variable: JpOgValue       : Number]
+[Variable: JpOgAdjusted    : Number]
+[Variable: JpOgBalance     : Number]
+[Variable: JpOgPayMode     : String]
+[Variable: JpOgHallmark    : String]
+[Variable: JpOgNote        : String]
+[Variable: JpOgMsg         : String]
+
+[Screen: JpOldGoldScreen]
+    Caption: "JadePro  ::  Old Gold Exchange"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           OLD GOLD  /  GOLD EXCHANGE"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Fine Weight = Net Weight x Purity %      Exchange Value = Fine Weight x Today's Rate for that purity"
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1, 1, 1, 1
+    Field: <Field-Id: JpOgCust, Label: "Customer *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOgHallmark, Label: "Hallmark Stamp / Old Tag No">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOgMetal, Label: "Metal Type *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpMetalPick
+    Field: <Field-Id: JpOgPurity, Label: "Purity *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPurityPick
+    Field: <Field-Id: JpOgPurityPc, Label: "Purity Percentage *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOgDedPc, Label: "Deduction %">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " WEIGHTS  AND  VALUATION"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1, 1
+    Field: <Field-Id: JpOgGross, Label: "Gross Weight *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOgStone, Label: "Stone Weight">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOgNet, Label: "Net Weight">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+    Field: <Field-Id: JpOgFine, Label: "Fine Weight">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+    Field: <Field-Id: JpOgRate, Label: "Applicable Gold Rate *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOgGrossValue, Label: "Value Before Deduction">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOgValue, Label: "EXCHANGE VALUE (after deduction)">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+        Font: Bold
+
+    Line: Spacing
+    Lines: 1
+    Text: " SETTLEMENT"
+    Style: JpSectionBox
+    Lines: 1, 1, 1
+    Field: <Field-Id: JpOgAdjusted, Label: "Adjusted Against New Purchase">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOgBalance, Label: "Balance Refundable">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+        Font: Bold
+    Field: <Field-Id: JpOgPayMode, Label: "Payout Mode">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPayModePick
+    Field: <Field-Id: JpOgNote, Label: "Note">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1, 1
+    Field: <Field-Id: JpOgMsg, Label: " ">
+        Width: 100
+        Style: JpWarn
+    Text: "The exchange voucher can be printed on the sales invoice by entering its reference in JwlOldGoldRef on the Sales voucher."
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Button: <Recalculate (F7), Key: F7, Action: JpOgCalc>
+    Button: <Fetch Today's Rate (F8), Key: F8, Action: JpOgFetchRate>
+    Button: <Save Exchange (F2), Key: F2, Action: JpOgSave>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+; =============================================================================
+;  SECTION E - ACTIONS
+; =============================================================================
+
+[Function: JpOgCalc]
+    Returns: Integer : Any
+    Var: pc : Number, ded : Number
+    pc = JpOgPurityPc($$JpOgPurity, $$JpOgPurityPc)
+    If (pc > 0) Then
+    {
+        $$JpOgPurityPc = pc
+    }
+    $$JpOgNet = JpOgNet($$JpOgGross, $$JpOgStone)
+    $$JpOgFine = JpOgFine($$JpOgNet, $$JpOgPurityPc)
+    ded = $$JpOgDedPc
+    If (ded = 0) Then
+    {
+        ded = ##JwlOldGoldDedPc
+        If (ded > 0) Then
+        {
+            $$JpOgDedPc = ded
+        }
+    }
+    ; The pre-deduction value is recomputed from scratch every time, so
+    ; pressing Recalculate repeatedly can never compound the deduction.
+    $$JpOgGrossValue = JpOgValue($$JpOgFine, $$JpOgRate)
+    $$JpOgValue = JpOgPayout($$JpOgGrossValue, $$JpOgDedPc)
+    $$JpOgBalance = JpOgBalance($$JpOgValue, $$JpOgAdjusted)
+    JpOgMsg = JpOgValidationText()
+    JpOgCalc = 1
+
+[Function: JpOgFetchRate]
+    Returns: Integer : Any
+    $$JpOgRate = JpOldGoldRate($$JpOgMetal, $$JpOgPurity)
+    If ($$JpOgRate <= 0) Then
+    {
+        JpOgMsg = "No rate found for " + JpBlankIfNull($$JpOgMetal) + " " + JpBlankIfNull($$JpOgPurity) + " today."
+        JpOgFetchRate = 0
+        Exit
+    }
+    JpOgCalc
+    JpOgFetchRate = 1
+
+[Function: JpOgSave]
+    Returns: Integer : Any
+    JpOgCalc
+    If (JpOgValidationText() <> "") Then
+    {
+        JpOgSave = 0
+        Exit
+    }
+    Create: Journal
+    Modify Group: JpOgSaveGroup
+        Add: Field-id: JwlVchKind
+            Set: Value: "OldGold"
+        Add: Field-id: JwlOgVchNo
+            Set: Value: JpOgRefNo()
+        Add: Field-id: JwlOgCustName
+            Set: Value: $$JpOgCust
+        Add: Field-id: JwlOgMetal
+            Set: Value: $$JpOgMetal
+        Add: Field-id: JwlOgPurity
+            Set: Value: $$JpOgPurity
+        Add: Field-id: JwlOgPurityPc
+            Set: Value: $$JpOgPurityPc
+        Add: Field-id: JwlOgGrossWt
+            Set: Value: $$JpOgGross
+        Add: Field-id: JwlOgStoneWt
+            Set: Value: $$JpOgStone
+        Add: Field-id: JwlOgNetWt
+            Set: Value: $$JpOgNet
+        Add: Field-id: JwlOgFineWt
+            Set: Value: $$JpOgFine
+        Add: Field-id: JwlOgRate
+            Set: Value: $$JpOgRate
+        Add: Field-id: JwlOgDedPc
+            Set: Value: $$JpOgDedPc
+        Add: Field-id: JwlOgValue
+            Set: Value: $$JpOgValue
+        Add: Field-id: JwlOgAdjAmt
+            Set: Value: $$JpOgAdjusted
+        Add: Field-id: JwlOgBalAmt
+            Set: Value: $$JpOgBalance
+        Add: Field-id: JwlOgPayMode
+            Set: Value: JpBlankIfNull($$JpOgPayMode)
+        Add: Field-id: JwlOgHallmark
+            Set: Value: JpBlankIfNull($$JpOgHallmark)
+        Add: Field-id: JwlOgNote
+            Set: Value: JpBlankIfNull($$JpOgNote)
+    Accept: JpOgSaved
+    JpOgSave = 1
+
+[Function: JpOgSaved]
+    Returns: Integer : Any
+    JpOgMsg = "Old gold exchange saved. Reference " + ##JwlOgVchNo + ". Enter this in JwlOldGoldRef on the sales invoice to print it on the same bill."
+    JpOgSaved = 1
+
+[Function: JpOgRefNo]
+    Returns: String : Any
+    JpOgRefNo = "OG-" + JpBlankIfNull(JpCacheDate)

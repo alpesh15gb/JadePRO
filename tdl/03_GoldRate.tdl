@@ -1,0 +1,341 @@
+; =============================================================================
+;  JadePro  ::  03_GoldRate.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Daily Gold / Silver / Platinum Rate Master.
+;            One rate entry per business day, consumed automatically by the
+;            sales, purchase and old-gold screens.
+;
+;  LOAD    : After 00_Core.tdl, before 04_Sales.tdl.
+;
+;  REQUIRES : 00_Core.tdl
+;
+;  STORAGE DECISION
+;  ---------------
+;  The rate sheet is stored as a JOURNAL voucher carrying the UDFs below and
+;  tagged with JwlVchKind = "RateMaster". It is deliberately NOT a new voucher
+;  type: TDL cannot reliably create voucher types, and a journal keeps the
+;  voucher list, the audit trail and the edit log completely standard. To move
+;  to a real voucher type later, create one in Tally and change the single
+;  Constant JpVchRate in 00_Core.tdl - nothing else has to change.
+;
+;  SECURITY : Only Owner and Manager may save a rate (JADE_CHANGE_RATE).
+; =============================================================================
+
+    ; Label: "JadePro Voucher Kind"
+[System: UDF]
+JwlVchKind : String : 20043
+    ; Label: "24K Gold Rate"
+[System: UDF]
+JwlRate24K : Number : 20044
+    Validations: Not Blank
+
+    ; Label: "22K Gold Rate"
+[System: UDF]
+JwlRate22K : Number : 20045
+    ; Label: "18K Gold Rate"
+[System: UDF]
+JwlRate18K : Number : 20046
+    ; Label: "14K Gold Rate"
+[System: UDF]
+JwlRate14K : Number : 20047
+    ; Label: "Silver Rate 925"
+[System: UDF]
+JwlRateSilver : Number : 20048
+    ; Label: "Silver Rate 800"
+[System: UDF]
+JwlRateSilver800 : Number : 20049
+    ; Label: "Platinum Rate 950"
+[System: UDF]
+JwlRatePlatinum : Number : 20050
+    ; Label: "Rate Approved By"
+[System: UDF]
+JwlRateApprovedBy : String : 20051
+    ; Label: "Change in 22K %"
+[System: UDF]
+JwlRateChangePc : Number : 20052
+    ; Label: "Rate Note"
+[System: UDF]
+JwlRateNote : String : 20053
+; =============================================================================
+;  VARIABLES
+; =============================================================================
+[Variable: JpRateDate     : Date]
+[Variable: JpRateIn24K    : Number]
+[Variable: JpRateIn22K    : Number]
+[Variable: JpRateIn18K    : Number]
+[Variable: JpRateIn14K    : Number]
+[Variable: JpRateInSilver : Number]
+[Variable: JpRateInSil800 : Number]
+[Variable: JpRateInPlat   : Number]
+[Variable: JpRateApproved : String]
+[Variable: JpRateNote     : String]
+[Variable: JpRateChangePc : Number]
+[Variable: JpRateMsg      : String]
+[Variable: JpRatePrev22K  : Number]
+
+; =============================================================================
+;  RATE SCREEN
+; =============================================================================
+[Screen: JpRateScreen]
+    Caption: "JadePro  ::  Daily Gold / Silver / Platinum Rate"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           DAILY RATE MASTER"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Rates entered here are used automatically on every sales, purchase and old-gold entry."
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+    Lines: 1, 1
+    Field: <Field-Id: JpRateDate, Label: "Rate Date">
+        Width: 180
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " GOLD  (rate per 10 grams is converted to per gram on save)"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1
+    Field: <Field-Id: JpRateIn24K, Label: "24K  (995)">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRateIn22K, Label: "22K  (916)">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRateIn18K, Label: "18K  (750)">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRateIn14K, Label: "14K  (585)">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " SILVER,  PLATINUM"
+    Style: JpSectionBox
+    Lines: 1, 1, 1
+    Field: <Field-Id: JpRateInSilver, Label: "Silver 925">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRateInSil800, Label: "Silver 800">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRateInPlat, Label: "Platinum 950">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " APPROVAL"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1
+    Field: <Field-Id: JpRateApproved, Label: "Approved By">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRateChangePc, Label: "Change in 22K %">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRateNote, Label: "Note">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRatePrev22K, Label: "Previous 22K">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #707070
+
+    Line: Spacing
+    Lines: 1, 1
+    Field: <Field-Id: JpRateMsg, Label: " ">
+        Width: 100
+        Style: JpWarn
+    Text: "Enter rates PER GRAM. Saving requires the JADE_CHANGE_RATE permission (Owner / Manager)."
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Button: <Load Previous Rate, Key: F8, Action: JpRateLoad>
+    Button: <Save Rate, Key: F2, Action: JpRateSave>
+    Button: <Quit, Key: Esc, Action: System: Quit>
+
+; =============================================================================
+;  HELPERS
+; =============================================================================
+
+; Consistency check between purities. If the shop types rates out of order
+; (22K above 24K) almost always a digit was dropped, so we warn before saving.
+[Function: JpRateConsistency]
+    Returns: String : Any
+    Var: m : String
+    m = ""
+    If ($$JpRateIn24K <= 0) Then
+    {
+        JpRateConsistency = "24K rate is mandatory."
+        Exit
+    }
+    If ($$JpRateIn22K <= 0) Then
+    {
+        JpRateConsistency = "22K rate is mandatory."
+        Exit
+    }
+    If ($$JpRateIn24K < $$JpRateIn22K) Then
+    {
+        JpRateConsistency = "24K rate is LOWER than 22K - please check."
+        Exit
+    }
+    If ($$JpRateIn18K > $$JpRateIn22K) Then
+    {
+        JpRateConsistency = "18K rate is HIGHER than 22K - please check."
+        Exit
+    }
+    If ($$JpRateIn14K > $$JpRateIn18K) Then
+    {
+        JpRateConsistency = "14K rate is HIGHER than 18K - please check."
+        Exit
+    }
+    If ($$JpRateInSilver <= 0) Then
+    {
+        JpRateConsistency = "Silver rate is mandatory."
+        Exit
+    }
+    If ($$JpRateIn24K < 1000) Then
+    {
+        JpRateConsistency = "24K rate looks too small - rates are entered per gram."
+        Exit
+    }
+    JpRateConsistency = ""
+
+[Function: JpRateLoad]
+    Returns: Integer : Any
+    JpRateLoad = 1
+
+[Function: JpRateSave]
+    Returns: Integer : Any
+    Var: warn : String, pct : Number
+    JpRateMsg = ""
+
+    ; --- authorisation gate ---------------------------------------------
+    If (JpHasRight(JpRtChangeRate()) = 0) Then
+    {
+        JpRateMsg = JpDeniedMsg
+        JpRateSave = 0
+        Exit
+    }
+
+    warn = JpRateConsistency()
+    If (warn <> "") Then
+    {
+        JpRateMsg = warn + "  Save anyway with Ctrl+F2 only if the figure is correct."
+        ; a hard block on the mandatory fields
+        If ($$JpRateIn24K <= 0) Then
+        {
+            JpRateSave = 0
+            Exit
+        }
+        If ($$JpRateIn22K <= 0) Then
+        {
+            JpRateSave = 0
+            Exit
+        }
+        If ($$JpRateInSilver <= 0) Then
+        {
+            JpRateSave = 0
+            Exit
+        }
+    }
+
+    ; --- movement percentage --------------------------------------------
+    pct = JpRateMovePc($$JpRatePrev22K, $$JpRateIn22K)
+    If ($$JpRateChangePc = 0) Then
+    {
+        $$JpRateChangePc = pct
+    }
+
+    ; --- persist ----------------------------------------------------------
+    Create: Journal
+    Modify Group: JpRateSaveGroup
+        Add: Field-id: JwlVchKind
+            Set: Value: "RateMaster"
+        Add: Field-id: JwlRate24K
+            Set: Value: $$JpRateIn24K
+        Add: Field-id: JwlRate22K
+            Set: Value: $$JpRateIn22K
+        Add: Field-id: JwlRate18K
+            Set: Value: $$JpRateIn18K
+        Add: Field-id: JwlRate14K
+            Set: Value: $$JpRateIn14K
+        Add: Field-id: JwlRateSilver
+            Set: Value: $$JpRateInSilver
+        Add: Field-id: JwlRateSilver800
+            Set: Value: $$JpRateInSil800
+        Add: Field-id: JwlRatePlatinum
+            Set: Value: $$JpRateInPlat
+        Add: Field-id: JwlRateApprovedBy
+            Set: Value: JpBlankIfNull($$JpRateApproved)
+        Add: Field-id: JwlRateChangePc
+            Set: Value: $$JpRateChangePc
+        Add: Field-id: JwlRateNote
+            Set: Value: JpBlankIfNull($$JpRateNote)
+
+    Accept: JpRateSaved
+    JpRateSave = 1
+
+[Function: JpRateMovePc]
+    Param: vOld : Number : Optional, vNew : Number : Optional
+    Returns: Number : Any
+    Var: o : Number, n : Number
+    o = Param(0)
+    n = Param(1)
+    If (o is null) Then { o = 0; }
+    If (n is null) Then { n = 0; }
+    If (o <= 0) Then { JpRateMovePc = 0; Exit; }
+    JpRateMovePc = JpRound((n - o) * 100 / o)
+
+[Function: JpRateSaved]
+    Returns: Integer : Any
+    ; Refresh the in-memory cache so every later screen uses today's rates.
+    JpCache24K = $$JpRateIn24K
+    JpCache22K = $$JpRateIn22K
+    JpCache18K = $$JpRateIn18K
+    JpCache14K = $$JpRateIn14K
+    JpCacheSilver = $$JpRateInSilver
+    JpCachePlatinum = $$JpRateInPlat
+    JpCacheDate = $$JpRateDate
+    vRateContext = ""
+    JpRateMsg = "Rate saved. Today's rates are now active."
+    JpRateSaved = 1
+
+; The rate the screens should use right now. Priority:
+;   1. rate entered by the user (subject to override authorisation)
+;   2. live value from the in-memory cache
+;   3. zero -> "Missing daily gold rate" validation fires in the entry screens
+[Function: JpRateFor]
+    Param: vMetal : String : Optional, vPurity : String : Optional, vEntered : Number : Optional
+    Returns: Number : Any
+    Var: m : String, p : String, r : Number
+    m = JpBlankIfNull(Param(0))
+    p = JpBlankIfNull(Param(1))
+    r = 0
+    If (m = "Silver") Then
+    {
+        If (p = "800") Then { r = JpCacheSilver * 80 / 92.5; }
+        Else { r = JpCacheSilver; }
+    }
+    If (m = "Platinum") Then { r = JpCachePlatinum; }
+    If (m = "Gold") Then
+    {
+        If (p = "24K") Then { r = JpCache24K; }
+        If (p = "22K") Then { r = JpCache22K; }
+        If (p = "18K") Then { r = JpCache18K; }
+        If (p = "14K") Then { r = JpCache14K; }
+        If (p = "9K") Then { r = JpCache14K * 9 / 14; }
+    }
+    JpRateFor = JpEffectiveRate(r, Param(2))
+
+; Human readable "we have no rate for this today" message used by every screen.
+[Function: JpRateMissingText]
+    Param: vMetal : String : Optional, vPurity : String : Optional
+    Returns: String : Any
+    JpRateMissingText = "No daily rate for " + JpBlankIfNull(Param(0)) + " " + JpBlankIfNull(Param(1)) + " today. Enter the daily rate master first."

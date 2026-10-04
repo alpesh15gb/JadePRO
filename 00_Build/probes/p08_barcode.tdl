@@ -1,0 +1,8 @@
+; P08  TDL-native Barcode: section (PATH B), minimal Code 128 form
+[Barcode: ZzP08Code]
+    Title: <1000, "P08">
+    Bar-Code: Code128
+    Height: 30
+    Rows: 1
+    Columns: 1
+    Width: 2

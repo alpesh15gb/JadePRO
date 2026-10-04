@@ -1,0 +1,25 @@
+; p30 - "Every screen in TallyPrime is represented by a Report definition."
+; Decides the rewrite of all 15 `[Screen:]` blocks: Report + Form + Object,
+; with the Object that the screen edits.
+[Report: ZzP30ScreenReport]
+    Form : ZzP30ScreenForm
+    Title : "ZzP30 Screen"
+    Object : Stock Item
+    Set : ##ZzP30Current
+
+[Form: ZzP30ScreenForm]
+    Parts : ZzP30ScreenPart
+
+[Part: ZzP30ScreenPart]
+    Lines : ZzP30ScreenLine
+
+[Line: ZzP30ScreenLine]
+    Field : ZzP30ScreenField
+
+[Field: ZzP30ScreenField]
+    Use : Name Field
+    Set As : $Name
+    Width : 30
+
+[Variable: ZzP30Current]
+    Type : String

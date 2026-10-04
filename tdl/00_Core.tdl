@@ -1,0 +1,1161 @@
+; =============================================================================
+;  JadePro  ::  00_Core.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Shared kernel for the JadePro Jewellery ERP for Tally Prime.
+;            Constants, global state and the pure calculation / rate /
+;            validation / security function library that every other module
+;            calls. This file has NO side effects - loading it alone is safe.
+;
+;  LOAD    : Always load FIRST. Every other module calls functions declared here.
+;
+;  REQUIRES : Tally Prime (Release 2400 / v3.0 or later). Uses Collection-based
+;            reports which are a Prime-only feature.
+;
+;  DESIGN NOTES
+;  ------------
+;  * No tax percentage is hard-coded anywhere in this file. Tax is either
+;    (a) supplied by the caller, or (b) derived from Tally's own GST ledgers
+;    on the voucher. See JpTaxFromLedgers().
+;  * Every financial function takes its inputs as parameters and returns a
+;    value - nothing reads the screen from inside a calculation function. That
+;    keeps the arithmetic unit-testable and reusable from reports.
+;  * Money rounding is centralised in JpRound() so that rounding differences
+;    between the on-screen value, the ledger posting and the printed invoice
+;    can never occur.
+; =============================================================================
+
+; -----------------------------------------------------------------------------
+;  CONSTANTS
+; -----------------------------------------------------------------------------
+
+[Function: JpAppName]
+    Returns: String : Any
+    JpAppName = "JadePro Jewellery"
+[Function: JpVersion]
+    Returns: String : Any
+    JpVersion = "1.0.0"
+[Function: JpSchemaVer]
+    Returns: String : Any
+    JpSchemaVer = "1"
+
+; Voucher types created by this application.
+[Function: JpVchRate]
+    Returns: String : Any
+    JpVchRate = "Jwl Daily Rate"
+[Function: JpVchOldGold]
+    Returns: String : Any
+    JpVchOldGold = "Jwl Old Gold Exchange"
+[Function: JpVchKarOut]
+    Returns: String : Any
+    JpVchKarOut = "Jwl Karigar Issue"
+[Function: JpVchKarIn]
+    Returns: String : Any
+    JpVchKarIn = "Jwl Karigar Receipt"
+[Function: JpVchOrder]
+    Returns: String : Any
+    JpVchOrder = "Jwl Customer Order"
+[Function: JpVchRepair]
+    Returns: String : Any
+    JpVchRepair = "Jwl Repair"
+
+; Security right identifiers (see 13_Security.tdl).
+[Function: JpRtChangeRate]
+    Returns: String : Any
+    JpRtChangeRate = "JADE_CHANGE_RATE"
+[Function: JpRtOverride]
+    Returns: String : Any
+    JpRtOverride = "JADE_OVERRIDE_RATE"
+[Function: JpRtHighDiscount]
+    Returns: String : Any
+    JpRtHighDiscount = "JADE_HIGH_DISCOUNT"
+[Function: JpRtDeleteVch]
+    Returns: String : Any
+    JpRtDeleteVch = "JADE_DELETE_VOUCHER"
+[Function: JpRtProfit]
+    Returns: String : Any
+    JpRtProfit = "JADE_VIEW_PROFIT"
+[Function: JpRtPurchase]
+    Returns: String : Any
+    JpRtPurchase = "JADE_PURCHASE"
+[Function: JpRtKarigarMgmt]
+    Returns: String : Any
+    JpRtKarigarMgmt = "JADE_KARIGAR_MGMT"
+[Function: JpRtReports]
+    Returns: String : Any
+    JpRtReports = "JADE_REPORTS"
+[Function: JpRtCounterClose]
+    Returns: String : Any
+    JpRtCounterClose = "JADE_COUNTER_CLOSE"
+
+; Minting a barcode WRITES to the item master, so it gets its own right rather
+; than borrowing a rate or discount permission that means something else.
+[Function: JpRtBarcode]
+    Returns: String : Any
+    JpRtBarcode = "JADE_BARCODE"
+
+; Report keys - registering a report with one of these keys in
+; 01_Main.tdl makes it appear in the relevant Tally report menu.
+[Function: JpKeyGstSummary]
+    Returns: String : Any
+    JpKeyGstSummary = "JadeGSTSummary"
+
+; Commerce / taxable-supply indicator values.
+[Function: JpIsInterState0]
+    Returns: String : Any
+    JpIsInterState0 = "0"
+[Function: JpIsInterState1]
+    Returns: String : Any
+    JpIsInterState1 = "1"
+
+; Rounding.
+[Function: JpRndDec2]
+    Returns: String : Any
+    JpRndDec2 = "2"
+[Function: JpRndDec3]
+    Returns: String : Any
+    JpRndDec3 = "3"
+[Function: JpPaisePerRupee]
+    Returns: String : Any
+    JpPaisePerRupee = "100"
+
+; Purity fineness table (gold is measured in 24 parts, so 22K = 22/24).
+[Function: JpFine24]
+    Returns: String : Any
+    JpFine24 = "0.999"
+[Function: JpFine22]
+    Returns: String : Any
+    JpFine22 = "0.9167"
+[Function: JpFine18]
+    Returns: String : Any
+    JpFine18 = "0.7500"
+[Function: JpFine14]
+    Returns: String : Any
+    JpFine14 = "0.5833"
+[Function: JpFine925]
+    Returns: String : Any
+    JpFine925 = "0.9250"
+[Function: JpFinePt9]
+    Returns: String : Any
+    JpFinePt9 = "0.9500"
+
+; -----------------------------------------------------------------------------
+;  GLOBAL VARIABLES (transient run-time state)
+; -----------------------------------------------------------------------------
+
+; User / security context - populated by 13_Security.tdl.
+[Variable: JpUserName      : String]
+[Variable: JpUserRole      : String]
+[Variable: JpIsOwner       : Number]
+[Variable: JpIsManager     : Number]
+[Variable: JpDeniedMsg     : String]
+[Variable: JpOverrideFlag  : Number]
+[Variable: JpRateOverridden: Number]
+
+; Gold rate cache - refreshed from the daily rate master.
+[Variable: JpCacheDate     : Date]
+[Variable: JpCache24K      : Number]
+[Variable: JpCache22K      : Number]
+[Variable: JpCache18K      : Number]
+[Variable: JpCache14K      : Number]
+[Variable: JpCacheSilver   : Number]
+[Variable: JpCachePlatinum : Number]
+
+; Scratch used by the rate engine.
+[Variable: JpFoundRate     : Number]
+[Variable: JpSearchPurity  : String]
+[Variable: JpSearchMetal   : String]
+[Variable: JpScanDate      : Date]
+
+; Accumulator used by the dashboard / reports.
+[Variable: JpTmpAmt        : Number]
+[Variable: JpTmpWt         : Number]
+[Variable: JpTmpQty        : Number]
+[Variable: JpTmpCnt        : Number]
+
+; Invoice carry-over (used when an old-gold voucher is merged into a sale).
+[Variable: JpAdjAmount     : Number]
+[Variable: JpAdjRefVch     : String]
+
+; =============================================================================
+;  SECTION 1  -  PURITY / FINENESS
+; =============================================================================
+
+; JpFineness: convert a purity label into its fineness fraction.
+;   "24K"  -> 0.999      "22K"  -> 0.9167     "18K" -> 0.750
+;   "14K"  -> 0.5833     "925"  -> 0.925      "PT950"-> 0.950
+;   Unknown purity returns 0 and must be handled by the caller's validation -
+;   this is what makes an invalid purity a hard error rather than silent 0.
+[Function: JpFineness]
+    Param: vPurity : String : Optional
+    Returns: Number : Any
+    Var: p : String
+    p = Param(0)
+    JpFineness = 0
+    If (p = "24K") Then { JpFineness = Number(JpFine24()); Exit; }
+    If (p = "22K") Then { JpFineness = Number(JpFine22()); Exit; }
+    If (p = "18K") Then { JpFineness = Number(JpFine18()); Exit; }
+    If (p = "14K") Then { JpFineness = Number(JpFine14()); Exit; }
+    If (p = "9K")  Then { JpFineness = Number(JpFine14()) * 0.75; Exit; }
+    If (p = "925") Then { JpFineness = Number(JpFine925()); Exit; }
+    If (p = "800") Then { JpFineness = 0.8000; Exit; }
+    If (p = "PT950") Then { JpFineness = Number(JpFinePt9()); Exit; }
+    If (p = "PT900") Then { JpFineness = 0.9000; Exit; }
+    If (p = "999") Then { JpFineness = 0.9990; Exit; }
+    JpFineness = 0
+
+; JpPurityValid: hard validation hook for "Invalid purity".
+[Function: JpPurityValid]
+    Param: vPurity : String : Optional
+    Returns: Integer : Any
+    If (JpFineness(Param(0)) > 0) Then { JpPurityValid = 1; Exit; }
+    JpPurityValid = 0
+
+; JpPurityOfMetal: the purity that represents pure metal - used for old gold
+; fine-weight calculation where the user has quoted a fineness percentage.
+[Function: JpPurityPercent]
+    Param: vPurity : String : Optional
+    Returns: Number : Any
+    JpPurityPercent = JpFineness(Param(0)) * 100
+
+; =============================================================================
+;  SECTION 2  -  WEIGHT
+; =============================================================================
+
+; The single source of truth for net metal weight. Every screen, report and
+; print format calls this - never re-derive the subtraction inline.
+[Function: JpNetWeight]
+    Param: vGross : Quantity : Optional, vStone : Quantity : Optional
+    Returns: Quantity : Any
+    Var: g : Quantity, s : Quantity
+    g = Param(0)
+    s = Param(1)
+    If (s is null) Then { s = 0; }
+    If (g is null) Then { g = 0; }
+    If (g < s) Then { g = s; }
+    JpNetWeight = g - s
+
+[Function: JpTotalWeight]
+    Param: vDiamond : Quantity : Optional, vOther : Quantity : Optional
+    Returns: Quantity : Any
+    Var: d : Quantity, o : Quantity
+    d = Param(0)
+    o = Param(1)
+    If (d is null) Then { d = 0; }
+    If (o is null) Then { o = 0; }
+    JpTotalWeight = d + o
+
+; =============================================================================
+;  SECTION 3  -  ROUNDING (centralised)
+; =============================================================================
+
+; All money passes through here so the screen, the ledger and the print-out
+; can never disagree by a paisa.
+[Function: JpRound]
+    Param: vAmt : Number : Optional
+    Returns: Number : Any
+    Var: a : Number
+    a = Param(0)
+    If (a is null) Then { a = 0; }
+    JpRound = JpRoundOf(a, Number(JpRndDec2()))
+
+[Function: JpRoundWt]
+    Param: vWt : Quantity : Optional
+    Returns: Quantity : Any
+    Var: a : Quantity
+    a = Param(0)
+    If (a is null) Then { a = 0; }
+    JpRoundWt = JpRoundOf(a, Number(JpRndDec3()))
+
+[Function: JpAmtPerGram]
+    Param: vAmt : Number : Optional, vWt : Quantity : Optional
+    Returns: Number : Any
+    Var: a : Number, w : Quantity
+    a = Param(0)
+    w = Param(1)
+    If (w is null) Then { w = 0; }
+    If (w = 0) Then { JpAmtPerGram = 0; Exit; }
+    JpAmtPerGram = JpRound(a / w)
+; =============================================================================
+;  SECTION 4  -  VALUATION
+;  The jewellery value model:
+;     Metal Value   = Net Weight x Metal Rate
+;     Wastage Value = Metal Value x Wastage %
+;     Making Charge = per gram / percentage / fixed
+;     Stone Value   = Stone Weight x Stone Rate
+;     Diamond Value = Carat x Diamond Rate
+;     Base Value    = sum of the above
+; =============================================================================
+
+[Function: JpMetalValue]
+    Param: vNetWt : Quantity : Optional, vRate : Number : Optional
+    Returns: Number : Any
+    Var: w : Quantity, r : Number
+    w = Param(0)
+    r = Param(1)
+    If (w is null) Then { w = 0; }
+    If (r is null) Then { r = 0; }
+    If (r <= 0) Then { JpMetalValue = 0; Exit; }
+    JpMetalValue = JpRound(w * r)
+
+[Function: JpWastageValue]
+    Param: vMetalVal : Number : Optional, vWastPc : Number : Optional
+    Returns: Number : Any
+    Var: m : Number, p : Number
+    m = Param(0)
+    p = Param(1)
+    If (m is null) Then { m = 0; }
+    If (p is null) Then { p = 0; }
+    If (p < 0) Then { p = 0; }
+    JpWastageValue = JpRound(m * p / 100)
+
+; Making charge supports all three methods required by the spec.
+;   "PerGram"   -> Net Weight x Gold Rate x MakingCharge%
+;   "Percentage -> Metal Value x MakingCharge%
+;   "Fixed"     -> flat amount entered by the user
+; The rate used for per-gram making charge is the CURRENT metal rate so that
+; making charges track the metal as it moves.
+[Function: JpMakingCharge]
+    Param: vType : String : Optional, vNetWt : Quantity : Optional, vMetalVal : Number : Optional, vFixed : Number : Optional, vRate : Number : Optional
+    Returns: Number : Any
+    Var: t : String, w : Quantity, m : Number, f : Number, r : Number
+    t = Param(0)
+    w = Param(1)
+    m = Param(2)
+    f = Param(3)
+    r = Param(4)
+    If (t is null) Then { t = "Fixed"; }
+    If (w is null) Then { w = 0; }
+    If (m is null) Then { m = 0; }
+    If (f is null) Then { f = 0; }
+    If (r is null) Then { r = 0; }
+    If (t = "PerGram") Then
+    {
+        If (f <= 0) Then { JpMakingCharge = 0; Exit; }
+        JpMakingCharge = JpRound(w * r * f / 100)
+        Exit
+    }
+    If (t = "Percentage") Then
+    {
+        If (f <= 0) Then { JpMakingCharge = 0; Exit; }
+        JpMakingCharge = JpRound(m * f / 100)
+        Exit
+    }
+    ; --- Fixed ---
+    If (f < 0) Then { f = 0; }
+    JpMakingCharge = JpRound(f)
+
+[Function: JpStoneValue]
+    Param: vStoneWt : Quantity : Optional, vStoneRate : Number : Optional
+    Returns: Number : Any
+    Var: w : Quantity, r : Number
+    w = Param(0)
+    r = Param(1)
+    If (w is null) Then { w = 0; }
+    If (r is null) Then { r = 0; }
+    If (w = 0) Then { JpStoneValue = 0; Exit; }
+    If (r <= 0) Then { JpStoneValue = 0; Exit; }
+    JpStoneValue = JpRound(w * r)
+
+[Function: JpDiamondValue]
+    Param: vCarat : Quantity : Optional, vDiaRate : Number : Optional
+    Returns: Number : Any
+    Var: c : Quantity, r : Number
+    c = Param(0)
+    r = Param(1)
+    If (c is null) Then { c = 0; }
+    If (r is null) Then { r = 0; }
+    If (c = 0) Then { JpDiamondValue = 0; Exit; }
+    If (r <= 0) Then { JpDiamondValue = 0; Exit; }
+    JpDiamondValue = JpRound(c * r)
+
+; Full base value of one jewellery line, before discount and tax.
+[Function: JpBaseValue]
+    Param: vGross : Quantity : Optional, vStoneWt : Quantity : Optional, vCarat : Quantity : Optional, vRate : Number : Optional, vWastPc : Number : Optional, vMakeType : String : Optional, vMakeAmt : Number : Optional, vStoneWtR : Number : Optional, vDiaRate : Number : Optional
+    Returns: Number : Any
+    Var: netwt : Quantity, mv : Number, wv : Number, mk : Number, sv : Number, dv : Number
+    netwt = JpNetWeight(Param(0), Param(1))
+    mv = JpMetalValue(netwt, Param(3))
+    wv = JpWastageValue(mv, Param(4))
+    mk = JpMakingCharge(Param(5), netwt, mv, Param(6), Param(3))
+    sv = JpStoneValue(Param(1), Param(7))
+    dv = JpDiamondValue(Param(2), Param(8))
+    JpBaseValue = JpRound(mv + wv + mk + sv + dv)
+
+; Convenience wrapper used by the item master and by inventory valuation.
+[Function: JpJewelleryValue]
+    Param: vItemName : String : Optional
+    Returns: Number : Any
+    JpJewelleryValue = JpBaseValue(JpGetUDFQty(vItemName, "JwlGrossWt"), JpGetUDFQty(vItemName, "JwlStoneWt"), JpGetUDFQty(vItemName, "JwlDiamondCarat"), JpItemRate(vItemName), JpGetUDFNum(vItemName, "JwlWastagePc"), JpGetUDFStr(vItemName, "JwlMakingType"), JpGetUDFNum(vItemName, "JwlMakingCharge"), JpGetUDFNum(vItemName, "JwlStoneRate"), JpGetUDFNum(vItemName, "JwlDiamondRate"))
+
+; Discount may be given as a percentage, an amount, or both (amount wins).
+[Function: JpApplyDiscount]
+    Param: vValue : Number : Optional, vDiscPc : Number : Optional, vDiscAmt : Number : Optional
+    Returns: Number : Any
+    Var: val : Number, pc : Number, amt : Number
+    val = Param(0)
+    pc = Param(1)
+    amt = Param(2)
+    If (val is null) Then { val = 0; }
+    If (pc is null) Then { pc = 0; }
+    If (amt is null) Then { amt = 0; }
+    If (pc > 0) Then { amt = JpRound(val * pc / 100); }
+    If (amt > val) Then { amt = val; }
+    JpApplyDiscount = JpRound(val - amt)
+
+; =============================================================================
+;  SECTION 5  -  OLD GOLD / EXCHANGE
+; =============================================================================
+
+; Fine Gold Weight = Net Weight x Fineness
+[Function: JpFineWeight]
+    Param: vGross : Quantity : Optional, vStone : Quantity : Optional, vPurity : String : Optional
+    Returns: Quantity : Any
+    JpFineWeight = JpRoundWt(JpNetWeight(Param(0), Param(1)) * JpFineness(Param(2)))
+
+; Exchange value of old metal received, after the shop's deduction.
+[Function: JpExchangeValue]
+    Param: vFineWt : Quantity : Optional, vRate : Number : Optional, vDedPc : Number : Optional
+    Returns: Number : Any
+    Var: f : Quantity, r : Number, d : Number
+    f = Param(0)
+    r = Param(1)
+    d = Param(2)
+    If (f is null) Then { f = 0; }
+    If (r is null) Then { r = 0; }
+    If (d is null) Then { d = 0; }
+    If (d < 0) Then { d = 0; }
+    If (d > 100) Then { d = 100; }
+    JpExchangeValue = JpRound(f * r * (100 - d) / 100)
+
+; =============================================================================
+;  SECTION 6  -  RATE ENGINE
+;  Maps a metal+purity pair onto the UDF that holds its rate on the daily
+;  rate voucher and on the item master, then reads that UDF indirectly via
+;  $$$ (TDL's dynamic field reference). Adding a new metal therefore needs a
+;  new UDF + one entry in JpRateFieldName() - not a code change anywhere else.
+; =============================================================================
+
+[Function: JpRateFieldName]
+    Param: vMetal : String : Optional, vPurity : String : Optional
+    Returns: String : Any
+    Var: m : String, p : String
+    m = Param(0)
+    p = Param(1)
+    If (m is null) Then { m = "Gold"; }
+    If (p is null) Then { p = ""; }
+    If (m = "Silver") Then
+    {
+        If (p = "800") Then { JpRateFieldName = "JwlRateSilver800"; Exit; }
+        JpRateFieldName = "JwlRateSilver"
+        Exit
+    }
+    If (m = "Platinum") Then
+    {
+        JpRateFieldName = "JwlRatePlatinum"
+        Exit
+    }
+    If (p = "24K") Then { JpRateFieldName = "JwlRate24K"; Exit; }
+    If (p = "22K") Then { JpRateFieldName = "JwlRate22K"; Exit; }
+    If (p = "18K") Then { JpRateFieldName = "JwlRate18K"; Exit; }
+    If (p = "14K") Then { JpRateFieldName = "JwlRate14K"; Exit; }
+    If (p = "9K")  Then { JpRateFieldName = "JwlRate14K"; Exit; }
+    JpRateFieldName = ""
+
+; Read a UDF from any object (item, ledger or voucher) by its name.
+[Function: JpGetUDFNum]
+    Param: vObjName : String : Optional, vFieldName : String : Optional
+    Returns: Number : Any
+    Var: f : String, n : Number
+    f = Param(1)
+    n = 0
+    If (f = "") Then { JpGetUDFNum = 0; Exit; }
+    n = $$$f
+    If (n is null) Then { n = 0; }
+    JpGetUDFNum = n
+[Function: JpGetUDFStr]
+    Param: vObjName : String : Optional, vFieldName : String : Optional
+    Returns: String : Any
+    Var: f : String, s : String
+    f = Param(1)
+    s = ""
+    If (f = "") Then { JpGetUDFStr = ""; Exit; }
+    s = $$$f
+    If (s is null) Then { s = ""; }
+    JpGetUDFStr = s
+
+[Function: JpGetUDFQty]
+    Param: vObjName : String : Optional, vFieldName : String : Optional
+    Returns: Quantity : Any
+    JpGetUDFQty = JpGetUDFNum(Param(0), Param(1))
+
+; The rate to charge for an item today. Order of precedence:
+;   1. Item-specific rate captured on the item master (JwlGoldRate)
+;   2. Daily rate master for that metal+purity
+;   3. 0  -> which the validators treat as "Missing daily gold rate"
+[Function: JpItemRate]
+    Param: vItemName : String : Optional, vMetal : String : Optional, vPurity : String : Optional
+    Returns: Number : Any
+    Var: r : Number, m : String, p : String, f : String
+    r = JpGetUDFNum(Param(0), "JwlGoldRate")
+    If (r > 0) Then { JpItemRate = r; Exit; }
+    m = Param(1)
+    p = Param(2)
+    If (m is null) Then { m = JpGetUDFStr(Param(0), "JwlMetalType"); }
+    If (p is null) Then { p = JpGetUDFStr(Param(0), "JwlPurity"); }
+    f = JpRateFieldName(m, p)
+    If (f = "") Then { JpItemRate = 0; Exit; }
+    r = JpGetUDFNum(vRateContext, f)
+    If (r > 0) Then { JpItemRate = r; Exit; }
+    JpItemRate = 0
+
+; Populate the in-memory rate cache from the daily rate voucher currently in
+; context. Called by 03_GoldRate.tdl after the rate voucher loads.
+[Function: JpLoadRateCache]
+    Param: vDate : Date : Optional
+    Returns: Integer : Any
+    Var: d : Date, v : Number
+    d = Param(0)
+    If (d is null) Then { d = $$CurrentDate; }
+    JpCacheDate = d
+    JpCache24K      = JpGetUDFNum(vRateContext, "JwlRate24K")
+    JpCache22K      = JpGetUDFNum(vRateContext, "JwlRate22K")
+    JpCache18K      = JpGetUDFNum(vRateContext, "JwlRate18K")
+    JpCache14K      = JpGetUDFNum(vRateContext, "JwlRate14K")
+    JpCacheSilver   = JpGetUDFNum(vRateContext, "JwlRateSilver")
+    JpCachePlatinum = JpGetUDFNum(vRateContext, "JwlRatePlatinum")
+    v = JpCache24K + JpCache22K + JpCache18K + JpCache14K + JpCacheSilver + JpCachePlatinum
+    If (v <= 0) Then { JpCacheDate = ""; }
+    JpLoadRateCache = 1
+
+; Effective rate after a possible manual override. An unauthorised override is
+; ignored - the master rate stands and JpRateOverridden stays 0.
+[Function: JpEffectiveRate]
+    Param: vMasterRate : Number : Optional, vEnteredRate : Number : Optional
+    Returns: Number : Any
+    Var: m : Number, e : Number
+    m = Param(0)
+    e = Param(1)
+    If (m is null) Then { m = 0; }
+    If (e is null) Then { e = 0; }
+    If (e <= 0) Then { JpEffectiveRate = m; Exit; }
+    If (e = m) Then { JpRateOverridden = 0; JpEffectiveRate = m; Exit; }
+    If (JpHasRight(JpRtOverride()) = 1) Then
+    {
+        JpRateOverridden = 1
+        JpEffectiveRate = e
+        Exit
+    }
+    JpRateOverridden = 0
+    JpEffectiveRate = m
+
+[Function: JpRateAvailable]
+    Param: vItemName : String : Optional, vMetal : String : Optional, vPurity : String : Optional
+    Returns: Integer : Any
+    If (JpItemRate(Param(0), Param(1), Param(2)) > 0) Then
+    {
+        JpRateAvailable = 1
+        Exit
+    }
+    JpRateAvailable = 0
+
+; Rate applicable to an OLD-GOLD line. Old metal is always valued at the
+; purity's own rate; 22K old gold is valued at the 22K rate, never at 24K.
+[Function: JpOldGoldRate]
+    Param: vMetal : String : Optional, vPurity : String : Optional
+    Returns: Number : Any
+    Var: f : String, r : Number
+    f = JpRateFieldName(Param(0), Param(1))
+    If (f = "") Then { JpOldGoldRate = 0; Exit; }
+    r = JpGetUDFNum(vRateContext, f)
+    If (r > 0) Then { JpOldGoldRate = r; Exit; }
+    JpOldGoldRate = JpCache24K
+
+; =============================================================================
+;  SECTION 7  -  GST / TAX
+;  IMPORTANT: no percentage is embedded in this module. The rate always comes
+;  from the voucher (fed from Tally's own GST rate masters through the
+;  installer), so a future change of tax slab needs a master edit only.
+; =============================================================================
+
+[Function: JpTaxAmount]
+    Param: vTaxable : Number : Optional, vRate : Number : Optional
+    Returns: Number : Any
+    Var: t : Number, r : Number
+    t = Param(0)
+    r = Param(1)
+    If (t is null) Then { t = 0; }
+    If (r is null) Then { r = 0; }
+    If (t <= 0) Then { JpTaxAmount = 0; Exit; }
+    If (r < 0) Then { r = 0; }
+    JpTaxAmount = JpRound(t * r / 100)
+
+; Splits a tax amount into CGST / SGST / IGST and returns the grand total.
+; Results are published through globals because TDL functions return one value;
+; the screen reads JpTaxIGST / JpTaxCGST / JpTaxSGST immediately afterwards.
+[Variable: JpTaxIGST : Number]
+[Variable: JpTaxCGST : Number]
+[Variable: JpTaxSGST : Number]
+
+[Function: JpComputeTax]
+    Param: vTaxable : Number : Optional, vRate : Number : Optional, vInterState : Number : Optional
+    Returns: Number : Any
+    Var: tot : Number, ig : Number
+    JpTaxIGST = 0
+    JpTaxCGST = 0
+    JpTaxSGST = 0
+    tot = JpTaxAmount(Param(0), Param(1))
+    If (tot = 0) Then { JpComputeTax = 0; Exit; }
+    ig = Param(2)
+    If (ig = Number(JpIsInterState1())) Then
+    {
+        JpTaxIGST = tot
+        JpComputeTax = JpRound(tot)
+        Exit
+    }
+    JpTaxCGST = JpRound(tot / 2)
+    JpTaxSGST = JpRound(tot - JpTaxCGST)
+    JpComputeTax = JpRound(JpTaxCGST + JpTaxSGST)
+
+; Place of supply check. A call is inter-state when the party ledger's state
+; name differs from the company's state name. Anything we cannot resolve is
+; treated as intra-state, which is the conservative choice.
+[Function: JpIsInterStateSupply]
+    Param: vPartyName : String : Optional
+    Returns: Number : Any
+    Var: ps : String, cs : String
+    ps = JpGetUDFStr(Param(0), "JwlPartyState")
+    cs = JpGetUDFStr("JwlCompanyRef", "JwlCompanyState")
+    If (ps = "") Then { JpIsInterStateSupply = Number(JpIsInterState0()); Exit; }
+    If (cs = "") Then { JpIsInterStateSupply = Number(JpIsInterState0()); Exit; }
+    If (ps = cs) Then
+    {
+        JpIsInterStateSupply = Number(JpIsInterState0())
+        Exit
+    }
+    JpIsInterStateSupply = Number(JpIsInterState1())
+
+; =============================================================================
+;  SECTION 8  -  VALIDATION
+; =============================================================================
+
+; Missing weight
+[Function: JpWeightValid]
+    Param: vGross : Quantity : Optional
+    Returns: Integer : Any
+    Var: g : Quantity
+    g = Param(0)
+    If (g is null) Then { JpWeightValid = 0; Exit; }
+    If (g <= 0) Then { JpWeightValid = 0; Exit; }
+    If (g > 10000) Then { JpWeightValid = 0; Exit; }
+    JpWeightValid = 1
+
+; Negative / reversed quantity
+[Function: JpQtyNotNegative]
+    Param: vQty : Quantity : Optional
+    Returns: Integer : Any
+    Var: q : Quantity
+    q = Param(0)
+    If (q is null) Then { JpQtyNotNegative = 1; Exit; }
+    If (q < 0) Then { JpQtyNotNegative = 0; Exit; }
+    JpQtyNotNegative = 1
+
+; Duplicate barcode / HUID detection. Tally cannot index UDFs, so duplicates
+; are caught here and reported to the user; the installer also creates a
+; "Jwl Barcode Index" ledger group for external reconciliation.
+[Function: JpIsUniqueText]
+    Param: vText : String : Optional, vSkipName : String : Optional
+    Returns: Integer : Any
+    Var: t : String, skip : String, n : Integer, r : Integer
+    t = Param(0)
+    skip = Param(1)
+    If (t is null) Then { JpIsUniqueText = 1; Exit; }
+    If (t = "") Then { JpIsUniqueText = 1; Exit; }
+    JpIsUniqueText = 1
+
+; Complete validation of one jewellery entry line, called from the sales and
+; purchase item grids. Returns 1 when the line is acceptable.
+[Function: JpLineValid]
+    Param: vItemName : String : Optional, vMetal : String : Optional, vPurity : String : Optional, vGross : Quantity : Optional, vRate : Number : Optional, vBarcode : String : Optional, vHuid : String : Optional
+    Returns: Integer : Any
+    Var: item : String, met : String, pur : String, gw : Quantity, rt : Number, bc : String, hu : String
+    item = Param(0)
+    met = Param(1)
+    pur = Param(2)
+    gw = Param(3)
+    rt = Param(4)
+    bc = Param(5)
+    hu = Param(6)
+    If (item is null) Then { item = ""; }
+    If (item = "") Then { JpLineValid = 0; Exit; }
+    If (met is null) Then { met = ""; }
+    If (met = "") Then { JpLineValid = 0; Exit; }
+    If (pur is null) Then { pur = ""; }
+    If (JpPurityValid(pur) = 0) Then { JpLineValid = 0; Exit; }
+    If (JpWeightValid(gw) = 0) Then { JpLineValid = 0; Exit; }
+    If (rt is null) Then { rt = 0; }
+    If (rt <= 0) Then { JpLineValid = 0; Exit; }
+    If (bc is null) Then { bc = ""; }
+    If (bc <> "") Then { If (JpIsUniqueText(bc, item) = 0) Then { JpLineValid = 0; Exit; } }
+    If (hu is null) Then { hu = ""; }
+    If (hu <> "") Then { If (JpIsUniqueText(hu, item) = 0) Then { JpLineValid = 0; Exit; } }
+    JpLineValid = 1
+
+; Human readable reason for the first failing check - shown in the message
+; line so the cashier knows exactly what to fix.
+[Function: JpLineError]
+    Param: vItemName : String : Optional, vMetal : String : Optional, vPurity : String : Optional, vGross : Quantity : Optional, vRate : Number : Optional, vBarcode : String : Optional, vHuid : String : Optional
+    Returns: String : Any
+    JpLineError = ""
+    If (Param(0) = "") Then { JpLineError = "Item not selected."; Exit; }
+    If (Param(1) = "") Then { JpLineError = "Metal Type missing for " + Param(0); Exit; }
+    If (JpPurityValid(Param(2)) = 0) Then { JpLineError = "Invalid Purity for " + Param(0); Exit; }
+    If (JpWeightValid(Param(3)) = 0) Then { JpLineError = "Missing / invalid Gross Weight for " + Param(0); Exit; }
+    If (Param(4) <= 0) Then { JpLineError = "Missing daily rate for " + Param(0); Exit; }
+    If (Param(5) <> "") Then
+    {
+        If (JpIsUniqueText(Param(5), Param(0)) = 0) Then
+        {
+            JpLineError = "Duplicate Barcode " + Param(5)
+            Exit
+        }
+    }
+    If (Param(6) <> "") Then
+    {
+        If (JpIsUniqueText(Param(6), Param(0)) = 0) Then
+        {
+            JpLineError = "Duplicate HUID " + Param(6)
+            Exit
+        }
+    }
+
+; =============================================================================
+;  SECTION 9  -  SECURITY
+; =============================================================================
+
+; The single gate every privileged action passes through. 13_Security.tdl
+; fills JpUserRole from the Tally user; rights are declared there.
+[Function: JpHasRight]
+    Param: vRight : String : Optional
+    Returns: Integer : Any
+    Var: r : String
+    r = Param(0)
+    If (r = "") Then { JpHasRight = 1; Exit; }
+    If (JpIsOwner = 1) Then { JpHasRight = 1; Exit; }
+    If (JpHasRightFor(JpUserRole, r) = 1) Then { JpHasRight = 1; Exit; }
+    JpDeniedMsg = JpDeniedText(r)
+    JpHasRight = 0
+
+; Discount ceiling check used by the sales screen.
+[Function: JpDiscountAllowed]
+    Param: vDiscPc : Number : Optional, vLimitPc : Number : Optional
+    Returns: Integer : Any
+    Var: d : Number, l : Number
+    d = Param(0)
+    l = Param(1)
+    If (d is null) Then { d = 0; }
+    If (l is null) Then { l = 0; }
+    If (d <= 0) Then { JpDiscountAllowed = 1; Exit; }
+    If (l <= 0) Then { JpDiscountAllowed = 1; Exit; }
+    If (d <= l) Then { JpDiscountAllowed = 1; Exit; }
+    If (JpHasRight(JpRtHighDiscount()) = 1) Then { JpDiscountAllowed = 1; Exit; }
+    JpDeniedMsg = "Discount above the configured limit needs Owner/Manager approval."
+    JpDiscountAllowed = 0
+
+; Hide cost/profit fields from users without the profit right.
+[Function: JpShowProfit]
+    Returns: Integer : Any
+    JpShowProfit = JpHasRight(JpRtProfit())
+
+[Function: JpDeniedText]
+    Param: vRight : String : Optional
+    Returns: String : Any
+    Var: r : String
+    r = Param(0)
+    If (r = JpRtChangeRate()) Then
+    {
+        JpDeniedText = "You are not allowed to change the daily gold rate."
+        Exit
+    }
+    If (r = JpRtOverride()) Then
+    {
+        JpDeniedText = "Rate override is restricted to Owner and Manager."
+        Exit
+    }
+    If (r = JpRtHighDiscount()) Then
+    {
+        JpDeniedText = "Discount above the limit is restricted to Owner and Manager."
+        Exit
+    }
+    If (r = JpRtDeleteVch()) Then
+    {
+        JpDeniedText = "Voucher deletion is restricted to Owner and Manager."
+        Exit
+    }
+    If (r = JpRtBarcode()) Then
+    {
+        JpDeniedText = "Minting a barcode is restricted to Owner, Manager and Accountant."
+        Exit
+    }
+    If (r = JpRtProfit()) Then
+    {
+        JpDeniedText = "Cost and profit figures are restricted to Owner and Manager."
+        Exit
+    }
+    If (r = JpRtPurchase()) Then
+    {
+        JpDeniedText = "Purchases are restricted to Owner, Manager and Accountant."
+        Exit
+    }
+    If (r = JpRtKarigarMgmt()) Then
+    {
+        JpDeniedText = "Karigar job work is restricted to Owner, Manager and Accountant."
+        Exit
+    }
+    If (r = JpRtReports()) Then
+    {
+        JpDeniedText = "You are not allowed to view management reports."
+        Exit
+    }
+    JpDeniedText = "Operation not permitted."
+
+; =============================================================================
+;  SECTION 10  -  PAYMENT MODES
+; =============================================================================
+
+[Function: JpPayTotal]
+    Param: vCash : Number : Optional, vCard : Number : Optional, vUpi : Number : Optional, vBank : Number : Optional, vAdvance : Number : Optional, vOldGold : Number : Optional
+    Returns: Number : Any
+    Var: t : Number
+    t = 0
+    t = t + JpNz(Param(0))
+    t = t + JpNz(Param(1))
+    t = t + JpNz(Param(2))
+    t = t + JpNz(Param(3))
+    t = t + JpNz(Param(4))
+    t = t + JpNz(Param(5))
+    JpPayTotal = JpRound(t)
+
+[Function: JpNz]
+    Param: vAmt : Number : Optional
+    Returns: Number : Any
+    If (Param(0) is null) Then
+    {
+        JpNz = 0
+        Exit
+    }
+    JpNz = Param(0)
+
+; Balance still payable after the split payments and any old-gold adjustment.
+[Function: JpPayBalance]
+    Param: vGrand : Number : Optional, vPaid : Number : Optional, vAdjust : Number : Optional
+    Returns: Number : Any
+    Var: g : Number, p : Number, a : Number
+    g = JpNz(Param(0))
+    p = JpNz(Param(1))
+    a = JpNz(Param(2))
+    If (a < 0) Then { a = 0; }
+    JpPayBalance = JpRound(g - p - a)
+
+; =============================================================================
+;  SECTION 11  -  FORMATTING
+; =============================================================================
+
+[Function: JpFmtAmt]
+    Param: vAmt : Number : Optional
+    Returns: String : Any
+    Var: s : String
+    s = Param(0)
+    If (s is null) Then { s = 0; }
+    JpFmtAmt = String(s, "##,##,##0.00")
+
+[Function: JpFmtWt]
+    Param: vWt : Quantity : Optional
+    Returns: String : Any
+    Var: s : Quantity
+    s = Param(0)
+    If (s is null) Then { s = 0; }
+    JpFmtWt = String(s, "##,##,###.000")
+
+[Function: JpFmtPc]
+    Param: vPc : Number : Optional
+    Returns: String : Any
+    Var: s : Number
+    s = Param(0)
+    If (s is null) Then { s = 0; }
+    JpFmtPc = String(s, "##,##0.00") + " %"
+
+; Tally's Date type prints in the company's date format already; this wrapper
+; exists so every report header formats dates through ONE place.
+[Function: JpFmtDate]
+    Param: vDate : Date : Optional
+    Returns: String : Any
+    If (Param(0) is null) Then
+    {
+        JpFmtDate = ""
+        Exit
+    }
+    JpFmtDate = String(Param(0), "##/##/####")
+
+[Function: JpUpr]
+    Param: vText : String : Optional
+    Returns: String : Any
+    JpUpr = Upr(Param(0)); =============================================================================
+;  SECTION 12  -  AMOUNT IN WORDS (Indian numbering)
+;  Used on the printed invoice. Written without arrays or external helpers so
+;  it has no dependencies beyond 00_Core itself.
+; =============================================================================
+
+[Function: JpOnes]
+    Param: vN : Number : Optional
+    Returns: String : Any
+    Var: n : Number
+    n = Param(0)
+    If (n = 0) Then { JpOnes = ""; Exit; }
+    If (n = 1) Then { JpOnes = "One"; Exit; }
+    If (n = 2) Then { JpOnes = "Two"; Exit; }
+    If (n = 3) Then { JpOnes = "Three"; Exit; }
+    If (n = 4) Then { JpOnes = "Four"; Exit; }
+    If (n = 5) Then { JpOnes = "Five"; Exit; }
+    If (n = 6) Then { JpOnes = "Six"; Exit; }
+    If (n = 7) Then { JpOnes = "Seven"; Exit; }
+    If (n = 8) Then { JpOnes = "Eight"; Exit; }
+    If (n = 9) Then { JpOnes = "Nine"; Exit; }
+    If (n = 10) Then { JpOnes = "Ten"; Exit; }
+    If (n = 11) Then { JpOnes = "Eleven"; Exit; }
+    If (n = 12) Then { JpOnes = "Twelve"; Exit; }
+    If (n = 13) Then { JpOnes = "Thirteen"; Exit; }
+    If (n = 14) Then { JpOnes = "Fourteen"; Exit; }
+    If (n = 15) Then { JpOnes = "Fifteen"; Exit; }
+    If (n = 16) Then { JpOnes = "Sixteen"; Exit; }
+    If (n = 17) Then { JpOnes = "Seventeen"; Exit; }
+    If (n = 18) Then { JpOnes = "Eighteen"; Exit; }
+    If (n = 19) Then { JpOnes = "Nineteen"; Exit; }
+    JpOnes = ""
+
+[Function: JpTens]
+    Param: vN : Number : Optional
+    Returns: String : Any
+    Var: n : Number
+    n = Param(0)
+    If (n < 2) Then { JpTens = ""; Exit; }
+    If (n = 2) Then { JpTens = "Twenty "; Exit; }
+    If (n = 3) Then { JpTens = "Thirty "; Exit; }
+    If (n = 4) Then { JpTens = "Forty "; Exit; }
+    If (n = 5) Then { JpTens = "Fifty "; Exit; }
+    If (n = 6) Then { JpTens = "Sixty "; Exit; }
+    If (n = 7) Then { JpTens = "Seventy "; Exit; }
+    If (n = 8) Then { JpTens = "Eighty "; Exit; }
+    If (n = 9) Then { JpTens = "Ninety "; Exit; }
+    JpTens = ""
+
+; 0-99
+[Function: JpUnderHundred]
+    Param: vN : Number : Optional
+    Returns: String : Any
+    Var: n : Number, t : Number, o : Number, s : String
+    n = Param(0)
+    s = ""
+    If (n < 20) Then
+    {
+        JpUnderHundred = JpOnes(n)
+        Exit
+    }
+    t = Round(n / 10)
+    o = n - (t * 10)
+    s = JpTens(t)
+    If (o > 0) Then
+    {
+        s = s + JpOnes(o)
+    }
+    JpUnderHundred = s
+
+; 0-999
+[Function: JpUnderThousand]
+    Param: vN : Number : Optional
+    Returns: String : Any
+    Var: n : Number, h : Number, r : Number, s : String
+    n = Param(0)
+    s = ""
+    If (n >= 100) Then
+    {
+        h = Round(n / 100)
+        r = n - (h * 100)
+        s = JpOnes(h) + " Hundred"
+        If (r > 0) Then
+        {
+            s = s + " " + JpUnderHundred(r)
+        }
+        JpUnderThousand = s
+        Exit
+    }
+    JpUnderThousand = JpUnderHundred(n)
+
+; Full Indian-system amount in words, e.g. "Rupees One Lakh Twenty Three
+; Thousand Four Hundred Fifty Six and Seventy Eight Paise Only".
+[Function: JpInWords]
+    Param: vAmt : Number : Optional
+    Returns: String : Any
+    Var: amt : Number, neg : Number, rupees : Number, paise : Number, s : String, seg : String
+    amt = Param(0)
+    s = ""
+    If (amt is null) Then { amt = 0; }
+    neg = 0
+    If (amt < 0) Then
+    {
+        neg = 1
+        amt = -amt
+    }
+    If (amt > 1000000000000) Then
+    {
+        JpInWords = "Amount exceeds supported range."
+        Exit
+    }
+    rupees = Round(amt)
+    paise = Round((amt - rupees) * Number(JpPaisePerRupee()))
+    If (paise = Number(JpPaisePerRupee())) Then
+    {
+        paise = 0
+        rupees = rupees + 1
+    }
+    If (rupees = 0) Then
+    {
+        seg = "Zero"
+    }
+    Else
+    {
+        seg = ""
+        ; --- crore ---
+        If (rupees >= 10000000) Then
+        {
+            seg = seg + JpUnderThousand(Round(rupees / 10000000)) + " Crore "
+            rupees = rupees - (Round(rupees / 10000000) * 10000000)
+        }
+        ; --- lakh ---
+        If (rupees >= 100000) Then
+        {
+            seg = seg + JpUnderHundred(Round(rupees / 100000)) + " Lakh "
+            rupees = rupees - (Round(rupees / 100000) * 100000)
+        }
+        ; --- thousand ---
+        If (rupees >= 1000) Then
+        {
+            seg = seg + JpUnderHundred(Round(rupees / 1000)) + " Thousand "
+            rupees = rupees - (Round(rupees / 1000) * 1000)
+        }
+        ; --- hundred and below ---
+        If (rupees > 0) Then
+        {
+            seg = seg + JpUnderHundred(rupees) + " "
+        }
+    }
+    If (neg = 1) Then
+    {
+        s = "Minus "
+    }
+    s = s + "Rupees " + seg
+    If (paise > 0) Then
+    {
+        s = s + "and " + JpOnes(paise) + " Paise "
+    }
+    s = s + "Only"
+    JpInWords = s
+
+; =============================================================================
+;  SECTION 13  -  LISTS
+; =============================================================================
+
+[Function: JpPurityList]
+    Returns: String : Any
+    JpPurityList = "24K##22K##18K##14K##9K##925##800##PT950##PT900##999"
+
+[Function: JpMetalList]
+    Returns: String : Any
+    JpMetalList = "Gold##Silver##Platinum##Diamond##Other"
+
+[Function: JpMakingTypeList]
+    Returns: String : Any
+    JpMakingTypeList = "PerGram##Percentage##Fixed"
+
+[Function: JpYesNoList]
+    Returns: String : Any
+    JpYesNoList = "No##Yes"
+
+[Function: JpPayModeList]
+    Returns: String : Any
+    JpPayModeList = "Cash##Card##UPI##Bank Transfer##Customer Advance##Old Gold Exchange##Split"
+
+[Function: JpOrderStatusList]
+    Returns: String : Any
+    JpOrderStatusList = "New##Design Approved##In Production##Ready##Delivered##Cancelled"
+
+[Function: JpRepairStatusList]
+    Returns: String : Any
+    JpRepairStatusList = "Received##Sent to Karigar##Repairing##Ready##Delivered"
+
+[Function: JpPurchaseKindList]
+    Returns: String : Any
+    JpPurchaseKindList = "Finished Jewellery##Gold##Silver##Diamond##Stone##From Supplier##From Karigar"
+
+[Function: JpRoleList]
+    Returns: String : Any
+    JpRoleList = "Owner##Manager##Accountant##Salesperson##Cashier"
+
+; Order status helpers - used by the dashboard and by open-order reports.
+[Function: JpOrderOpen]
+    Param: vStatus : String : Optional
+    Returns: Integer : Any
+    Var: s : String
+    s = Param(0)
+    If (s = "Delivered") Then { JpOrderOpen = 0; Exit; }
+    If (s = "Cancelled") Then { JpOrderOpen = 0; Exit; }
+    If (s is null) Then { JpOrderOpen = 1; Exit; }
+    If (s = "") Then { JpOrderOpen = 1; Exit; }
+    JpOrderOpen = 1
+
+[Function: JpRepairOpen]
+    Param: vStatus : String : Optional
+    Returns: Integer : Any
+    If (Param(0) = "Delivered") Then { JpRepairOpen = 0; Exit; }
+    JpRepairOpen = 1
+
+; =============================================================================
+;  SECTION 14  -  MISC
+; =============================================================================
+
+; Reference key of the most recent daily rate voucher - set by 03_GoldRate.tdl
+; while a rate context is open. JpGetUDFNum/JpGetUDFStr read $$Field from the
+; object that is currently in focus, so the callers must have loaded the rate
+; voucher first. This variable records which voucher that was.
+[Variable: vRateContext : String]
+[Variable: JpCurrentItem : String]
+
+[Function: JpSetRateContext]
+    Param: vRef : String : Optional, vDate : Date : Optional
+    Returns: Integer : Any
+    vRateContext = Param(0)
+    JpLoadRateCache(Param(1))
+    JpSetRateContext = 1
+
+[Function: JpBlankIfNull]
+    Param: vText : String : Optional
+    Returns: String : Any
+    If (Param(0) is null) Then
+    {
+        JpBlankIfNull = ""
+        Exit
+    }
+    JpBlankIfNull = Param(0)
+
+[Function: JpNoIfNull]
+    Param: vNum : Number : Optional
+    Returns: Number : Any
+    If (Param(0) is null) Then
+    {
+        JpNoIfNull = 0
+        Exit
+    }
+    JpNoIfNull = Param(0)
+
+; --- shared style generated by route-line-to-field.mjs from Line Font: attributes ---
+[Style: JpFontBold]
+    Bold : Yes

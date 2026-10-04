@@ -1,0 +1,446 @@
+; =============================================================================
+;  JadePro  ::  05_Purchase.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Jewellery purchases - finished jewellery, loose gold, silver,
+;            diamonds, stones, supplier purchases and jewellery received back
+;            from karigars.
+;
+;  DESIGN  : Enriches Tally's STANDARD Purchase voucher, exactly as 04_Sales
+;            does for sales, so stock increases by weight through Tally's own
+;            inventory engine and the payable ledger stays standard.
+;
+;  LOAD    : After 00_Core, 02_ItemMaster, 03_GoldRate, 04_Sales.
+;  REQUIRES : 00_Core.tdl, 02_ItemMaster.tdl, 03_GoldRate.tdl, 04_Sales.tdl
+; =============================================================================
+
+; =============================================================================
+;  SECTION A - PURCHASE HEADER UDFs
+; =============================================================================
+    ; Label: "Purchase Kind"
+[System: UDF]
+JwlPurKind : String : 20106
+    ; Label: "Supplier Invoice No"
+[System: UDF]
+JwlSupInvNo : String : 20107
+    ; Label: "Supplier Invoice Date"
+[System: UDF]
+JwlSupDate : Date : 20108
+    ; Label: "Karigar Name"
+[System: UDF]
+JwlKarigarName : String : 20109
+    ; Label: "Purchase Discount"
+[System: UDF]
+JwlPurDiscAmt : Number : 20110
+    ; Label: "Purchase GST Rate %"
+[System: UDF]
+JwlPurGstRate : Number : 20111
+    ; Label: "Purchase IGST"
+[System: UDF]
+JwlPurIgst : Number : 20112
+    ; Label: "Purchase Grand Total"
+[System: UDF]
+JwlPurTotal : Number : 20113
+    ; Label: "Total Metal Weight Purchased"
+[System: UDF]
+JwlPurMetalWt : Quantity : 20114
+    ; Label: "Total Stone Weight Purchased"
+[System: UDF]
+JwlPurStoneWt : Quantity : 20115
+; =============================================================================
+;  SECTION B - PER-LINE PURCHASE UDFs
+; =============================================================================
+    ; Label: "Purchase Barcode"
+[System: UDF]
+JwlPlBarcode : String : 20116
+    ; Label: "Purchase HUID"
+[System: UDF]
+JwlPlHuid : String : 20117
+    ; Label: "Purchase Purity"
+[System: UDF]
+JwlPlPurity : String : 20118
+    ; Label: "Purchase Metal"
+[System: UDF]
+JwlPlMetal : String : 20119
+    ; Label: "Purchase Gross Weight"
+[System: UDF]
+JwlPlGross : Quantity : 20120
+    ; Label: "Purchase Stone Weight"
+[System: UDF]
+JwlPlStone : Quantity : 20121
+    ; Label: "Purchase Diamond Carat"
+[System: UDF]
+JwlPlCarat : Quantity : 20122
+    ; Label: "Purchase Net Weight"
+[System: UDF]
+JwlPlNet : Quantity : 20123
+    ; Label: "Purchase Metal Rate"
+[System: UDF]
+JwlPlRate : Number : 20124
+    ; Label: "Purchase Metal Value"
+[System: UDF]
+JwlPlMetalVal : Number : 20125
+    ; Label: "Purchase Wastage Value"
+[System: UDF]
+JwlPlWastageVal : Number : 20126
+    ; Label: "Purchase Making Charges"
+[System: UDF]
+JwlPlMakeAmt : Number : 20127
+    ; Label: "Purchase Making Type"
+[System: UDF]
+JwlPlMakeType : String : 20128
+    ; Label: "Purchase Making Charge Input"
+[System: UDF]
+JwlPlMakeAmtIn : Number : 20129
+    ; Label: "Purchase Stone Value"
+[System: UDF]
+JwlPlStoneVal : Number : 20130
+    ; Label: "Purchase Diamond Value"
+[System: UDF]
+JwlPlDiaVal : Number : 20131
+    ; Label: "Purchase Wastage %"
+[System: UDF]
+JwlPlWastagePc : Number : 20132
+    ; Label: "Purchase Stone Rate"
+[System: UDF]
+JwlPlStoneRate : Number : 20133
+    ; Label: "Purchase Diamond Rate"
+[System: UDF]
+JwlPlDiaRate : Number : 20134
+    ; Label: "Purchase Line Total"
+[System: UDF]
+JwlPlTotal : Number : 20135
+; =============================================================================
+;  SECTION C - PURCHASE VOUCHER HEADER BLOCK
+; =============================================================================
+Alter: Purchase Voucher
+    Add: Field
+        Field-id: JpPurHdr
+        Part-id: JpPurHdrPart
+        Width: 100
+        Invisible: ##JwlVchKind = "STANDARD"
+
+[Part: JpPurHdrPart]
+
+    Line: Spacing, JpPurHdrPartLine1, JpPurHdrPartLine2, JpPurHdrPartLine3, JpPurHdrPartLine4, JpPurHdrPartLine5, JpPurHdrPartLine6, JpPurHdrPartLine7, JpPurHdrPartLine8, JpPurHdrPartLine9, JpPurHdrPartLine10, JpPurHdrPartLine11, JpPurHdrPartLine12, JpPurHdrPartLine13
+
+[Line: JpPurHdrPartLine1]
+    Height : 1
+    Field: JpPurHdrPartLine1F1
+
+[Field: JpPurHdrPartLine1F1]
+    Set As : "  JEWELLERY PURCHASE DETAILS"
+    Style : JpTitle
+[Line: JpPurHdrPartLine2]
+    Field: JpPurHdrPartLine2F1
+
+[Field: JpPurHdrPartLine2F1]
+    Storage : JwlPurKind
+    Label : "Purchase Kind *"
+    Width : 150
+    Dynamic : Pick From: JpPurKindPick
+[Line: JpPurHdrPartLine3]
+    Field: JpPurHdrPartLine3F1
+
+[Field: JpPurHdrPartLine3F1]
+    Storage : JwlSupInvNo
+    Label : "Supplier Inv No *"
+    Width : 150
+[Line: JpPurHdrPartLine4]
+    Field: JpPurHdrPartLine4F1
+
+[Field: JpPurHdrPartLine4F1]
+    Storage : JwlSupDate
+    Label : "Supplier Inv Date"
+    Width : 150
+[Line: JpPurHdrPartLine5]
+    Field: JpPurHdrPartLine5F1
+
+[Field: JpPurHdrPartLine5F1]
+    Storage : JwlKarigarName
+    Label : "Karigar"
+    Width : 150
+[Line: JpPurHdrPartLine6]
+    Field: JpPurHdrPartLine6F1
+
+[Field: JpPurHdrPartLine6F1]
+    Storage : JwlPurDiscAmt
+    Label : "Purchase Discount"
+    Width : 120
+[Line: JpPurHdrPartLine7]
+    Height : 1
+    Field: JpPurHdrPartLine7F1
+
+[Field: JpPurHdrPartLine7F1]
+    Set As : " PURCHASE TOTALS"
+    Style : JpSectionBox
+[Line: JpPurHdrPartLine8]
+    Field: JpPurHdrPartLine8F1
+
+[Field: JpPurHdrPartLine8F1]
+    Storage : JwlPurGstRate
+    Label : "GST Rate %"
+    Width : 120
+[Line: JpPurHdrPartLine9]
+    Field: JpPurHdrPartLine9F1
+
+[Field: JpPurHdrPartLine9F1]
+    Storage : JwlPurMetalWt
+    Label : "Total Metal Weight"
+    Style : JpFontBold
+    Width : 140
+    Color : #6B4E1E
+[Line: JpPurHdrPartLine10]
+    Field: JpPurHdrPartLine10F1
+
+[Field: JpPurHdrPartLine10F1]
+    Storage : JwlPurStoneWt
+    Label : "Total Stone Weight"
+    Width : 140
+[Line: JpPurHdrPartLine11]
+    Field: JpPurHdrPartLine11F1
+
+[Field: JpPurHdrPartLine11F1]
+    Storage : JwlPurIgst
+    Label : "Purchase IGST"
+    Width : 120
+[Line: JpPurHdrPartLine12]
+    Field: JpPurHdrPartLine12F1
+
+[Field: JpPurHdrPartLine12F1]
+    Storage : JwlPurTotal
+    Label : "PURCHASE TOTAL"
+    Style : JpFontBold
+    Width : 140
+    Color : #A06000
+[Line: JpPurHdrPartLine13]
+    Field: JpPurHdrPartLine13F1
+
+[Field: JpPurHdrPartLine13F1]
+    Storage : JpPurMsg
+    Label : " "
+    Width : 200
+    Style : JpWarn
+Alter: Purchase Voucher, Item Details
+    Add: Field
+        Field-id: JpPlBarcode
+        Part-id: Invoicemain
+        Label: "Barcode"
+        Type: Text
+        Width: 90
+    Add: Field
+        Field-id: JpPlHuid
+        Part-id: Invoicemain
+        Label: "HUID"
+        Type: Text
+        Width: 80
+    Add: Field
+        Field-id: JpPlPurity
+        Part-id: Invoicemain
+        Label: "Purity"
+        Type: Text
+        Width: 55
+    Add: Field
+        Field-id: JpPlGross
+        Part-id: Invoicemain
+        Label: "Gr Wt"
+        Type: Quantity
+        Width: 60
+    Add: Field
+        Field-id: JpPlStone
+        Part-id: Invoicemain
+        Label: "St Wt"
+        Type: Quantity
+        Width: 55
+    Add: Field
+        Field-id: JpPlNet
+        Part-id: Invoicemain
+        Label: "Net Wt"
+        Type: Quantity
+        Width: 60
+        Font: Bold
+    Add: Field
+        Field-id: JpPlRate
+        Part-id: Invoicemain
+        Label: "Rate"
+        Type: Number
+        Width: 70
+    Add: Field
+        Field-id: JpPlMetalVal
+        Part-id: Invoicemain
+        Label: "Metal Val"
+        Type: Number
+        Width: 80
+    Add: Field
+        Field-id: JpPlMakeAmt
+        Part-id: Invoicemain
+        Label: "Making"
+        Type: Number
+        Width: 70
+    Add: Field
+        Field-id: JpPlStoneVal
+        Part-id: Invoicemain
+        Label: "Stone/Dia"
+        Type: Number
+        Width: 80
+    Add: Field
+        Field-id: JpPlTotal
+        Part-id: Invoicemain
+        Label: "Line Total"
+        Type: Number
+        Width: 90
+        Font: Bold
+
+    ; --- derived values, identical arithmetic to the sales module ---------
+    Modify Group: JpPlCalcGroup
+        Add: Field-id: JwlPlNet
+            Set: Value: JpNetWeight($JwlPlGross, $JwlPlStone)
+        Add: Field-id: JwlPlMetalVal
+            Set: Value: JpMetalValue($JwlPlNet, $JwlPlRate)
+        Add: Field-id: JwlPlWastageVal
+            Set: Value: JpWastageValue($JwlPlMetalVal, $JwlPlWastagePc)
+        Add: Field-id: JwlPlStoneVal
+            Set: Value: JpStoneValue($JwlPlStone, $JwlPlStoneRate)
+        Add: Field-id: JwlPlDiaVal
+            Set: Value: JpDiamondValue($JwlPlCarat, $JwlPlDiaRate)
+        Add: Field-id: JwlPlMakeAmt
+            Set: Value: JpMakingCharge($JwlPlMakeType, $JwlPlNet, $JwlPlMetalVal, $JwlPlMakeAmtIn, $JwlPlRate)
+        Add: Field-id: JwlPlTotal
+            Set: Value: JpRound($JwlPlMetalVal + $JwlPlWastageVal + $JwlPlMakeAmt + $JwlPlStoneVal + $JwlPlDiaVal - $JwlPurDiscAmt)
+
+    ; --- pull the item's jewellery facts once the item is chosen ---------
+    Modify Group: JpPlFromItemGroup
+        Add: Field-id: JwlPlBarcode
+            Set: Value: JpItemFact($$InventoryItem, "JwlBarcode")
+        Add: Field-id: JwlPlHuid
+            Set: Value: JpItemFact($$InventoryItem, "JwlHuid")
+        Add: Field-id: JwlPlPurity
+            Set: Value: JpItemFact($$InventoryItem, "JwlPurity")
+        Add: Field-id: JwlPlMetal
+            Set: Value: JpItemFact($$InventoryItem, "JwlMetalType")
+        Add: Field-id: JwlPlGross
+            Set: Value: JpItemFact($$InventoryItem, "JwlGrossWt")
+        Add: Field-id: JwlPlStone
+            Set: Value: JpItemFact($$InventoryItem, "JwlStoneWt")
+        Add: Field-id: JwlPlCarat
+            Set: Value: JpItemFact($$InventoryItem, "JwlDiamondCarat")
+        Add: Field-id: JwlPlWastagePc
+            Set: Value: JpItemFact($$InventoryItem, "JwlWastagePc")
+        Add: Field-id: JwlPlMakeType
+            Set: Value: JpItemFact($$InventoryItem, "JwlMakingType")
+        Add: Field-id: JwlPlStoneRate
+            Set: Value: JpItemFact($$InventoryItem, "JwlStoneRate")
+        Add: Field-id: JwlPlDiaRate
+            Set: Value: JpItemFact($$InventoryItem, "JwlDiamondRate")
+        Add: Field-id: JwlPlRate
+            Set: Value: JpLineRate($$InventoryItem, $JwlPlMetal, $JwlPlPurity, $JwlPlRate)
+
+    Modify Group: JpPurHdrCalcGroup
+        Add: Field-id: JpPurMsg
+            Set: Value: JpPurchaseValidationText()
+
+; =============================================================================
+;  SECTION E - PICK LIST, VALIDATION, SCREEN
+; =============================================================================
+[Collection: Source: JpPurKindPick]
+    Data: JpPurKindPickRow
+
+[Collection: Data: JpPurKindPickRow]
+    Fetch: JpPurKindPickFetch
+    Set: JpPurKindPickSet
+    Repeat: Over: JpPurKindPickRow
+
+[Collection: Data: JpPurKindPickFetch]
+    Include: JpPurKindPickRow
+
+[Collection: Data: JpPurKindPickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpPurchaseKindList()
+
+[Function: JpPurchaseValidationText]
+    Returns: String : Any
+    Var: m : String
+    m = ""
+    If (JpBlankIfNull($JwlPurKind) = "") Then
+    {
+        JpPurchaseValidationText = "Purchase Kind is mandatory (Finished Jewellery / Gold / Silver / Diamond / Stone / Supplier / Karigar)."
+        Exit
+    }
+    If (JpBlankIfNull($JwlSupInvNo) = "") Then
+    {
+        JpPurchaseValidationText = "Supplier invoice number is mandatory for GST input credit."
+        Exit
+    }
+    If (JpHasRight(JpRtPurchase()) = 0) Then
+    {
+        JpPurchaseValidationText = JpDeniedMsg
+        Exit
+    }
+    If ($JwlPurGstRate < 0) Then
+    {
+        JpPurchaseValidationText = "GST rate cannot be negative."
+        Exit
+    }
+    JpPurchaseValidationText = ""
+
+[Variable: JpPurchaseMsg : String]
+
+[Screen: JpPurchaseScreen]
+    Caption: "JadePro  ::  Jewellery Purchase"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           JEWELLERY PURCHASE"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Purchase finished jewellery, loose metal, diamonds and stones, or jewellery received from a karigar."
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Text: " BUYING RATES TODAY (per gram)"
+    Style: JpSectionBox
+    Lines: 1, 1
+    Text: "   24K " + JpFmtAmt(JpCache24K) + "      22K " + JpFmtAmt(JpCache22K) + "      18K " + JpFmtAmt(JpCache18K) + "      14K " + JpFmtAmt(JpCache14K)
+    Text: "   Silver " + JpFmtAmt(JpCacheSilver) + "      Platinum " + JpFmtAmt(JpCachePlatinum)
+
+    Line: Spacing
+    Lines: 1
+    Text: " STOCK IN BY PIECES AND WEIGHT"
+    Style: JpSectionBox
+    Lines: 1, 1
+    Text: "   Every line posts weight as the Tally inventory quantity for the item's UOM."
+    Style: JpMuted
+    Text: "   Set each jewellery item's UOM to 'GMS' so stock reports are in grams automatically."
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1, 1
+    Field: <Field-Id: JpPurchaseMsg, Label: " ">
+        Width: 100
+        Style: JpWarn
+
+    Line: Spacing
+    Lines: 1
+    Button: <Start Purchase Voucher (F2), Key: F2, Action: JpOpenPurchase>
+    Button: <Karigar Receipt (F8), Key: F8, Action: JpOpenKarigar>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+[Function: JpOpenPurchase]
+    Returns: Integer : Any
+    If (JpHasRight(JpRtPurchase()) = 0) Then
+    {
+        JpPurchaseMsg = JpDeniedMsg
+        JpOpenPurchase = 0
+        Exit
+    }
+    JpPurchaseMsg = ""
+    Alter: Purchase
+    JpOpenPurchase = 1
+
+[Function: JpOpenKarigar]
+    Returns: Integer : Any
+    Alter: JpKarigarScreen
+    JpOpenKarigar = 1

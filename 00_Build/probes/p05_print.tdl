@@ -1,0 +1,11 @@
+; P05  [Print:] as a print format referenced by a Report
+[Report: ZzP05Report]
+    Title: <1000, "ZzP05">
+    Print: ZzP05Print
+
+[Print: ZzP05Print]
+    Title: "ZzP05"
+    Paper: 104 x 152
+    Lines: 1, 1
+    Text: "P05"
+    Font: BOLD

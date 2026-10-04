@@ -1,0 +1,8 @@
+; P02  Alter: BRACKETED, one arg  <- what the bracketing pass produced (suspected T0006)
+[Alter: Company]
+    Add: Field
+        Field-id: ZzP02Chk
+        Label: "P02"
+        Type: Logical
+        Value: No
+        Width: 100

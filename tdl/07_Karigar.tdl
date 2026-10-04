@@ -1,0 +1,791 @@
+; =============================================================================
+;  JadePro  ::  07_Karigar.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Karigar / Job-Work management.
+;            Gold issued to a karigar, jewellery received back, wastage,
+;            labour charges and the metal still lying with each karigar.
+;
+;  BALANCE MODEL
+;    Balance with karigar = Metal Issued - (Net Weight Received + Wastage Given)
+;    Labour charges are posted to the karigar ledger as a payable.
+;
+;  LOAD    : After 00_Core, 03_GoldRate, 04_Sales.
+;  REQUIRES : 00_Core.tdl, 03_GoldRate.tdl, 04_Sales.tdl
+; =============================================================================
+
+; =============================================================================
+;  SECTION A - KARIGAR LEDGER UDFs
+; =============================================================================
+    ; Label: "Is Karigar"
+[System: UDF]
+JwlIsKarigar : Logical : 20153
+    ; Label: "Karigar Speciality"
+[System: UDF]
+JwlKarigarSpeciality : String : 20154
+    ; Label: "Karigar City"
+[System: UDF]
+JwlKarigarCity : String : 20155
+    ; Label: "Karigar PAN"
+[System: UDF]
+JwlKarigarPan : String : 20156
+    ; Label: "Metal Balance With Karigar"
+[System: UDF]
+JwlKarigarOpenWt : Quantity : 20157
+    ; Label: "Payable To Karigar"
+[System: UDF]
+JwlKarigarOpenAmt : Number : 20158
+; =============================================================================
+;  SECTION B - JOB WORK VOUCHER UDFs
+; =============================================================================
+    ; Label: "Job Work Reference"
+[System: UDF]
+JwlJobNo : String : 20159
+    ; Label: "Karigar"
+[System: UDF]
+JwlJobKarigar : String : 20160
+    ; Label: "Job Type"
+[System: UDF]
+JwlJobType : String : 20161
+    ; Label: "Job Description"
+[System: UDF]
+JwlJobDesc : String : 20162
+    ; Label: "Job Design Number"
+[System: UDF]
+JwlJobDesign : String : 20163
+    ; Label: "Date Issued"
+[System: UDF]
+JwlJobIssuedDate : Date : 20164
+    ; Label: "Weight Issued"
+[System: UDF]
+JwlJobIssuedWt : Quantity : 20165
+    ; Label: "Issued Purity"
+[System: UDF]
+JwlJobIssuedPure : String : 20166
+    ; Label: "Issue Rate"
+[System: UDF]
+JwlJobIssuedRate : Number : 20167
+    ; Label: "Date Received"
+[System: UDF]
+JwlJobRecvDate : Date : 20168
+    ; Label: "Gross Weight Received"
+[System: UDF]
+JwlJobRecvGross : Quantity : 20169
+    ; Label: "Net Weight Received"
+[System: UDF]
+JwlJobRecvNet : Quantity : 20170
+    ; Label: "Wastage Given %"
+[System: UDF]
+JwlJobWastagePc : Number : 20171
+    ; Label: "Wastage Weight"
+[System: UDF]
+JwlJobWastageWt : Quantity : 20172
+    ; Label: "Labour Charges"
+[System: UDF]
+JwlJobLabour : Number : 20173
+    ; Label: "Balance Metal With Karigar"
+[System: UDF]
+JwlJobBalWt : Quantity : 20174
+    ; Label: "Job Status"
+[System: UDF]
+JwlJobStatus : String : 20175
+[Function: JpJobStatusList]
+    Returns: String : Any
+    JpJobStatusList = "Issued##Part Received##In Progress##Received##Closed"
+
+; =============================================================================
+;  SECTION C - KARIGAR BLOCK ON THE LEDGER MASTER
+; =============================================================================
+Alter: Ledger
+    Add: Field
+        Field-id: JpKarigarChk
+        Label: "Is Karigar"
+        Type: Logical
+        Value: ##JwlIsKarigar
+        Width: 140
+        Style: UseFormCtrl
+
+    Add: Field
+        Field-id: JpKarigarBlock
+        Part-id: JpKarigarPart
+        Width: 100
+        Invisible: ##JwlIsKarigar <> 1
+
+    ; The Customer CRM block (Part defined in 11_Reports.tdl) is attached to
+    ; the SAME Alter: Ledger section - TDL allows only one section per name.
+    Add: Field
+        Field-id: JpCrmBlock
+        Part-id: JpCrmPart
+        Width: 100
+        Invisible: ##JwlPartyState = ""
+
+[Part: JpKarigarPart]
+    Line: Spacing, JpKarigarPartLine1, JpKarigarPartLine2, JpKarigarPartLine3, JpKarigarPartLine4, JpKarigarPartLine5, JpKarigarPartLine6
+
+[Line: JpKarigarPartLine1]
+    Height : 1
+    Field: JpKarigarPartLine1F1
+
+[Field: JpKarigarPartLine1F1]
+    Set As : " KARIGAR DETAILS"
+    Style : JpSectionBox
+[Line: JpKarigarPartLine2]
+    Field: JpKarigarPartLine2F1
+
+[Field: JpKarigarPartLine2F1]
+    Storage : JwlKarigarSpeciality
+    Label : "Speciality"
+    Width : 200
+[Line: JpKarigarPartLine3]
+    Field: JpKarigarPartLine3F1
+
+[Field: JpKarigarPartLine3F1]
+    Storage : JwlKarigarCity
+    Label : "City"
+    Width : 200
+[Line: JpKarigarPartLine4]
+    Field: JpKarigarPartLine4F1
+
+[Field: JpKarigarPartLine4F1]
+    Storage : JwlKarigarPan
+    Label : "PAN"
+    Width : 200
+[Line: JpKarigarPartLine5]
+    Field: JpKarigarPartLine5F1
+
+[Field: JpKarigarPartLine5F1]
+    Storage : JwlKarigarOpenWt
+    Label : "Metal Balance (gm)"
+    Style : JpFontBold
+    Width : 200
+    Color : #A06000
+[Line: JpKarigarPartLine6]
+    Field: JpKarigarPartLine6F1
+
+[Field: JpKarigarPartLine6F1]
+    Storage : JwlKarigarOpenAmt
+    Label : "Payable To Karigar"
+    Style : JpFontBold
+    Width : 200
+    Color : #A06000
+[Function: JpJobWastageWt]
+    Param: vIssuedWt : Quantity : Optional, vRecvNet : Quantity : Optional, vWastPc : Number : Optional
+    Returns: Quantity : Any
+    Var: i : Quantity, r : Quantity, p : Number
+    i = Param(0)
+    r = Param(1)
+    p = Param(2)
+    If (i is null) Then { i = 0; }
+    If (r is null) Then { r = 0; }
+    If (p is null) Then { p = 0; }
+    If (p <= 0) Then
+    {
+        ; No stated percentage: whatever is missing is the wastage given.
+        If (i > r) Then
+        {
+            JpJobWastageWt = JpRoundWt(i - r)
+            Exit
+        }
+        JpJobWastageWt = 0
+        Exit
+    }
+    If (r <= 0) Then
+    {
+        JpJobWastageWt = 0
+        Exit
+    }
+    JpJobWastageWt = JpRoundWt(r * p / 100)
+
+; Metal still with the karigar = issued - received - wastage given.
+[Function: JpJobBalance]
+    Param: vIssuedWt : Quantity : Optional, vRecvNet : Quantity : Optional, vWastPc : Number : Optional
+    Returns: Quantity : Any
+    Var: i : Quantity, r : Quantity, p : Quantity
+    i = Param(0)
+    r = Param(1)
+    p = JpJobWastageWt(Param(0), Param(1), Param(2))
+    If (i is null) Then { i = 0; }
+    If (r is null) Then { r = 0; }
+    JpJobBalance = JpRoundWt(i - r - p)
+
+[Function: JpJobLabourPerGm]
+    Param: vLabour : Number : Optional, vRecvNet : Quantity : Optional
+    Returns: Number : Any
+    JpJobLabourPerGm = JpAmtPerGram(Param(0), Param(1))
+
+; =============================================================================
+;  SECTION E - SCREEN
+; =============================================================================
+[Variable: JpJobMode       : String]
+[Variable: JpJobRef        : String]
+[Variable: JpJobKarigarNm  : String]
+[Variable: JpJobDesignNm   : String]
+[Variable: JpJobDescTxt    : String]
+[Variable: JpJobPurity     : String]
+[Variable: JpJobIssued     : Quantity]
+[Variable: JpJobIssuedDt   : Date]
+[Variable: JpJobRecvGross  : Quantity]
+[Variable: JpJobRecvStone  : Quantity]
+[Variable: JpJobRecvNet    : Quantity]
+[Variable: JpJobWastPc     : Number]
+[Variable: JpJobWastWt     : Quantity]
+[Variable: JpJobLabourAmt  : Number]
+[Variable: JpJobBalanceWt  : Quantity]
+[Variable: JpJobBalAmt     : Number]
+[Variable: JpJobStatusTxt  : String]
+[Variable: JpJobMsg        : String]
+
+[Screen: JpKarigarScreen]
+    Caption: "JadePro  ::  Karigar Job Work"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           KARIGAR  /  JOB WORK"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Balance = Metal Issued - (Net Received + Wastage Given)      Labour is payable to the karigar."
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Text: " JOB DETAILS"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1, 1
+    Field: <Field-Id: JpJobMode, Label: "Job Type *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpJobModePick
+    Field: <Field-Id: JpJobRef, Label: "Job Reference *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpJobKarigarNm, Label: "Karigar *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpJobDesignNm, Label: "Design Number">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpJobPurity, Label: "Purity">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPurityPick
+    Field: <Field-Id: JpJobDescTxt, Label: "Job Description">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " METAL ISSUED"
+    Style: JpSectionBox
+    Lines: 1, 1, 1
+    Field: <Field-Id: JpJobIssuedDt, Label: "Date Issued">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpJobIssued, Label: "Weight Issued (gm)">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpJobStatusTxt, Label: "Job Status">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpJobStatusPick
+
+    Line: Spacing
+    Lines: 1
+    Text: " JEWELLERY RECEIVED BACK"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1, 1, 1
+    Field: <Field-Id: JpJobRecvGross, Label: "Gross Received">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpJobRecvStone, Label: "Stone Weight">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpJobRecvNet, Label: "Net Received">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+    Field: <Field-Id: JpJobWastPc, Label: "Wastage %">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpJobWastWt, Label: "Wastage Weight">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpJobLabourAmt, Label: "Labour Charges">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " RESULT"
+    Style: JpSectionBox
+    Lines: 1, 1, 1
+    Field: <Field-Id: JpJobBalanceWt, Label: "METAL STILL WITH KARIGAR">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+        Font: Bold
+    Field: <Field-Id: JpJobBalAmt, Label: "Value of Metal With Karigar">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpJobMsg, Label: " ">
+        Width: 250
+        Style: JpWarn
+
+    Line: Spacing
+    Lines: 1
+    Button: <Recalculate (F7), Key: F7, Action: JpJobCalc>
+    Button: <Save Job Entry (F2), Key: F2, Action: JpJobSave>
+    Button: <Karigar Outstanding (F8), Key: F8, Action: JpJobOutstanding>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+[Collection: Source: JpJobModePick]
+    Data: JpJobModePickRow
+
+[Collection: Data: JpJobModePickRow]
+    Fetch: JpJobModePickFetch
+    Set: JpJobModePickSet
+    Repeat: Over: JpJobModePickRow
+
+[Collection: Data: JpJobModePickFetch]
+    Include: JpJobModePickRow
+
+[Collection: Data: JpJobModePickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpJobTypeList()
+
+[Collection: Source: JpJobStatusPick]
+    Data: JpJobStatusPickRow
+
+[Collection: Data: JpJobStatusPickRow]
+    Fetch: JpJobStatusPickFetch
+    Set: JpJobStatusPickSet
+    Repeat: Over: JpJobStatusPickRow
+
+[Collection: Data: JpJobStatusPickFetch]
+    Include: JpJobStatusPickRow
+
+[Collection: Data: JpJobStatusPickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpJobStatusList()
+
+[Function: JpJobTypeList]
+    Returns: String : Any
+    JpJobTypeList = "Karigar Issue##Karigar Receipt"
+
+; =============================================================================
+;  SECTION F - ACTIONS
+; =============================================================================
+
+[Function: JpJobCalc]
+    Returns: Integer : Any
+    Var: r : Number
+    $$JpJobRecvNet = JpNetWeight($$JpJobRecvGross, $$JpJobRecvStone)
+    $$JpJobWastWt = JpJobWastageWt($$JpJobIssued, $$JpJobRecvNet, $$JpJobWastPc)
+    $$JpJobBalanceWt = JpJobBalance($$JpJobIssued, $$JpJobRecvNet, $$JpJobWastPc)
+    r = JpRateFor("Gold", $$JpJobPurity, 0)
+    If (r <= 0) Then
+    {
+        r = JpCache22K
+    }
+    $$JpJobBalAmt = JpMetalValue($$JpJobBalanceWt, r)
+    JpJobMsg = JpJobValidationText()
+    JpJobCalc = 1
+
+[Function: JpJobValidationText]
+    Returns: String : Any
+    Var: m : String
+    m = ""
+    If (JpBlankIfNull($$JpJobMode) = "") Then
+    {
+        JpJobValidationText = "Job Type is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($$JpJobRef) = "") Then
+    {
+        JpJobValidationText = "Job Reference is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($$JpJobKarigarNm) = "") Then
+    {
+        JpJobValidationText = "Karigar name is mandatory."
+        Exit
+    }
+    If (JpHasRight(JpRtKarigarMgmt()) = 0) Then
+    {
+        JpJobValidationText = JpDeniedMsg
+        Exit
+    }
+    If ($$JpJobMode = "Karigar Issue") Then
+    {
+        If (JpWeightValid($$JpJobIssued) = 0) Then
+        {
+            JpJobValidationText = "Weight issued is mandatory."
+            Exit
+        }
+        JpJobValidationText = ""
+        Exit
+    }
+    ; --- Karigar Receipt ---
+    If (JpWeightValid($$JpJobRecvGross) = 0) Then
+    {
+        JpJobValidationText = "Gross weight received is mandatory."
+        Exit
+    }
+    If ($$JpJobRecvNet <= 0) Then
+    {
+        JpJobValidationText = "Stone weight is greater than or equal to gross weight."
+        Exit
+    }
+    If ($$JpJobLabourAmt < 0) Then
+    {
+        JpJobValidationText = "Labour charges cannot be negative."
+        Exit
+    }
+    If ($$JpJobBalanceWt < 0) Then
+    {
+        JpJobValidationText = "Received weight is MORE than the weight issued. Check the entry or record wastage."
+        Exit
+    }
+    JpJobValidationText = ""
+
+[Function: JpJobSave]
+    Returns: Integer : Any
+    JpJobCalc
+    If (JpJobValidationText() <> "") Then
+    {
+        JpJobSave = 0
+        Exit
+    }
+    Create: Journal
+    Modify Group: JpJobSaveGroup
+        Add: Field-id: JwlVchKind
+            Set: Value: "KarigarJob"
+        Add: Field-id: JwlJobNo
+            Set: Value: $$JpJobRef
+        Add: Field-id: JwlJobKarigar
+            Set: Value: $$JpJobKarigarNm
+        Add: Field-id: JwlJobType
+            Set: Value: $$JpJobMode
+        Add: Field-id: JwlJobDesc
+            Set: Value: JpBlankIfNull($$JpJobDescTxt)
+        Add: Field-id: JwlJobDesign
+            Set: Value: JpBlankIfNull($$JpJobDesignNm)
+        Add: Field-id: JwlJobIssuedWt
+            Set: Value: $$JpJobIssued
+        Add: Field-id: JwlJobIssuedPure
+            Set: Value: JpBlankIfNull($$JpJobPurity)
+        Add: Field-id: JwlJobIssuedRate
+            Set: Value: JpRateFor("Gold", $$JpJobPurity, 0)
+        Add: Field-id: JwlJobIssuedDate
+            Set: Value: $$JpJobIssuedDt
+        Add: Field-id: JwlJobRecvDate
+            Set: Value: JpBlankIfNull(JpCacheDate)
+        Add: Field-id: JwlJobRecvGross
+            Set: Value: $$JpJobRecvGross
+        Add: Field-id: JwlJobRecvNet
+            Set: Value: $$JpJobRecvNet
+        Add: Field-id: JwlJobWastagePc
+            Set: Value: $$JpJobWastPc
+        Add: Field-id: JwlJobWastageWt
+            Set: Value: $$JpJobWastWt
+        Add: Field-id: JwlJobLabour
+            Set: Value: $$JpJobLabourAmt
+        Add: Field-id: JwlJobBalWt
+            Set: Value: $$JpJobBalanceWt
+        Add: Field-id: JwlJobStatus
+            Set: Value: JpBlankIfNull($$JpJobStatusTxt)
+    Accept: JpJobSaved
+    JpJobSave = 1
+
+[Function: JpJobSaved]
+    Returns: Integer : Any
+    JpJobMsg = "Job entry saved. Metal still with " + ##JwlJobKarigar + " : " + JpFmtWt(##JwlJobBalWt) + " gm."
+    JpJobSaved = 1
+
+[Function: JpJobOutstanding]
+    Returns: Integer : Any
+    If (JpHasRight(JpRtReports()) = 0) Then
+    {
+        JpJobMsg = JpDeniedMsg
+        JpJobOutstanding = 0
+        Exit
+    }
+    Alter: JpKarigarOutstanding
+    JpJobOutstanding = 1
+
+; =============================================================================
+;  SECTION G - KARIGAR OUTSTANDING REPORT
+;  SQL over the karigar job vouchers so it stays fast with thousands of jobs.
+; =============================================================================
+[Collection: Report: JpKarigarOutstanding]
+    Source: JpKarigarOutstandingSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  KARIGAR OUTSTANDING  -  METAL HELD BY KARIGAR">
+    Print: JpKarigarOutstandingPrint
+    Export: JpKarigarOutstandingExport
+    Key: JpKarigarOutstandingKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>
+
+[Variable: JpKarigarOutstandingSQL : String]
+    Type: String
+    Value: "SELECT * FROM $$JOURNAL$$ WHERE $JwlVchKind$$ = 'KarigarJob' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$"
+
+[Variable: JpKarigarOutstandingKey : String]
+    Type: String
+    Value: "JwlJobKarigar"
+
+
+; [Print: JpKarigarOutstandingPrint] -> [Form: JpKarigarOutstandingPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpKarigarOutstandingPrint]
+    Parts : JpKarigarOutstandingPrintLines
+
+[Part: JpKarigarOutstandingPrintLines]
+    Lines : Spacing, JpKarigarOutstandingPrintLine1, JpKarigarOutstandingPrintLine2, JpKarigarOutstandingPrintLine3, JpKarigarOutstandingPrintLine4, JpKarigarOutstandingPrintLine5, JpKarigarOutstandingPrintLine6, JpKarigarOutstandingPrintLine7, JpKarigarOutstandingPrintLine8, JpKarigarOutstandingPrintLine9, JpKarigarOutstandingPrintLine10, JpKarigarOutstandingPrintLine11, JpKarigarOutstandingPrintLine12, JpKarigarOutstandingPrintLine13, JpKarigarOutstandingPrintLine14, JpKarigarOutstandingPrintLine15, JpKarigarOutstandingPrintLine16, JpKarigarOutstandingPrintLine17, JpKarigarOutstandingPrintLine18, JpKarigarOutstandingPrintLine19, JpKarigarOutstandingPrintLine20, JpKarigarOutstandingPrintLine21, JpKarigarOutstandingPrintLine22, JpKarigarOutstandingPrintLine23, JpKarigarOutstandingPrintLine24, JpKarigarOutstandingPrintLine25, JpKarigarOutstandingPrintLine26, JpKarigarOutstandingPrintLine27, JpKarigarOutstandingPrintLine28, JpKarigarOutstandingPrintLine29, JpKarigarOutstandingPrintLine30, JpKarigarOutstandingPrintLine31, JpKarigarOutstandingPrintLine32, JpKarigarOutstandingPrintLine33, JpKarigarOutstandingPrintLine34, JpKarigarOutstandingPrintLine35, JpKarigarOutstandingPrintLine36, JpKarigarOutstandingPrintLine37, JpKarigarOutstandingPrintLine38, JpKarigarOutstandingPrintLine39, JpKarigarOutstandingPrintLine40, JpKarigarOutstandingPrintLine41, JpKarigarOutstandingPrintLine42, JpKarigarOutstandingPrintLine43, JpKarigarOutstandingPrintLine44, JpKarigarOutstandingPrintLine45, JpKarigarOutstandingPrintLine46
+
+[Line: JpKarigarOutstandingPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpKarigarOutstandingPrintLine2]
+    Field: JpKarigarOutstandingPrintLine2F1
+
+[Field: JpKarigarOutstandingPrintLine2F1]
+    Set As : "Company: " + $$CompanyName
+    Style : JpFontBold
+[Line: JpKarigarOutstandingPrintLine3]
+    Field: JpKarigarOutstandingPrintLine3F1
+
+[Field: JpKarigarOutstandingPrintLine3F1]
+    Set As : "From " + JpFmtDate($$JpFromDate) + "   To " + JpFmtDate($$JpToDate)
+[Line: JpKarigarOutstandingPrintLine4]
+    Part Name : Width
+    Field: JpKarigarOutstandingPrintLine4F1
+
+[Field: JpKarigarOutstandingPrintLine4F1]
+    Set As : " "
+[Line: JpKarigarOutstandingPrintLine5]
+    Field: JpKarigarOutstandingPrintLine5F1
+
+[Field: JpKarigarOutstandingPrintLine5F1]
+    Set As : "Karigar"
+[Line: JpKarigarOutstandingPrintLine6]
+    Field: JpKarigarOutstandingPrintLine6F1
+
+[Field: JpKarigarOutstandingPrintLine6F1]
+    Style : JpGridHead
+[Line: JpKarigarOutstandingPrintLine7]
+    Field: JpKarigarOutstandingPrintLine7F1
+
+[Field: JpKarigarOutstandingPrintLine7F1]
+    Set As : "Ref"
+[Line: JpKarigarOutstandingPrintLine8]
+    Field: JpKarigarOutstandingPrintLine8F1
+
+[Field: JpKarigarOutstandingPrintLine8F1]
+    Style : JpGridHead
+[Line: JpKarigarOutstandingPrintLine9]
+    Field: JpKarigarOutstandingPrintLine9F1
+
+[Field: JpKarigarOutstandingPrintLine9F1]
+    Set As : "Design"
+[Line: JpKarigarOutstandingPrintLine10]
+    Field: JpKarigarOutstandingPrintLine10F1
+
+[Field: JpKarigarOutstandingPrintLine10F1]
+    Style : JpGridHead
+[Line: JpKarigarOutstandingPrintLine11]
+    Field: JpKarigarOutstandingPrintLine11F1
+
+[Field: JpKarigarOutstandingPrintLine11F1]
+    Set As : "Issued g"
+[Line: JpKarigarOutstandingPrintLine12]
+    Field: JpKarigarOutstandingPrintLine12F1
+
+[Field: JpKarigarOutstandingPrintLine12F1]
+    Style : JpGridHead
+[Line: JpKarigarOutstandingPrintLine13]
+    Field: JpKarigarOutstandingPrintLine13F1
+
+[Field: JpKarigarOutstandingPrintLine13F1]
+    Set As : "Net Recd g"
+[Line: JpKarigarOutstandingPrintLine14]
+    Field: JpKarigarOutstandingPrintLine14F1
+
+[Field: JpKarigarOutstandingPrintLine14F1]
+    Style : JpGridHead
+[Line: JpKarigarOutstandingPrintLine15]
+    Field: JpKarigarOutstandingPrintLine15F1
+
+[Field: JpKarigarOutstandingPrintLine15F1]
+    Set As : "Wastage g"
+[Line: JpKarigarOutstandingPrintLine16]
+    Field: JpKarigarOutstandingPrintLine16F1
+
+[Field: JpKarigarOutstandingPrintLine16F1]
+    Style : JpGridHead
+[Line: JpKarigarOutstandingPrintLine17]
+    Field: JpKarigarOutstandingPrintLine17F1
+
+[Field: JpKarigarOutstandingPrintLine17F1]
+    Set As : "Balance g"
+[Line: JpKarigarOutstandingPrintLine18]
+    Field: JpKarigarOutstandingPrintLine18F1
+
+[Field: JpKarigarOutstandingPrintLine18F1]
+    Style : JpGridHead
+[Line: JpKarigarOutstandingPrintLine19]
+    Field: JpKarigarOutstandingPrintLine19F1
+
+[Field: JpKarigarOutstandingPrintLine19F1]
+    Set As : "Labour"
+[Line: JpKarigarOutstandingPrintLine20]
+    Field: JpKarigarOutstandingPrintLine20F1
+
+[Field: JpKarigarOutstandingPrintLine20F1]
+    Style : JpGridHead
+[Line: JpKarigarOutstandingPrintLine21]
+    Field: JpKarigarOutstandingPrintLine21F1
+
+[Field: JpKarigarOutstandingPrintLine21F1]
+    Set As : "Status"
+[Line: JpKarigarOutstandingPrintLine22]
+    Field: JpKarigarOutstandingPrintLine22F1
+
+[Field: JpKarigarOutstandingPrintLine22F1]
+    Style : JpGridHead
+[Line: JpKarigarOutstandingPrintLine23]
+    Field: JpKarigarOutstandingPrintLine23F1
+
+[Field: JpKarigarOutstandingPrintLine23F1]
+    Set As : $JwlJobKarigar
+[Line: JpKarigarOutstandingPrintLine24]
+    Field: JpKarigarOutstandingPrintLine24F1
+
+[Field: JpKarigarOutstandingPrintLine24F1]
+    Style : JpGrid
+[Line: JpKarigarOutstandingPrintLine25]
+    Field: JpKarigarOutstandingPrintLine25F1
+
+[Field: JpKarigarOutstandingPrintLine25F1]
+    Set As : $JwlJobNo
+[Line: JpKarigarOutstandingPrintLine26]
+    Field: JpKarigarOutstandingPrintLine26F1
+
+[Field: JpKarigarOutstandingPrintLine26F1]
+    Style : JpGrid
+[Line: JpKarigarOutstandingPrintLine27]
+    Field: JpKarigarOutstandingPrintLine27F1
+
+[Field: JpKarigarOutstandingPrintLine27F1]
+    Set As : $JwlJobDesign
+[Line: JpKarigarOutstandingPrintLine28]
+    Field: JpKarigarOutstandingPrintLine28F1
+
+[Field: JpKarigarOutstandingPrintLine28F1]
+    Style : JpGrid
+[Line: JpKarigarOutstandingPrintLine29]
+    Field: JpKarigarOutstandingPrintLine29F1
+
+[Field: JpKarigarOutstandingPrintLine29F1]
+    Set As : $JwlJobIssuedWt
+[Line: JpKarigarOutstandingPrintLine30]
+    Field: JpKarigarOutstandingPrintLine30F1
+
+[Field: JpKarigarOutstandingPrintLine30F1]
+    Style : JpWeight
+[Line: JpKarigarOutstandingPrintLine31]
+    Field: JpKarigarOutstandingPrintLine31F1
+
+[Field: JpKarigarOutstandingPrintLine31F1]
+    Set As : $JwlJobRecvNet
+[Line: JpKarigarOutstandingPrintLine32]
+    Field: JpKarigarOutstandingPrintLine32F1
+
+[Field: JpKarigarOutstandingPrintLine32F1]
+    Style : JpWeight
+[Line: JpKarigarOutstandingPrintLine33]
+    Field: JpKarigarOutstandingPrintLine33F1
+
+[Field: JpKarigarOutstandingPrintLine33F1]
+    Set As : $JwlJobWastageWt
+[Line: JpKarigarOutstandingPrintLine34]
+    Field: JpKarigarOutstandingPrintLine34F1
+
+[Field: JpKarigarOutstandingPrintLine34F1]
+    Style : JpWeight
+[Line: JpKarigarOutstandingPrintLine35]
+    Field: JpKarigarOutstandingPrintLine35F1
+
+[Field: JpKarigarOutstandingPrintLine35F1]
+    Set As : $JwlJobBalWt
+[Line: JpKarigarOutstandingPrintLine36]
+    Field: JpKarigarOutstandingPrintLine36F1
+
+[Field: JpKarigarOutstandingPrintLine36F1]
+    Style : JpWeightBold
+[Line: JpKarigarOutstandingPrintLine37]
+    Field: JpKarigarOutstandingPrintLine37F1
+
+[Field: JpKarigarOutstandingPrintLine37F1]
+    Set As : $JwlJobLabour
+[Line: JpKarigarOutstandingPrintLine38]
+    Field: JpKarigarOutstandingPrintLine38F1
+
+[Field: JpKarigarOutstandingPrintLine38F1]
+    Style : JpMoney
+[Line: JpKarigarOutstandingPrintLine39]
+    Field: JpKarigarOutstandingPrintLine39F1
+
+[Field: JpKarigarOutstandingPrintLine39F1]
+    Set As : $JwlJobStatus
+[Line: JpKarigarOutstandingPrintLine40]
+    Field: JpKarigarOutstandingPrintLine40F1
+
+[Field: JpKarigarOutstandingPrintLine40F1]
+    Style : JpGrid
+[Line: JpKarigarOutstandingPrintLine41]
+    Field: JpKarigarOutstandingPrintLine41F1
+
+[Field: JpKarigarOutstandingPrintLine41F1]
+    Set As : "TOTAL METAL HELD WITH KARIGARS (gm)"
+[Line: JpKarigarOutstandingPrintLine42]
+    Field: JpKarigarOutstandingPrintLine42F1
+
+[Field: JpKarigarOutstandingPrintLine42F1]
+    Style : JpTotal
+[Line: JpKarigarOutstandingPrintLine43]
+    Field: JpKarigarOutstandingPrintLine43F1
+
+[Field: JpKarigarOutstandingPrintLine43F1]
+    Set As : Sum($JwlJobBalWt)
+[Line: JpKarigarOutstandingPrintLine44]
+    Field: JpKarigarOutstandingPrintLine44F1
+
+[Field: JpKarigarOutstandingPrintLine44F1]
+    Style : JpTotal
+[Line: JpKarigarOutstandingPrintLine45]
+    Field: JpKarigarOutstandingPrintLine45F1
+
+[Field: JpKarigarOutstandingPrintLine45F1]
+    Set As : Sum($JwlJobLabour)
+[Line: JpKarigarOutstandingPrintLine46]
+    Field: JpKarigarOutstandingPrintLine46F1
+
+[Field: JpKarigarOutstandingPrintLine46F1]
+    Style : JpTotal
+[Export: JpKarigarOutstandingExport]
+    Title: <1000, "Karigar Outstanding">
+    Repeat: Over: JpKarigarOutstanding
+    Export Title: Detail
+    Export: Value: $JwlJobKarigar
+    Export: Value: $JwlJobNo
+    Export: Value: $JwlJobIssuedWt
+    Export: Value: $JwlJobRecvNet
+    Export: Value: $JwlJobWastageWt
+    Export: Value: $JwlJobBalWt
+    Export: Value: $JwlJobLabour

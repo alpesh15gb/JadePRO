@@ -1,0 +1,9 @@
+; P06  [Export:] + Export: Value:  <- DECIDES THE ZEBRA CSV DESIGN
+[Report: ZzP06Report]
+    Title: <1000, "ZzP06">
+    Export: ZzP06Export
+
+[Export: ZzP06Export]
+    Title: "ZzP06"
+    Data: Item Details
+    Export: Value: $$ItemName

@@ -1,0 +1,12 @@
+; P07  [Keys:] two-part form
+[Screen: ZzP07Screen]
+    Title: <1000, "ZzP07">
+    Lines: 1, 1
+    Field: <Field-Id: ZzP07Field, Label: "X">
+        Width: 100
+
+[Keys: ZzP07SalesKey]
+    Ctrl+S: ZzP07KeySales
+
+[Keys: ZzP07KeySales]
+    Action: <Key-Id: ZzP07SalesKey, Display: ZzP07Screen>

@@ -1,0 +1,7 @@
+; p27 - Numbered procedural statements inside a Function.
+; JadePro uses `Add:` / `Create:` / `Alter:` / `Accept:` as bare attributes in
+; 165 places; the reference puts them behind `NNN : Action :`.
+[Function: ZzP27Act]
+    100 : Action : Alter Item
+    200 : Msg Box : "done" : "ok"
+    300 : Exit

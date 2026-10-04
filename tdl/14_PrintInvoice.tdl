@@ -1,0 +1,701 @@
+; =============================================================================
+;  JadePro  ::  14_PrintInvoice.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Premium jewellery invoice - the format a luxury showroom prints.
+;            Replaces the print style for Tally's Sales voucher; the standard
+;            Sales print is NOT disabled, so it can be restored from Tally's
+;            own "Printer Settings" at any time.
+;
+;  WHAT IS ON THE BILL
+;    Shop block with GSTIN, customer block with mobile and GSTIN, the
+;    jewellery line grid (HUID, purity, gross / stone / net weight, metal
+;    rate, making charges, wastage, discount), taxable value, CGST / SGST /
+;    IGST, grand total, amount in words, payment-mode breakup, old-gold
+;    exchange annexure, terms and authorised signature.
+;
+;  PRINT SHORTCUTS INSIDE A SALES VOUCHER
+;    F5          preview / print using this format
+;    Alt+E       export the invoice to Excel
+;
+;  LOAD    : After 00_Core, 04_Sales, 06_OldGold.
+;  REQUIRES : 00_Core.tdl, 04_Sales.tdl, 06_OldGold.tdl
+; =============================================================================
+
+; =============================================================================
+;  PART ONE - SHOP LETTERHEAD
+; =============================================================================
+[Part: JpInvoiceHeader]
+    Height: 24
+    Height: 18
+    Line: JpInvoiceHeaderLine1, JpInvoiceHeaderLine2, JpInvoiceHeaderLine3, JpInvoiceHeaderLine4, JpInvoiceHeaderLine5, JpInvoiceHeaderLine6, JpInvoiceHeaderLine7, JpInvoiceHeaderLine8, JpInvoiceHeaderLine9, JpInvoiceHeaderLine10, JpInvoiceHeaderLine11, JpInvoiceHeaderLine12, JpInvoiceHeaderLine13
+
+[Line: JpInvoiceHeaderLine1]
+    Field: JpInvoiceHeaderLine1F1
+
+[Field: JpInvoiceHeaderLine1F1]
+    Set As : Upr(##JwlShopName)
+    Style : JpFontBold
+[Line: JpInvoiceHeaderLine2]
+    Field: JpInvoiceHeaderLine2F1
+
+[Field: JpInvoiceHeaderLine2F1]
+    Align : CENTRE
+[Line: JpInvoiceHeaderLine3]
+    Field: JpInvoiceHeaderLine3F1
+
+[Field: JpInvoiceHeaderLine3F1]
+    Set As : ##JwlShopAddress
+    Style : JpFontBold
+    Align : CENTRE
+[Line: JpInvoiceHeaderLine4]
+    Field: JpInvoiceHeaderLine4F1
+
+[Field: JpInvoiceHeaderLine4F1]
+    Set As : "Phone: " + ##JwlCompanyPhone + "          GSTIN: " + ##JwlCompanyGSTIN + "          State: " + ##JwlCompanyState
+    Style : JpFontBold
+    Align : CENTRE
+[Line: JpInvoiceHeaderLine5]
+    Field: JpInvoiceHeaderLine5F1
+
+[Field: JpInvoiceHeaderLine5F1]
+    Set As : "--------------------------------------------------------------------------------------"
+    Style : JpFontBold
+[Line: JpInvoiceHeaderLine6]
+    Field: JpInvoiceHeaderLine6F1
+
+[Field: JpInvoiceHeaderLine6F1]
+    Set As : "TAX INVOICE"
+    Style : JpFontBold
+[Line: JpInvoiceHeaderLine7]
+    Field: JpInvoiceHeaderLine7F1
+
+[Field: JpInvoiceHeaderLine7F1]
+    Align : CENTRE
+[Line: JpInvoiceHeaderLine8]
+    Field: JpInvoiceHeaderLine8F1
+
+[Field: JpInvoiceHeaderLine8F1]
+    Set As : "--------------------------------------------------------------------------------------"
+    Style : JpFontBold
+[Line: JpInvoiceHeaderLine9]
+    Field: JpInvoiceHeaderLine9F1
+
+[Field: JpInvoiceHeaderLine9F1]
+    Set As : "Invoice No : " + $JwlInvNo + "        Date : " + $$DATE + "        Salesperson : " + $JwlSalesperson
+    Style : JpFontBold
+[Line: JpInvoiceHeaderLine10]
+    Field: JpInvoiceHeaderLine10F1
+
+[Field: JpInvoiceHeaderLine10F1]
+    Set As : "Customer   : " + $$PARTYNAME
+    Style : JpFontBold
+[Line: JpInvoiceHeaderLine11]
+    Field: JpInvoiceHeaderLine11F1
+
+[Field: JpInvoiceHeaderLine11F1]
+    Set As : "Mobile     : " + $JwlCustMobile + "        Party GSTIN : " + $$PARTYGSTIN
+    Style : JpFontBold
+[Line: JpInvoiceHeaderLine12]
+    Field: JpInvoiceHeaderLine12F1
+
+[Field: JpInvoiceHeaderLine12F1]
+    Set As : "Address    : " + $$PARTYADDRESS
+    Style : JpFontBold
+[Line: JpInvoiceHeaderLine13]
+    Field: JpInvoiceHeaderLine13F1
+
+[Field: JpInvoiceHeaderLine13F1]
+    Set As : "--------------------------------------------------------------------------------------"
+    Style : JpFontBold
+[Part: JpInvoiceItems]
+    Width: 110
+    Width: 160
+    Width: 85
+    Width: 45
+    Width: 55
+    Width: 50
+    Width: 55
+    Width: 60
+    Width: 65
+    Width: 55
+    Width: 55
+    Width: 55
+    Width: 70
+    Width: 200
+    Width: 180
+    Width: 55
+    Width: 235
+    Width: 70
+    Line: Spacing, JpInvoiceItemsLine1, JpInvoiceItemsLine2, JpInvoiceItemsLine3, JpInvoiceItemsLine4, JpInvoiceItemsLine5, JpInvoiceItemsLine6, JpInvoiceItemsLine7, JpInvoiceItemsLine8, JpInvoiceItemsLine9, JpInvoiceItemsLine10, JpInvoiceItemsLine11, JpInvoiceItemsLine12, JpInvoiceItemsLine13, JpInvoiceItemsLine14, JpInvoiceItemsLine15, JpInvoiceItemsLine16, JpInvoiceItemsLine17, JpInvoiceItemsLine18, JpInvoiceItemsLine19, JpInvoiceItemsLine20, JpInvoiceItemsLine21, JpInvoiceItemsLine22, JpInvoiceItemsLine23, JpInvoiceItemsLine24, JpInvoiceItemsLine25, JpInvoiceItemsLine26, JpInvoiceItemsLine27, JpInvoiceItemsLine28, JpInvoiceItemsLine29, JpInvoiceItemsLine30, JpInvoiceItemsLine31, JpInvoiceItemsLine32, JpInvoiceItemsLine33, JpInvoiceItemsLine34, JpInvoiceItemsLine35, JpInvoiceItemsLine36, JpInvoiceItemsLine37
+
+[Line: JpInvoiceItemsLine1]
+    Part Name: JpInvoiceItemHead
+
+[Line: JpInvoiceItemsLine2]
+    Field: JpInvoiceItemsLine2F1
+
+[Field: JpInvoiceItemsLine2F1]
+    Set As : $JwlLnBarcode
+[Line: JpInvoiceItemsLine3]
+    Field: JpInvoiceItemsLine3F1
+
+[Field: JpInvoiceItemsLine3F1]
+    Style : JpGrid
+[Line: JpInvoiceItemsLine4]
+    Field: JpInvoiceItemsLine4F1
+
+[Field: JpInvoiceItemsLine4F1]
+    Set As : $$ITEMNAME
+[Line: JpInvoiceItemsLine5]
+    Field: JpInvoiceItemsLine5F1
+
+[Field: JpInvoiceItemsLine5F1]
+    Style : JpGrid
+[Line: JpInvoiceItemsLine6]
+    Field: JpInvoiceItemsLine6F1
+
+[Field: JpInvoiceItemsLine6F1]
+    Set As : $JwlLnHuid
+[Line: JpInvoiceItemsLine7]
+    Field: JpInvoiceItemsLine7F1
+
+[Field: JpInvoiceItemsLine7F1]
+    Style : JpGrid
+[Line: JpInvoiceItemsLine8]
+    Field: JpInvoiceItemsLine8F1
+
+[Field: JpInvoiceItemsLine8F1]
+    Set As : $JwlLnPurity
+[Line: JpInvoiceItemsLine9]
+    Field: JpInvoiceItemsLine9F1
+
+[Field: JpInvoiceItemsLine9F1]
+    Style : JpGrid
+[Line: JpInvoiceItemsLine10]
+    Field: JpInvoiceItemsLine10F1
+
+[Field: JpInvoiceItemsLine10F1]
+    Set As : $JwlLnGross
+[Line: JpInvoiceItemsLine11]
+    Field: JpInvoiceItemsLine11F1
+
+[Field: JpInvoiceItemsLine11F1]
+    Style : JpWeight
+[Line: JpInvoiceItemsLine12]
+    Field: JpInvoiceItemsLine12F1
+
+[Field: JpInvoiceItemsLine12F1]
+    Set As : $JwlLnStone
+[Line: JpInvoiceItemsLine13]
+    Field: JpInvoiceItemsLine13F1
+
+[Field: JpInvoiceItemsLine13F1]
+    Style : JpWeight
+[Line: JpInvoiceItemsLine14]
+    Field: JpInvoiceItemsLine14F1
+
+[Field: JpInvoiceItemsLine14F1]
+    Set As : $JwlLnNet
+[Line: JpInvoiceItemsLine15]
+    Field: JpInvoiceItemsLine15F1
+
+[Field: JpInvoiceItemsLine15F1]
+    Style : JpWeightBold
+[Line: JpInvoiceItemsLine16]
+    Field: JpInvoiceItemsLine16F1
+
+[Field: JpInvoiceItemsLine16F1]
+    Set As : $JwlLnRate
+[Line: JpInvoiceItemsLine17]
+    Field: JpInvoiceItemsLine17F1
+
+[Field: JpInvoiceItemsLine17F1]
+    Style : JpMoney
+[Line: JpInvoiceItemsLine18]
+    Field: JpInvoiceItemsLine18F1
+
+[Field: JpInvoiceItemsLine18F1]
+    Set As : $JwlLnMetalVal
+[Line: JpInvoiceItemsLine19]
+    Field: JpInvoiceItemsLine19F1
+
+[Field: JpInvoiceItemsLine19F1]
+    Style : JpMoney
+[Line: JpInvoiceItemsLine20]
+    Field: JpInvoiceItemsLine20F1
+
+[Field: JpInvoiceItemsLine20F1]
+    Set As : $JwlLnWastageVal
+[Line: JpInvoiceItemsLine21]
+    Field: JpInvoiceItemsLine21F1
+
+[Field: JpInvoiceItemsLine21F1]
+    Style : JpMoney
+[Line: JpInvoiceItemsLine22]
+    Field: JpInvoiceItemsLine22F1
+
+[Field: JpInvoiceItemsLine22F1]
+    Set As : $JwlLnMakeAmt
+[Line: JpInvoiceItemsLine23]
+    Field: JpInvoiceItemsLine23F1
+
+[Field: JpInvoiceItemsLine23F1]
+    Style : JpMoney
+[Line: JpInvoiceItemsLine24]
+    Field: JpInvoiceItemsLine24F1
+
+[Field: JpInvoiceItemsLine24F1]
+    Set As : $JwlLnDiscAmt
+[Line: JpInvoiceItemsLine25]
+    Field: JpInvoiceItemsLine25F1
+
+[Field: JpInvoiceItemsLine25F1]
+    Style : JpMoney
+[Line: JpInvoiceItemsLine26]
+    Field: JpInvoiceItemsLine26F1
+
+[Field: JpInvoiceItemsLine26F1]
+    Set As : $JwlLnTotal
+[Line: JpInvoiceItemsLine27]
+    Field: JpInvoiceItemsLine27F1
+
+[Field: JpInvoiceItemsLine27F1]
+    Style : JpMoneyBold
+[Line: JpInvoiceItemsLine28]
+    Field: JpInvoiceItemsLine28F1
+
+[Field: JpInvoiceItemsLine28F1]
+    Set As : "Total pieces: " + Count()
+[Line: JpInvoiceItemsLine29]
+    Field: JpInvoiceItemsLine29F1
+
+[Field: JpInvoiceItemsLine29F1]
+    Style : JpTotal
+[Line: JpInvoiceItemsLine30]
+    Field: JpInvoiceItemsLine30F1
+
+[Field: JpInvoiceItemsLine30F1]
+    Set As : "Net metal weight sold:"
+[Line: JpInvoiceItemsLine31]
+    Field: JpInvoiceItemsLine31F1
+
+[Field: JpInvoiceItemsLine31F1]
+    Style : JpTotal
+[Line: JpInvoiceItemsLine32]
+    Field: JpInvoiceItemsLine32F1
+
+[Field: JpInvoiceItemsLine32F1]
+    Set As : Sum($JwlLnNet)
+[Line: JpInvoiceItemsLine33]
+    Field: JpInvoiceItemsLine33F1
+
+[Field: JpInvoiceItemsLine33F1]
+    Style : JpTotal
+[Line: JpInvoiceItemsLine34]
+    Field: JpInvoiceItemsLine34F1
+
+[Field: JpInvoiceItemsLine34F1]
+    Set As : "Invoice value:"
+[Line: JpInvoiceItemsLine35]
+    Field: JpInvoiceItemsLine35F1
+
+[Field: JpInvoiceItemsLine35F1]
+    Style : JpTotal
+[Line: JpInvoiceItemsLine36]
+    Field: JpInvoiceItemsLine36F1
+
+[Field: JpInvoiceItemsLine36F1]
+    Set As : Sum($JwlLnTotal)
+[Line: JpInvoiceItemsLine37]
+    Field: JpInvoiceItemsLine37F1
+
+[Field: JpInvoiceItemsLine37F1]
+    Style : JpTotal
+[Part: JpInvoiceItemHead]
+    Width: 110
+    Width: 160
+    Width: 85
+    Width: 45
+    Width: 55
+    Width: 50
+    Width: 55
+    Width: 60
+    Width: 65
+    Width: 55
+    Width: 55
+    Width: 55
+    Width: 70
+    Line: Spacing, JpInvoiceItemHeadLine1, JpInvoiceItemHeadLine2, JpInvoiceItemHeadLine3, JpInvoiceItemHeadLine4, JpInvoiceItemHeadLine5, JpInvoiceItemHeadLine6, JpInvoiceItemHeadLine7, JpInvoiceItemHeadLine8, JpInvoiceItemHeadLine9, JpInvoiceItemHeadLine10, JpInvoiceItemHeadLine11, JpInvoiceItemHeadLine12, JpInvoiceItemHeadLine13, JpInvoiceItemHeadLine14, JpInvoiceItemHeadLine15, JpInvoiceItemHeadLine16, JpInvoiceItemHeadLine17, JpInvoiceItemHeadLine18, JpInvoiceItemHeadLine19, JpInvoiceItemHeadLine20, JpInvoiceItemHeadLine21, JpInvoiceItemHeadLine22, JpInvoiceItemHeadLine23, JpInvoiceItemHeadLine24, JpInvoiceItemHeadLine25, JpInvoiceItemHeadLine26, JpInvoiceItemHeadLine27
+
+[Line: JpInvoiceItemHeadLine1]
+    Part Name: Width
+[Line: JpInvoiceItemHeadLine2]
+    Field: JpInvoiceItemHeadLine2F1
+
+[Field: JpInvoiceItemHeadLine2F1]
+    Set As : "Barcode"
+[Line: JpInvoiceItemHeadLine3]
+    Field: JpInvoiceItemHeadLine3F1
+
+[Field: JpInvoiceItemHeadLine3F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine4]
+    Field: JpInvoiceItemHeadLine4F1
+
+[Field: JpInvoiceItemHeadLine4F1]
+    Set As : "Description"
+[Line: JpInvoiceItemHeadLine5]
+    Field: JpInvoiceItemHeadLine5F1
+
+[Field: JpInvoiceItemHeadLine5F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine6]
+    Field: JpInvoiceItemHeadLine6F1
+
+[Field: JpInvoiceItemHeadLine6F1]
+    Set As : "HUID"
+[Line: JpInvoiceItemHeadLine7]
+    Field: JpInvoiceItemHeadLine7F1
+
+[Field: JpInvoiceItemHeadLine7F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine8]
+    Field: JpInvoiceItemHeadLine8F1
+
+[Field: JpInvoiceItemHeadLine8F1]
+    Set As : "Pur"
+[Line: JpInvoiceItemHeadLine9]
+    Field: JpInvoiceItemHeadLine9F1
+
+[Field: JpInvoiceItemHeadLine9F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine10]
+    Field: JpInvoiceItemHeadLine10F1
+
+[Field: JpInvoiceItemHeadLine10F1]
+    Set As : "Gross"
+[Line: JpInvoiceItemHeadLine11]
+    Field: JpInvoiceItemHeadLine11F1
+
+[Field: JpInvoiceItemHeadLine11F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine12]
+    Field: JpInvoiceItemHeadLine12F1
+
+[Field: JpInvoiceItemHeadLine12F1]
+    Set As : "Stone"
+[Line: JpInvoiceItemHeadLine13]
+    Field: JpInvoiceItemHeadLine13F1
+
+[Field: JpInvoiceItemHeadLine13F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine14]
+    Field: JpInvoiceItemHeadLine14F1
+
+[Field: JpInvoiceItemHeadLine14F1]
+    Set As : "Net"
+[Line: JpInvoiceItemHeadLine15]
+    Field: JpInvoiceItemHeadLine15F1
+
+[Field: JpInvoiceItemHeadLine15F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine16]
+    Field: JpInvoiceItemHeadLine16F1
+
+[Field: JpInvoiceItemHeadLine16F1]
+    Set As : "Rate"
+[Line: JpInvoiceItemHeadLine17]
+    Field: JpInvoiceItemHeadLine17F1
+
+[Field: JpInvoiceItemHeadLine17F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine18]
+    Field: JpInvoiceItemHeadLine18F1
+
+[Field: JpInvoiceItemHeadLine18F1]
+    Set As : "Metal Val"
+[Line: JpInvoiceItemHeadLine19]
+    Field: JpInvoiceItemHeadLine19F1
+
+[Field: JpInvoiceItemHeadLine19F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine20]
+    Field: JpInvoiceItemHeadLine20F1
+
+[Field: JpInvoiceItemHeadLine20F1]
+    Set As : "Wastage"
+[Line: JpInvoiceItemHeadLine21]
+    Field: JpInvoiceItemHeadLine21F1
+
+[Field: JpInvoiceItemHeadLine21F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine22]
+    Field: JpInvoiceItemHeadLine22F1
+
+[Field: JpInvoiceItemHeadLine22F1]
+    Set As : "Making"
+[Line: JpInvoiceItemHeadLine23]
+    Field: JpInvoiceItemHeadLine23F1
+
+[Field: JpInvoiceItemHeadLine23F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine24]
+    Field: JpInvoiceItemHeadLine24F1
+
+[Field: JpInvoiceItemHeadLine24F1]
+    Set As : "Discount"
+[Line: JpInvoiceItemHeadLine25]
+    Field: JpInvoiceItemHeadLine25F1
+
+[Field: JpInvoiceItemHeadLine25F1]
+    Style : JpGridHead
+[Line: JpInvoiceItemHeadLine26]
+    Field: JpInvoiceItemHeadLine26F1
+
+[Field: JpInvoiceItemHeadLine26F1]
+    Set As : "Amount"
+[Line: JpInvoiceItemHeadLine27]
+    Field: JpInvoiceItemHeadLine27F1
+
+[Field: JpInvoiceItemHeadLine27F1]
+    Style : JpGridHead
+[Part: JpInvoiceTotals]
+    Height: 18
+    Line: JpInvoiceTotalsLine1, JpInvoiceTotalsLine2, JpInvoiceTotalsLine3, JpInvoiceTotalsLine4, JpInvoiceTotalsLine5, JpInvoiceTotalsLine6, JpInvoiceTotalsLine7, JpInvoiceTotalsLine8, JpInvoiceTotalsLine9
+
+[Line: JpInvoiceTotalsLine1]
+    Field: JpInvoiceTotalsLine1F1
+
+[Field: JpInvoiceTotalsLine1F1]
+    Set As : "--------------------------------------------------------------------------------------"
+    Style : JpFontBold
+[Line: JpInvoiceTotalsLine2]
+    Field: JpInvoiceTotalsLine2F1
+
+[Field: JpInvoiceTotalsLine2F1]
+    Set As : "Taxable Jewellery Value : " + JpFmtAmt($JwlTaxableVal) + "        Making Charges Value : " + JpFmtAmt($JwlMakeVal)
+    Style : JpFontBold
+[Line: JpInvoiceTotalsLine3]
+    Field: JpInvoiceTotalsLine3F1
+
+[Field: JpInvoiceTotalsLine3F1]
+    Set As : "CGST : " + JpFmtAmt($JwlCgst) + "        SGST : " + JpFmtAmt($JwlSgst) + "        IGST : " + JpFmtAmt($JwlIgst)
+    Style : JpFontBold
+[Line: JpInvoiceTotalsLine4]
+    Field: JpInvoiceTotalsLine4F1
+
+[Field: JpInvoiceTotalsLine4F1]
+    Set As : "Total GST : " + JpFmtAmt($JwlTaxTotal)
+    Style : JpFontBold
+[Line: JpInvoiceTotalsLine5]
+    Field: JpInvoiceTotalsLine5F1
+
+[Field: JpInvoiceTotalsLine5F1]
+    Set As : "--------------------------------------------------------------------------------------"
+    Style : JpFontBold
+[Line: JpInvoiceTotalsLine6]
+    Field: JpInvoiceTotalsLine6F1
+
+[Field: JpInvoiceTotalsLine6F1]
+    Set As : "GRAND TOTAL : Rs. " + JpFmtAmt($JwlGrandTotal)
+    Style : JpFontBold
+[Line: JpInvoiceTotalsLine7]
+    Field: JpInvoiceTotalsLine7F1
+
+[Field: JpInvoiceTotalsLine7F1]
+    Set As : "--------------------------------------------------------------------------------------"
+    Style : JpFontBold
+[Line: JpInvoiceTotalsLine8]
+    Field: JpInvoiceTotalsLine8F1
+
+[Field: JpInvoiceTotalsLine8F1]
+    Set As : "Amount in words : " + JpInWords($JwlGrandTotal)
+    Style : JpFontBold
+[Line: JpInvoiceTotalsLine9]
+    Field: JpInvoiceTotalsLine9F1
+
+[Field: JpInvoiceTotalsLine9F1]
+    Set As : " "
+    Style : JpFontBold
+[Part: JpInvoicePayments]
+    Line: JpInvoicePaymentsLine1, JpInvoicePaymentsLine2, JpInvoicePaymentsLine3, JpInvoicePaymentsLine4, JpInvoicePaymentsLine5, JpInvoicePaymentsLine6
+
+[Line: JpInvoicePaymentsLine1]
+    Field: JpInvoicePaymentsLine1F1
+
+[Field: JpInvoicePaymentsLine1F1]
+    Set As : "PAYMENT BREAKUP"
+    Style : JpFontBold
+[Line: JpInvoicePaymentsLine2]
+    Field: JpInvoicePaymentsLine2F1
+
+[Field: JpInvoicePaymentsLine2F1]
+    Set As : "   Cash ................. " + JpFmtAmt($JwlPayCash) + "        Card ................. " + JpFmtAmt($JwlPayCard)
+    Style : JpFontBold
+[Line: JpInvoicePaymentsLine3]
+    Field: JpInvoicePaymentsLine3F1
+
+[Field: JpInvoicePaymentsLine3F1]
+    Set As : "   UPI .................. " + JpFmtAmt($JwlPayUpi) + "        Bank Transfer ........ " + JpFmtAmt($JwlPayBank)
+    Style : JpFontBold
+[Line: JpInvoicePaymentsLine4]
+    Field: JpInvoicePaymentsLine4F1
+
+[Field: JpInvoicePaymentsLine4F1]
+    Set As : "   Customer Advance ..... " + JpFmtAmt($JwlPayAdvance) + "        Old Gold Exchange .... " + JpFmtAmt($JwlPayOldGold)
+    Style : JpFontBold
+[Line: JpInvoicePaymentsLine5]
+    Field: JpInvoicePaymentsLine5F1
+
+[Field: JpInvoicePaymentsLine5F1]
+    Set As : "   Total Received ....... " + JpFmtAmt($JwlPayTotal) + "        Balance Due .......... " + JpFmtAmt($JwlPayBalance)
+    Style : JpFontBold
+[Line: JpInvoicePaymentsLine6]
+    Field: JpInvoicePaymentsLine6F1
+
+[Field: JpInvoicePaymentsLine6F1]
+    Set As : " "
+[Part: JpInvoiceOldGold]
+    Line: JpInvoiceOldGoldLine1, JpInvoiceOldGoldLine2, JpInvoiceOldGoldLine3, JpInvoiceOldGoldLine4, JpInvoiceOldGoldLine5, JpInvoiceOldGoldLine6, JpInvoiceOldGoldLine7, JpInvoiceOldGoldLine8
+
+[Line: JpInvoiceOldGoldLine1]
+    Field: JpInvoiceOldGoldLine1F1
+
+    ; layout guard was: If: ##JwlOldGoldRef <> ""
+    Empty : ##JwlOldGoldRef = ""
+[Field: JpInvoiceOldGoldLine1F1]
+    Set As : "--------------------------------------------------------------------------------------"
+    Style : JpFontBold
+[Line: JpInvoiceOldGoldLine2]
+    Field: JpInvoiceOldGoldLine2F1
+
+    ; layout guard was: If: ##JwlOldGoldRef <> ""
+    Empty : ##JwlOldGoldRef = ""
+[Field: JpInvoiceOldGoldLine2F1]
+    Set As : "OLD GOLD / GOLD EXCHANGE DETAILS   (Ref " + $JwlOldGoldRef + ")"
+    Style : JpFontBold
+[Line: JpInvoiceOldGoldLine3]
+    Field: JpInvoiceOldGoldLine3F1
+
+    ; layout guard was: If: ##JwlOldGoldRef <> ""
+    Empty : ##JwlOldGoldRef = ""
+[Field: JpInvoiceOldGoldLine3F1]
+    Set As : "   Metal ............ " + $JwlOgMetal + "        Purity ............ " + $JwlOgPurity + "  (" + JpFmtPc($JwlOgPurityPc) + ")"
+    Style : JpFontBold
+[Line: JpInvoiceOldGoldLine4]
+    Field: JpInvoiceOldGoldLine4F1
+
+    ; layout guard was: If: ##JwlOldGoldRef <> ""
+    Empty : ##JwlOldGoldRef = ""
+[Field: JpInvoiceOldGoldLine4F1]
+    Set As : "   Gross Weight ..... " + JpFmtWt($JwlOgGrossWt) + " gms     Stone Weight ....... " + JpFmtWt($JwlOgStoneWt) + " gms"
+    Style : JpFontBold
+[Line: JpInvoiceOldGoldLine5]
+    Field: JpInvoiceOldGoldLine5F1
+
+    ; layout guard was: If: ##JwlOldGoldRef <> ""
+    Empty : ##JwlOldGoldRef = ""
+[Field: JpInvoiceOldGoldLine5F1]
+    Set As : "   Net Weight ....... " + JpFmtWt($JwlOgNetWt) + " gms     Fine Weight ....... " + JpFmtWt($JwlOgFineWt) + " gms"
+    Style : JpFontBold
+[Line: JpInvoiceOldGoldLine6]
+    Field: JpInvoiceOldGoldLine6F1
+
+    ; layout guard was: If: ##JwlOldGoldRef <> ""
+    Empty : ##JwlOldGoldRef = ""
+[Field: JpInvoiceOldGoldLine6F1]
+    Set As : "   Rate Applied ..... " + JpFmtAmt($JwlOgRate) + " /gm      Deduction .......... " + JpFmtPc($JwlOgDedPc)
+    Style : JpFontBold
+[Line: JpInvoiceOldGoldLine7]
+    Field: JpInvoiceOldGoldLine7F1
+
+    ; layout guard was: If: ##JwlOldGoldRef <> ""
+    Empty : ##JwlOldGoldRef = ""
+[Field: JpInvoiceOldGoldLine7F1]
+    Set As : "   Exchange Value ... " + JpFmtAmt($JwlOgValue) + "     Adjusted to this bill  " + JpFmtAmt($JwlOgAdjAmt) + "     Refundable  " + JpFmtAmt($JwlOgBalAmt)
+    Style : JpFontBold
+[Line: JpInvoiceOldGoldLine8]
+    Field: JpInvoiceOldGoldLine8F1
+
+    ; layout guard was: If: ##JwlOldGoldRef <> ""
+    Empty : ##JwlOldGoldRef = ""
+[Field: JpInvoiceOldGoldLine8F1]
+    Set As : "--------------------------------------------------------------------------------------"
+    Style : JpFontBold
+[Part: JpInvoiceFooter]
+    Line: JpInvoiceFooterLine1, JpInvoiceFooterLine2, JpInvoiceFooterLine3, JpInvoiceFooterLine4, JpInvoiceFooterLine5, JpInvoiceFooterLine6, JpInvoiceFooterLine7, JpInvoiceFooterLine8, JpInvoiceFooterLine9, JpInvoiceFooterLine10
+
+[Line: JpInvoiceFooterLine1]
+    Field: JpInvoiceFooterLine1F1
+
+[Field: JpInvoiceFooterLine1F1]
+    Set As : "TERMS AND CONDITIONS"
+    Style : JpFontBold
+[Line: JpInvoiceFooterLine2]
+    Field: JpInvoiceFooterLine2F1
+
+[Field: JpInvoiceFooterLine2F1]
+    Set As : "   " + JpBlankIfNull($JwlInvoiceTerms)
+    Style : JpFontBold
+[Line: JpInvoiceFooterLine3]
+    Field: JpInvoiceFooterLine3F1
+
+[Field: JpInvoiceFooterLine3F1]
+    Set As : "   Gold and silver rates are as on the invoice date. Hallmarked metal carries the HUID shown above."
+    Style : JpFontBold
+[Line: JpInvoiceFooterLine4]
+    Field: JpInvoiceFooterLine4F1
+
+[Field: JpInvoiceFooterLine4F1]
+    Set As : "   Exchange is allowed within the shop's published return window against this original invoice."
+    Style : JpFontBold
+[Line: JpInvoiceFooterLine5]
+    Field: JpInvoiceFooterLine5F1
+
+[Field: JpInvoiceFooterLine5F1]
+    Set As : "   This is a computer generated invoice."
+    Style : JpFontBold
+[Line: JpInvoiceFooterLine6]
+    Field: JpInvoiceFooterLine6F1
+
+[Field: JpInvoiceFooterLine6F1]
+    Set As : " "
+    Style : JpFontBold
+[Line: JpInvoiceFooterLine7]
+    Field: JpInvoiceFooterLine7F1
+
+[Field: JpInvoiceFooterLine7F1]
+    Set As : "Customer Signature                                     Authorised Signatory"
+    Style : JpFontBold
+[Line: JpInvoiceFooterLine8]
+    Field: JpInvoiceFooterLine8F1
+
+[Field: JpInvoiceFooterLine8F1]
+    Set As : "--------------------------------------------------------------------------------------"
+    Style : JpFontBold
+[Line: JpInvoiceFooterLine9]
+    Field: JpInvoiceFooterLine9F1
+
+[Field: JpInvoiceFooterLine9F1]
+    Set As : "Thank you for choosing " + ##JwlShopName + "."
+    Style : JpFontBold
+    Align : CENTRE
+[Line: JpInvoiceFooterLine10]
+    Field: JpInvoiceFooterLine10F1
+
+[Field: JpInvoiceFooterLine10F1]
+    Set As : "This is a computer generated invoice and does not require a signature."
+    Style : JpFontBold
+    Align : CENTRE
+
+; [Print: JpInvoicePrint] -> [Form: JpInvoicePrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Paper, Margin-left, Margin-right, Margin-top, Margin-bottom, If (control flow), End (control flow)
+
+[Report: JpInvoicePrintPrintReport]
+    Form : JpInvoicePrint
+    Print : JpInvoicePrint
+    Title : "Jewellery Invoice"
+
+[Form: JpInvoicePrint]
+    Parts : JpInvoiceHeader, JpInvoiceItems, JpInvoiceTotals, JpInvoicePayments, JpInvoiceOldGold, JpInvoiceFooter

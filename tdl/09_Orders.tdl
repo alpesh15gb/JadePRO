@@ -1,0 +1,757 @@
+; =============================================================================
+;  JadePro  ::  09_Orders.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Advance / Custom Order management.
+;            Captures a customer order for a custom design, the advance taken,
+;            the karigar, the promised delivery date and a status that moves
+;            New -> Design Approved -> In Production -> Ready -> Delivered
+;                   (or Cancelled).
+;
+;  ADVANCE LOGIC
+;    Advance is held as a liability in the customer's ledger. When the final
+;    sales invoice is created, the shop enters the order reference in
+;    JwlOrderRef on the Sales voucher and the advance is consumed through
+;    JwlPayAdvance. That keeps both sides in standard Tally ledgers and means
+;    the amount can never be spent twice.
+;
+;  LOAD    : After 00_Core, 03_GoldRate, 04_Sales.
+;  REQUIRES : 00_Core.tdl, 04_Sales.tdl
+; =============================================================================
+
+; =============================================================================
+;  SECTION A - ORDER UDFs
+; =============================================================================
+    ; Label: "Order Number"
+[System: UDF]
+JwlOrdNo : String : 20177
+    ; Label: "Order Customer"
+[System: UDF]
+JwlOrdCust : String : 20178
+    ; Label: "Jewellery Type"
+[System: UDF]
+JwlOrdType : String : 20179
+    ; Label: "Design Reference"
+[System: UDF]
+JwlOrdDesignRef : String : 20180
+    ; Label: "Expected Weight"
+[System: UDF]
+JwlOrdExpWt : Quantity : 20181
+    ; Label: "Order Purity"
+[System: UDF]
+JwlOrdPurity : String : 20182
+    ; Label: "Expected Price"
+[System: UDF]
+JwlOrdExpPrice : Number : 20183
+    ; Label: "Advance Amount"
+[System: UDF]
+JwlOrdAdvance : Number : 20184
+    ; Label: "Advance Balance"
+[System: UDF]
+JwlOrdAdvBalance : Number : 20185
+    ; Label: "Promised Delivery Date"
+[System: UDF]
+JwlOrdDelivDate : Date : 20186
+    ; Label: "Assigned Karigar"
+[System: UDF]
+JwlOrdKarigar : String : 20187
+    ; Label: "Order Status"
+[System: UDF]
+JwlOrdStatus : String : 20188
+    ; Label: "Final Invoice Reference"
+[System: UDF]
+JwlOrdInvRef : String : 20189
+    ; Label: "Order Note"
+[System: UDF]
+JwlOrdNote : String : 20190
+; =============================================================================
+;  SECTION B - ORDER ARITHMETIC AND LIFECYCLE
+; =============================================================================
+
+[Function: JpOrdStatusListAll]
+    Returns: String : Any
+    JpOrdStatusListAll = JpOrderStatusList()
+
+; Estimated price when the customer has not quoted one: expected weight times
+; today's rate for the purity, plus the shop's usual making percentage. The
+; making percentage is DATA (JwlOrdMakePc), never a constant in the code.
+[Function: JpOrdEstimate]
+    Param: vExpWt : Quantity : Optional, vPurity : String : Optional, vQuoted : Number : Optional
+    Returns: Number : Any
+    Var: r : Number, mv : Number, mk : Number
+    If (JpNz(Param(2)) > 0) Then
+    {
+        JpOrdEstimate = JpNz(Param(2))
+        Exit
+    }
+    r = JpRateFor("Gold", Param(1), 0)
+    If (r <= 0) Then
+    {
+        JpOrdEstimate = 0
+        Exit
+    }
+    mv = JpMetalValue(Param(0), r)
+    mk = JpRound(mv * JpOrdMakePc / 100)
+    JpOrdEstimate = JpRound(mv + mk)
+
+; Advance still unspent.
+[Function: JpOrdAdvBalance]
+    Param: vAdvance : Number : Optional, vUsed : Number : Optional
+    Returns: Number : Any
+    Var: a : Number, u : Number
+    a = JpNz(Param(0))
+    u = JpNz(Param(1))
+    If (u > a) Then
+    {
+        JpOrdAdvBalance = 0
+        Exit
+    }
+    JpOrdAdvBalance = JpRound(a - u)
+
+; Can the order move to the next status? Encodes the legal transitions so the
+; shop cannot accidentally skip straight from New to Delivered.
+[Function: JpOrdCanAdvance]
+    Param: vFrom : String : Optional, vTo : String : Optional
+    Returns: Integer : Any
+    Var: a : String, b : String
+    a = JpBlankIfNull(Param(0))
+    b = JpBlankIfNull(Param(1))
+    If (a = "New") Then { If (b = "Design Approved") Then { JpOrdCanAdvance = 1; Exit; } }
+    If (a = "Design Approved") Then { If (b = "In Production") Then { JpOrdCanAdvance = 1; Exit; } }
+    If (a = "Design Approved") Then { If (b = "Cancelled") Then { JpOrdCanAdvance = 1; Exit; } }
+    If (a = "In Production") Then { If (b = "Ready") Then { JpOrdCanAdvance = 1; Exit; } }
+    If (a = "In Production") Then { If (b = "Cancelled") Then { JpOrdCanAdvance = 1; Exit; } }
+    If (a = "Ready") Then { If (b = "Delivered") Then { JpOrdCanAdvance = 1; Exit; } }
+    If (a = "Delivered") Then { If (b = "Delivered") Then { JpOrdCanAdvance = 1; Exit; } }
+    JpOrdCanAdvance = 0
+
+[Function: JpOrdNextStatus]
+    Param: vFrom : String : Optional
+    Returns: String : Any
+    Var: a : String
+    a = JpBlankIfNull(Param(0))
+    If (a = "New") Then { JpOrdNextStatus = "Design Approved"; Exit; }
+    If (a = "Design Approved") Then { JpOrdNextStatus = "In Production"; Exit; }
+    If (a = "In Production") Then { JpOrdNextStatus = "Ready"; Exit; }
+    If (a = "Ready") Then { JpOrdNextStatus = "Delivered"; Exit; }
+    If (a = "Delivered") Then { JpOrdNextStatus = "Delivered"; Exit; }
+    If (a = "Cancelled") Then { JpOrdNextStatus = "Cancelled"; Exit; }
+    JpOrdNextStatus = a
+
+; Overdue orders - promised date has passed and the order is still open.
+[Function: JpOrdOverdue]
+    Param: vDelivDate : Date : Optional, vStatus : String : Optional
+    Returns: Integer : Any
+    If (JpOrderOpen(Param(1)) = 0) Then
+    {
+        JpOrdOverdue = 0
+        Exit
+    }
+    If (Param(0) is null) Then
+    {
+        JpOrdOverdue = 0
+        Exit
+    }
+    If (Param(0) < JpCacheDate) Then
+    {
+        JpOrdOverdue = 1
+        Exit
+    }
+    JpOrdOverdue = 0
+
+[Function: JpOrdValidationText]
+    Returns: String : Any
+    Var: m : String
+    m = ""
+    If (JpBlankIfNull($$JpOrdNo) = "") Then
+    {
+        JpOrdValidationText = "Order Number is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($$JpOrdCust) = "") Then
+    {
+        JpOrdValidationText = "Customer is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($$JpOrdType) = "") Then
+    {
+        JpOrdValidationText = "Jewellery Type is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($$JpOrdPurity) = "") Then
+    {
+        JpOrdValidationText = "Purity is mandatory."
+        Exit
+    }
+    If (JpPurityValid($$JpOrdPurity) = 0) Then
+    {
+        JpOrdValidationText = "Purity '" + JpBlankIfNull($$JpOrdPurity) + "' is not valid."
+        Exit
+    }
+    If (JpWeightValid($$JpOrdExpWt) = 0) Then
+    {
+        JpOrdValidationText = "Expected Weight is mandatory."
+        Exit
+    }
+    If ($$JpOrdAdvance < 0) Then
+    {
+        JpOrdValidationText = "Advance cannot be negative."
+        Exit
+    }
+    If ($$JpOrdAdvance > $$JpOrdExpPrice) Then
+    {
+        JpOrdValidationText = "Advance is MORE than the expected price."
+        Exit
+    }
+    If ($$JpOrdDelivDate is null) Then
+    {
+        JpOrdValidationText = "Promised delivery date is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($$JpOrdStatus) = "") Then
+    {
+        JpOrdValidationText = "Order Status is mandatory."
+        Exit
+    }
+    If ($$JpOrdStatus = "Delivered") Then
+    {
+        If (JpBlankIfNull($$JpOrdInvRef) = "") Then
+        {
+            JpOrdValidationText = "A delivered order must carry the final invoice reference so the advance is adjusted."
+            Exit
+        }
+    }
+    JpOrdValidationText = ""
+
+; =============================================================================
+;  SECTION C - ORDER SCREEN
+; =============================================================================
+[Variable: JpOrdMakePc   : Number]
+[Variable: JpOrdNo        : String]
+[Variable: JpOrdCust      : String]
+[Variable: JpOrdType      : String]
+[Variable: JpOrdDesign    : String]
+[Variable: JpOrdExpWt     : Quantity]
+[Variable: JpOrdPurity    : String]
+[Variable: JpOrdExpPrice  : Number]
+[Variable: JpOrdAdvance   : Number]
+[Variable: JpOrdAdvUsed   : Number]
+[Variable: JpOrdAdvBal    : Number]
+[Variable: JpOrdDelivDt   : Date]
+[Variable: JpOrdKarigarNm : String]
+[Variable: JpOrdStatusTx  : String]
+[Variable: JpOrdInvRefTx  : String]
+[Variable: JpOrdNoteTx    : String]
+[Variable: JpOrdMsg       : String]
+
+[Screen: JpOrderScreen]
+    Caption: "JadePro  ::  Advance / Custom Order"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           ADVANCE  /  CUSTOM ORDER"
+    Style: JpTitle
+    Line Height: 1
+    Text: "New  ->  Design Approved  ->  In Production  ->  Ready  ->  Delivered   (or Cancelled)"
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Text: " ORDER DETAILS"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1, 1
+    Field: <Field-Id: JpOrdNo, Label: "Order Number *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOrdCust, Label: "Customer *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOrdType, Label: "Jewellery Type *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpMetalPick
+    Field: <Field-Id: JpOrdDesign, Label: "Design Reference">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOrdPurity, Label: "Purity *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPurityPick
+    Field: <Field-Id: JpOrdExpWt, Label: "Expected Weight *">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " MONEY"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1, 1
+    Field: <Field-Id: JpOrdExpPrice, Label: "Expected Price">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOrdAdvance, Label: "Advance Amount">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOrdAdvUsed, Label: "Advance Used">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOrdAdvBal, Label: "Advance Balance">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+        Font: Bold
+    Field: <Field-Id: JpOrdDelivDt, Label: "Promised Delivery *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOrdKarigarNm, Label: "Assigned Karigar">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " STATUS"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1
+    Field: <Field-Id: JpOrdStatusTx, Label: "Order Status *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpOrdStatusPick
+    Field: <Field-Id: JpOrdInvRefTx, Label: "Final Invoice Ref (for Delivered)">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOrdNoteTx, Label: "Note">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpOrdMsg, Label: " ">
+        Width: 250
+        Style: JpWarn
+
+    Line: Spacing
+    Lines: 1
+    Button: <Estimate Price (F7), Key: F7, Action: JpOrdCalc>
+    Button: <Advance Status (F8), Key: F8, Action: JpOrdNextStatusAction>
+    Button: <Save Order (F2), Key: F2, Action: JpOrdSave>
+    Button: <Custom Order Register (F4), Key: F4, Action: JpOrdRegister>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+[Collection: Source: JpOrdStatusPick]
+    Data: JpOrdStatusPickRow
+
+[Collection: Data: JpOrdStatusPickRow]
+    Fetch: JpOrdStatusPickFetch
+    Set: JpOrdStatusPickSet
+    Repeat: Over: JpOrdStatusPickRow
+
+[Collection: Data: JpOrdStatusPickFetch]
+    Include: JpOrdStatusPickRow
+
+[Collection: Data: JpOrdStatusPickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpOrdStatusListAll()
+
+; =============================================================================
+;  SECTION D - ACTIONS
+; =============================================================================
+
+[Function: JpOrdCalc]
+    Returns: Integer : Any
+    $$JpOrdExpPrice = JpOrdEstimate($$JpOrdExpWt, $$JpOrdPurity, $$JpOrdExpPrice)
+    $$JpOrdAdvBal = JpOrdAdvBalance($$JpOrdAdvance, $$JpOrdAdvUsed)
+    JpOrdMsg = JpOrdValidationText()
+    JpOrdCalc = 1
+
+[Function: JpOrdNextStatusAction]
+    Returns: Integer : Any
+    Var: nxt : String
+    nxt = JpOrdNextStatus($$JpOrdStatusTx)
+    If (JpOrdCanAdvance($$JpOrdStatusTx, nxt) = 0) Then
+    {
+        JpOrdMsg = "Cannot move from '" + JpBlankIfNull($$JpOrdStatusTx) + "' to '" + nxt + "'."
+        JpOrdNextStatusAction = 0
+        Exit
+    }
+    $$JpOrdStatusTx = nxt
+    JpOrdCalc
+    JpOrdNextStatusAction = 1
+
+[Function: JpOrdSave]
+    Returns: Integer : Any
+    JpOrdCalc
+    If (JpOrdValidationText() <> "") Then
+    {
+        JpOrdSave = 0
+        Exit
+    }
+    Create: Journal
+    Modify Group: JpOrdSaveGroup
+        Add: Field-id: JwlVchKind
+            Set: Value: "Order"
+        Add: Field-id: JwlOrdNo
+            Set: Value: $$JpOrdNo
+        Add: Field-id: JwlOrdCust
+            Set: Value: $$JpOrdCust
+        Add: Field-id: JwlOrdType
+            Set: Value: $$JpOrdType
+        Add: Field-id: JwlOrdDesignRef
+            Set: Value: JpBlankIfNull($$JpOrdDesign)
+        Add: Field-id: JwlOrdExpWt
+            Set: Value: $$JpOrdExpWt
+        Add: Field-id: JwlOrdPurity
+            Set: Value: $$JpOrdPurity
+        Add: Field-id: JwlOrdExpPrice
+            Set: Value: $$JpOrdExpPrice
+        Add: Field-id: JwlOrdAdvance
+            Set: Value: $$JpOrdAdvance
+        Add: Field-id: JwlOrdAdvBalance
+            Set: Value: $$JpOrdAdvBal
+        Add: Field-id: JwlOrdDelivDate
+            Set: Value: $$JpOrdDelivDt
+        Add: Field-id: JwlOrdKarigar
+            Set: Value: JpBlankIfNull($$JpOrdKarigarNm)
+        Add: Field-id: JwlOrdStatus
+            Set: Value: $$JpOrdStatusTx
+        Add: Field-id: JwlOrdInvRef
+            Set: Value: JpBlankIfNull($$JpOrdInvRefTx)
+        Add: Field-id: JwlOrdNote
+            Set: Value: JpBlankIfNull($$JpOrdNoteTx)
+    Accept: JpOrdSaved
+    JpOrdSave = 1
+
+[Function: JpOrdSaved]
+    Returns: Integer : Any
+    JpOrdMsg = "Order " + ##JwlOrdNo + " saved. Status: " + ##JwlOrdStatus + ".  Advance balance " + JpFmtAmt(##JwlOrdAdvBalance) + "."
+    JpOrdSaved = 1
+
+[Function: JpOrdRegister]
+    Returns: Integer : Any
+    If (JpHasRight(JpRtReports()) = 0) Then
+    {
+        JpOrdMsg = JpDeniedMsg
+        JpOrdRegister = 0
+        Exit
+    }
+    Alter: JpOrderRegister
+    JpOrdRegister = 1
+
+; =============================================================================
+;  SECTION E - CUSTOM ORDER REGISTER
+; =============================================================================
+[Collection: Report: JpOrderRegister]
+    Source: JpOrderRegisterSQL
+    Var: JpFromDate, JpToDate, JpOrdStatusFilter
+    Title: <1000,###,#a##"  CUSTOM ORDER REGISTER">
+    Print: JpOrderRegisterPrint
+    Export: JpOrderRegisterExport
+    Key: JpOrderRegisterKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>, <JpOrdStatusFilter, <String, "Status">>
+
+[Variable: JpOrderRegisterSQL : String]
+    Type: String
+    Value: "SELECT * FROM $$JOURNAL$$ WHERE $JwlVchKind$$ = 'Order' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$"
+
+[Variable: JpOrderRegisterKey : String]
+    Type: String
+    Value: "JwlOrdNo"
+
+
+; [Print: JpOrderRegisterPrint] -> [Form: JpOrderRegisterPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpOrderRegisterPrint]
+    Parts : JpOrderRegisterPrintLines
+
+[Part: JpOrderRegisterPrintLines]
+    Lines : Spacing, JpOrderRegisterPrintLine1, JpOrderRegisterPrintLine2, JpOrderRegisterPrintLine3, JpOrderRegisterPrintLine4, JpOrderRegisterPrintLine5, JpOrderRegisterPrintLine6, JpOrderRegisterPrintLine7, JpOrderRegisterPrintLine8, JpOrderRegisterPrintLine9, JpOrderRegisterPrintLine10, JpOrderRegisterPrintLine11, JpOrderRegisterPrintLine12, JpOrderRegisterPrintLine13, JpOrderRegisterPrintLine14, JpOrderRegisterPrintLine15, JpOrderRegisterPrintLine16, JpOrderRegisterPrintLine17, JpOrderRegisterPrintLine18, JpOrderRegisterPrintLine19, JpOrderRegisterPrintLine20, JpOrderRegisterPrintLine21, JpOrderRegisterPrintLine22, JpOrderRegisterPrintLine23, JpOrderRegisterPrintLine24, JpOrderRegisterPrintLine25, JpOrderRegisterPrintLine26, JpOrderRegisterPrintLine27, JpOrderRegisterPrintLine28, JpOrderRegisterPrintLine29, JpOrderRegisterPrintLine30, JpOrderRegisterPrintLine31, JpOrderRegisterPrintLine32, JpOrderRegisterPrintLine33, JpOrderRegisterPrintLine34, JpOrderRegisterPrintLine35, JpOrderRegisterPrintLine36, JpOrderRegisterPrintLine37, JpOrderRegisterPrintLine38, JpOrderRegisterPrintLine39, JpOrderRegisterPrintLine40, JpOrderRegisterPrintLine41, JpOrderRegisterPrintLine42, JpOrderRegisterPrintLine43, JpOrderRegisterPrintLine44, JpOrderRegisterPrintLine45, JpOrderRegisterPrintLine46, JpOrderRegisterPrintLine47, JpOrderRegisterPrintLine48, JpOrderRegisterPrintLine49, JpOrderRegisterPrintLine50, JpOrderRegisterPrintLine51, JpOrderRegisterPrintLine52, JpOrderRegisterPrintLine53, JpOrderRegisterPrintLine54, JpOrderRegisterPrintLine55
+
+[Line: JpOrderRegisterPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpOrderRegisterPrintLine2]
+    Field: JpOrderRegisterPrintLine2F1
+
+[Field: JpOrderRegisterPrintLine2F1]
+    Set As : Upr(##JwlShopName) + "   -   Customer Orders"
+    Style : JpFontBold
+[Line: JpOrderRegisterPrintLine3]
+    Field: JpOrderRegisterPrintLine3F1
+
+[Field: JpOrderRegisterPrintLine3F1]
+    Set As : "From " + JpFmtDate($$JpFromDate) + "   To " + JpFmtDate($$JpToDate)
+[Line: JpOrderRegisterPrintLine4]
+    Field: JpOrderRegisterPrintLine4F1
+
+[Field: JpOrderRegisterPrintLine4F1]
+    Set As : "Order No"
+[Line: JpOrderRegisterPrintLine5]
+    Field: JpOrderRegisterPrintLine5F1
+
+[Field: JpOrderRegisterPrintLine5F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine6]
+    Field: JpOrderRegisterPrintLine6F1
+
+[Field: JpOrderRegisterPrintLine6F1]
+    Set As : "Customer"
+[Line: JpOrderRegisterPrintLine7]
+    Field: JpOrderRegisterPrintLine7F1
+
+[Field: JpOrderRegisterPrintLine7F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine8]
+    Field: JpOrderRegisterPrintLine8F1
+
+[Field: JpOrderRegisterPrintLine8F1]
+    Set As : "Type"
+[Line: JpOrderRegisterPrintLine9]
+    Field: JpOrderRegisterPrintLine9F1
+
+[Field: JpOrderRegisterPrintLine9F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine10]
+    Field: JpOrderRegisterPrintLine10F1
+
+[Field: JpOrderRegisterPrintLine10F1]
+    Set As : "Design"
+[Line: JpOrderRegisterPrintLine11]
+    Field: JpOrderRegisterPrintLine11F1
+
+[Field: JpOrderRegisterPrintLine11F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine12]
+    Field: JpOrderRegisterPrintLine12F1
+
+[Field: JpOrderRegisterPrintLine12F1]
+    Set As : "Purity"
+[Line: JpOrderRegisterPrintLine13]
+    Field: JpOrderRegisterPrintLine13F1
+
+[Field: JpOrderRegisterPrintLine13F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine14]
+    Field: JpOrderRegisterPrintLine14F1
+
+[Field: JpOrderRegisterPrintLine14F1]
+    Set As : "Exp Wt"
+[Line: JpOrderRegisterPrintLine15]
+    Field: JpOrderRegisterPrintLine15F1
+
+[Field: JpOrderRegisterPrintLine15F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine16]
+    Field: JpOrderRegisterPrintLine16F1
+
+[Field: JpOrderRegisterPrintLine16F1]
+    Set As : "Expected"
+[Line: JpOrderRegisterPrintLine17]
+    Field: JpOrderRegisterPrintLine17F1
+
+[Field: JpOrderRegisterPrintLine17F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine18]
+    Field: JpOrderRegisterPrintLine18F1
+
+[Field: JpOrderRegisterPrintLine18F1]
+    Set As : "Advance"
+[Line: JpOrderRegisterPrintLine19]
+    Field: JpOrderRegisterPrintLine19F1
+
+[Field: JpOrderRegisterPrintLine19F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine20]
+    Field: JpOrderRegisterPrintLine20F1
+
+[Field: JpOrderRegisterPrintLine20F1]
+    Set As : "Bal"
+[Line: JpOrderRegisterPrintLine21]
+    Field: JpOrderRegisterPrintLine21F1
+
+[Field: JpOrderRegisterPrintLine21F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine22]
+    Field: JpOrderRegisterPrintLine22F1
+
+[Field: JpOrderRegisterPrintLine22F1]
+    Set As : "Delivery"
+[Line: JpOrderRegisterPrintLine23]
+    Field: JpOrderRegisterPrintLine23F1
+
+[Field: JpOrderRegisterPrintLine23F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine24]
+    Field: JpOrderRegisterPrintLine24F1
+
+[Field: JpOrderRegisterPrintLine24F1]
+    Set As : "Status"
+[Line: JpOrderRegisterPrintLine25]
+    Field: JpOrderRegisterPrintLine25F1
+
+[Field: JpOrderRegisterPrintLine25F1]
+    Style : JpGridHead
+[Line: JpOrderRegisterPrintLine26]
+    Field: JpOrderRegisterPrintLine26F1
+
+[Field: JpOrderRegisterPrintLine26F1]
+    Set As : $JwlOrdNo
+[Line: JpOrderRegisterPrintLine27]
+    Field: JpOrderRegisterPrintLine27F1
+
+[Field: JpOrderRegisterPrintLine27F1]
+    Style : JpGrid
+[Line: JpOrderRegisterPrintLine28]
+    Field: JpOrderRegisterPrintLine28F1
+
+[Field: JpOrderRegisterPrintLine28F1]
+    Set As : $JwlOrdCust
+[Line: JpOrderRegisterPrintLine29]
+    Field: JpOrderRegisterPrintLine29F1
+
+[Field: JpOrderRegisterPrintLine29F1]
+    Style : JpGrid
+[Line: JpOrderRegisterPrintLine30]
+    Field: JpOrderRegisterPrintLine30F1
+
+[Field: JpOrderRegisterPrintLine30F1]
+    Set As : $JwlOrdType
+[Line: JpOrderRegisterPrintLine31]
+    Field: JpOrderRegisterPrintLine31F1
+
+[Field: JpOrderRegisterPrintLine31F1]
+    Style : JpGrid
+[Line: JpOrderRegisterPrintLine32]
+    Field: JpOrderRegisterPrintLine32F1
+
+[Field: JpOrderRegisterPrintLine32F1]
+    Set As : $JwlOrdDesignRef
+[Line: JpOrderRegisterPrintLine33]
+    Field: JpOrderRegisterPrintLine33F1
+
+[Field: JpOrderRegisterPrintLine33F1]
+    Style : JpGrid
+[Line: JpOrderRegisterPrintLine34]
+    Field: JpOrderRegisterPrintLine34F1
+
+[Field: JpOrderRegisterPrintLine34F1]
+    Set As : $JwlOrdPurity
+[Line: JpOrderRegisterPrintLine35]
+    Field: JpOrderRegisterPrintLine35F1
+
+[Field: JpOrderRegisterPrintLine35F1]
+    Style : JpGrid
+[Line: JpOrderRegisterPrintLine36]
+    Field: JpOrderRegisterPrintLine36F1
+
+[Field: JpOrderRegisterPrintLine36F1]
+    Set As : $JwlOrdExpWt
+[Line: JpOrderRegisterPrintLine37]
+    Field: JpOrderRegisterPrintLine37F1
+
+[Field: JpOrderRegisterPrintLine37F1]
+    Style : JpWeight
+[Line: JpOrderRegisterPrintLine38]
+    Field: JpOrderRegisterPrintLine38F1
+
+[Field: JpOrderRegisterPrintLine38F1]
+    Set As : $JwlOrdExpPrice
+[Line: JpOrderRegisterPrintLine39]
+    Field: JpOrderRegisterPrintLine39F1
+
+[Field: JpOrderRegisterPrintLine39F1]
+    Style : JpMoney
+[Line: JpOrderRegisterPrintLine40]
+    Field: JpOrderRegisterPrintLine40F1
+
+[Field: JpOrderRegisterPrintLine40F1]
+    Set As : $JwlOrdAdvance
+[Line: JpOrderRegisterPrintLine41]
+    Field: JpOrderRegisterPrintLine41F1
+
+[Field: JpOrderRegisterPrintLine41F1]
+    Style : JpMoney
+[Line: JpOrderRegisterPrintLine42]
+    Field: JpOrderRegisterPrintLine42F1
+
+[Field: JpOrderRegisterPrintLine42F1]
+    Set As : $JwlOrdAdvBalance
+[Line: JpOrderRegisterPrintLine43]
+    Field: JpOrderRegisterPrintLine43F1
+
+[Field: JpOrderRegisterPrintLine43F1]
+    Style : JpMoneyBold
+[Line: JpOrderRegisterPrintLine44]
+    Field: JpOrderRegisterPrintLine44F1
+
+[Field: JpOrderRegisterPrintLine44F1]
+    Set As : $JwlOrdDelivDate
+[Line: JpOrderRegisterPrintLine45]
+    Field: JpOrderRegisterPrintLine45F1
+
+[Field: JpOrderRegisterPrintLine45F1]
+    Style : JpGrid
+[Line: JpOrderRegisterPrintLine46]
+    Field: JpOrderRegisterPrintLine46F1
+
+[Field: JpOrderRegisterPrintLine46F1]
+    Set As : $JwlOrdStatus
+[Line: JpOrderRegisterPrintLine47]
+    Field: JpOrderRegisterPrintLine47F1
+
+[Field: JpOrderRegisterPrintLine47F1]
+    Style : JpGrid
+[Line: JpOrderRegisterPrintLine48]
+    Field: JpOrderRegisterPrintLine48F1
+
+[Field: JpOrderRegisterPrintLine48F1]
+    Set As : "TOTAL"
+[Line: JpOrderRegisterPrintLine49]
+    Field: JpOrderRegisterPrintLine49F1
+
+[Field: JpOrderRegisterPrintLine49F1]
+    Style : JpTotal
+[Line: JpOrderRegisterPrintLine50]
+    Field: JpOrderRegisterPrintLine50F1
+
+[Field: JpOrderRegisterPrintLine50F1]
+    Set As : Sum($JwlOrdExpPrice)
+[Line: JpOrderRegisterPrintLine51]
+    Field: JpOrderRegisterPrintLine51F1
+
+[Field: JpOrderRegisterPrintLine51F1]
+    Style : JpTotal
+[Line: JpOrderRegisterPrintLine52]
+    Field: JpOrderRegisterPrintLine52F1
+
+[Field: JpOrderRegisterPrintLine52F1]
+    Set As : Sum($JwlOrdAdvance)
+[Line: JpOrderRegisterPrintLine53]
+    Field: JpOrderRegisterPrintLine53F1
+
+[Field: JpOrderRegisterPrintLine53F1]
+    Style : JpTotal
+[Line: JpOrderRegisterPrintLine54]
+    Field: JpOrderRegisterPrintLine54F1
+
+[Field: JpOrderRegisterPrintLine54F1]
+    Set As : Sum($JwlOrdAdvBalance)
+[Line: JpOrderRegisterPrintLine55]
+    Field: JpOrderRegisterPrintLine55F1
+
+[Field: JpOrderRegisterPrintLine55F1]
+    Style : JpTotal
+[Export: JpOrderRegisterExport]
+    Title: <1000, "Custom Order Register">
+    Repeat: Over: JpOrderRegister
+    Export Title: Detail
+    Export: Value: $JwlOrdNo
+    Export: Value: $JwlOrdCust
+    Export: Value: $JwlOrdType
+    Export: Value: $JwlOrdExpWt
+    Export: Value: $JwlOrdExpPrice
+    Export: Value: $JwlOrdAdvance
+    Export: Value: $JwlOrdAdvBalance
+    Export: Value: $JwlOrdDelivDate
+    Export: Value: $JwlOrdStatus

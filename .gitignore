@@ -1,0 +1,16 @@
+# Machine-local tooling state (session UUID, editor scratch)
+.freebuff/
+
+# Pre-migration snapshot of tdl/ - regenerable, and it would go stale
+# immediately, making it a misleading second source of truth.
+.tdl-backup/
+
+# Runtime logs written by Tally Prime / the compile oracle
+*.log
+00_Build/logs/
+
+# Editor / OS noise
+Thumbs.db
+desktop.ini
+*.tmp
+*.bak

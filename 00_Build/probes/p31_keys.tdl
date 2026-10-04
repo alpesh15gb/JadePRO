@@ -1,0 +1,4 @@
+; p31 - Is [Keys:] a definition type? JadePro has 3 of them.
+; If it fails, menu accelerators move into the [Menu:] Item entries.
+[Keys: ZzP31Keys]
+    ZzP31Item  : Ctrl + A

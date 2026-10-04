@@ -1,0 +1,5 @@
+; P09  $$UPCurrentUser symbol used inside a Function
+[Function: ZzP09Fn]
+    Type: String
+    Returns: String
+    ZzP09Fn = $$UPCurrentUser

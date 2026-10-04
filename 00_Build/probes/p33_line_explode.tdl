@@ -1,0 +1,28 @@
+; p33 - Line attributes for nesting and repetition. JadePro has 22 invented
+; `Part Name:` attributes on a Line; the documented way to nest is Explode.
+[Report: ZzP33Report]
+    Form : ZzP33Form
+
+[Form: ZzP33Form]
+    Parts : ZzP33Part
+
+[Part: ZzP33Part]
+    Lines : ZzP33Outer
+    Scroll : Vertical
+
+[Line: ZzP33Outer]
+    Field : ZzP33OuterField
+    Explode : ZzP33Inner : Yes
+
+[Field: ZzP33OuterField]
+    Set As : "outer"
+
+[Part: ZzP33Inner]
+    Lines : ZzP33InnerLine
+
+[Line: ZzP33InnerLine]
+    Field : ZzP33InnerField
+    Indent : 2
+
+[Field: ZzP33InnerField]
+    Set As : "inner"

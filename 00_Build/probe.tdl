@@ -1,0 +1,109 @@
+; =============================================================================
+;  probe.tdl  -  ISOLATE THE UNPROVEN CONSTRUCTS
+; -----------------------------------------------------------------------------
+;  WHY THIS FILE EXISTS
+;    Tally stops at the FIRST error. JadePro.tdl is 11,619 lines, so every
+;    reload reveals exactly one problem and each cycle costs a full manual
+;    load. This file packs the constructs I could NOT confirm in the official
+;    TDL Reference into one tiny file, ordered so the least certain comes
+;    first. Load it, read the error, and delete or fix that one block - the
+;    next error then surfaces immediately.
+;
+;    Each block below is something I INVENTED rather than found in the docs.
+;    Nothing here is referenced by JadePro.tdl; it is a diagnostic only.
+;
+;  HOW TO USE
+;    F11 -> Manage TDL Functions -> Create New Function -> Load -> probe.tdl
+;    Read the reported line. That line identifies which block is wrong.
+; =============================================================================
+
+
+; -----------------------------------------------------------------------------
+; PROBE 1 - Is `[Print: <name>]` a real TDL definition?
+;   The Reference documents no Print definition; it shows `Print:` as an
+;   ATTRIBUTE of a Report that names an existing part/print layout.
+;   My code declares 35 `[Print: ...]` blocks. If this probe fails, all 35
+;   must become Report attributes or be dropped.
+; -----------------------------------------------------------------------------
+[Print: JpProbePrint]
+    Title: <1000, "Probe">
+    Paper: 232 x 140
+    Margin-right: 10
+    Lines: 1, 1
+    Text: "probe"
+    Font: BOLD
+    Height: 10
+
+
+; -----------------------------------------------------------------------------
+; PROBE 2 - Is `[Export: <name>]` a real TDL definition, with `Export: Value:`?
+;   THIS IS THE BIG ONE. The Zebra CSV export depends entirely on it, and TDL
+;   cannot write files to disk. Tally does have an "Export Report" feature,
+;   but no Reference page shows its TDL syntax.
+;   If this fails, the Zebra workflow needs redesign, not a syntax patch.
+; -----------------------------------------------------------------------------
+[Export: JpProbeExport]
+    Title: <1000, "Probe">
+    Repeat: Over: JpProbeColl
+    Export: Value: $Name
+
+
+; -----------------------------------------------------------------------------
+; PROBE 3 - Is `[Keys: <name>]` a real TDL definition?
+;   My code declares 3 of these with an `Action:` line.
+; -----------------------------------------------------------------------------
+[Keys: JpProbeKeys]
+    Action: <Key-Id: F7, Display: JpProbeReport>
+
+
+; -----------------------------------------------------------------------------
+; PROBE 4 - `Set as : $Name` reads an object field with a single `$`.
+;   This is the form the Reference uses, and matches the UDF prefix fix.
+; -----------------------------------------------------------------------------
+[Collection: Data: JpProbeColl]
+    Type: Item
+    Var: JpProbeName
+
+
+; -----------------------------------------------------------------------------
+; PROBE 5 - Does `$$UPCurrentUser` resolve the signed-in Tally user?
+;   My security module depends on it to map users to roles.
+; -----------------------------------------------------------------------------
+[Function: JpProbeUser]
+    Returns: String : Any
+    JpProbeUser = $$UPCurrentUser
+
+
+; -----------------------------------------------------------------------------
+; PROBE 6 - Does the SQL collection form work?
+;   JadePro's 49 reports are built on it.
+; -----------------------------------------------------------------------------
+[Collection: Report: JpProbeColl]
+    Source: JpProbeCollSrc
+
+
+[Collection: Source: JpProbeCollSrc]
+    Value: "SELECT $$NAME$$ AS ProbeName FROM $$ITEMS$$"
+
+
+; -----------------------------------------------------------------------------
+; PROBE 7 - A minimal Report, to confirm the base object model is sound.
+; -----------------------------------------------------------------------------
+[Report: JpProbeReport]
+    Source: JpProbeColl
+    Title: <1000, "Probe">
+    Layout: JpProbePrint
+
+[Form: JpProbeReport]
+    Part: JpProbePart
+
+[Part: JpProbePart]
+    Line: JpProbeLine
+
+[Line: JpProbeLine]
+    Field: JpProbeField
+
+[Field: JpProbeField]
+    Use: Name Field
+    Variable: JpProbeName
+    Display: JpProbeReport : ##IsEmpty:$Name

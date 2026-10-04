@@ -1,0 +1,8 @@
+; P01  Alter: UNBRACKETED, one arg  <- the original pre-bracketing form
+Alter: Company
+    Add: Field
+        Field-id: ZzP01Chk
+        Label: "P01"
+        Type: Logical
+        Value: No
+        Width: 100

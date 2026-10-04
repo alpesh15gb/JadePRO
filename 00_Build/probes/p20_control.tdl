@@ -1,0 +1,17 @@
+; p20 - CONTROL. The canonical Report -> Form -> Part -> Line -> Field chain.
+; Must be Loaded. If this fails the suite is mis-built and nothing else counts.
+[Report: ZzP20Report]
+    Form: ZzP20Form
+    Title: "ZzP20 Control"
+
+[Form: ZzP20Form]
+    Parts: ZzP20Part
+
+[Part: ZzP20Part]
+    Lines: ZzP20Line
+
+[Line: ZzP20Line]
+    Field: ZzP20Field
+
+[Field: ZzP20Field]
+    Set As : "control"

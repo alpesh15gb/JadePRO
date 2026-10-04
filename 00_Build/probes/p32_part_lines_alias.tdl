@@ -1,0 +1,23 @@
+; p32 - `Lines:` is an alias for `Line:` and takes NAMES, never a count.
+; The original JadePro wrote `Lines: 1, 1, 1` in 34 layouts.
+[Report: ZzP32Report]
+    Form : ZzP32Form
+
+[Form: ZzP32Form]
+    Parts : ZzP32Part
+
+[Part: ZzP32Part]
+    Lines : ZzP32LineA, ZzP32LineB
+    Scroll : Vertical
+
+[Line: ZzP32LineA]
+    Field : ZzP32FieldA
+
+[Field: ZzP32FieldA]
+    Set As : "A"
+
+[Line: ZzP32LineB]
+    Field : ZzP32FieldB
+
+[Field: ZzP32FieldB]
+    Set As : "B"

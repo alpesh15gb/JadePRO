@@ -1,0 +1,757 @@
+; =============================================================================
+;  JadePro  ::  10_Repairs.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Jewellery Repair management.
+;            Received -> Sent to Karigar -> Repairing -> Ready -> Delivered
+;
+;  WEIGHT DISCIPLINE
+;    A repair does NOT change stock. The gross weight is captured only so that
+;    the karigar's metal accountability is complete, and the repair voucher is
+;    a journal tagged JwlVchKind = "Repair" - never a Sales or Purchase, so
+;    Tally's inventory is untouched.
+;
+;  LOAD    : After 00_Core, 04_Sales.
+;  REQUIRES : 00_Core.tdl, 04_Sales.tdl
+; =============================================================================
+
+; =============================================================================
+;  SECTION A - REPAIR UDFs
+; =============================================================================
+    ; Label: "Repair Number"
+[System: UDF]
+JwlRepNo : String : 20191
+    ; Label: "Repair Customer"
+[System: UDF]
+JwlRepCust : String : 20192
+    ; Label: "Customer Contact"
+[System: UDF]
+JwlRepContact : String : 20193
+    ; Label: "Jewellery Description"
+[System: UDF]
+JwlRepDesc : String : 20194
+    ; Label: "Metal Type"
+[System: UDF]
+JwlRepMetal : String : 20195
+    ; Label: "Purity"
+[System: UDF]
+JwlRepPurity : String : 20196
+    ; Label: "Gross Weight"
+[System: UDF]
+JwlRepGrossWt : Quantity : 20197
+    ; Label: "Stone Weight"
+[System: UDF]
+JwlRepStoneWt : Quantity : 20198
+    ; Label: "Net Weight"
+[System: UDF]
+JwlRepNetWt : Quantity : 20199
+    ; Label: "Stone Details"
+[System: UDF]
+JwlRepStoneDetail : String : 20200
+    ; Label: "Repair Work Required"
+[System: UDF]
+JwlRepWork : String : 20201
+    ; Label: "Sent To Karigar"
+[System: UDF]
+JwlRepKarigar : String : 20202
+    ; Label: "Estimated Amount"
+[System: UDF]
+JwlRepEstAmt : Number : 20203
+    ; Label: "Advance Taken"
+[System: UDF]
+JwlRepAdvance : Number : 20204
+    ; Label: "Balance Payable"
+[System: UDF]
+JwlRepBalance : Number : 20205
+    ; Label: "Expected Delivery"
+[System: UDF]
+JwlRepDelivDate : Date : 20206
+    ; Label: "Repair Status"
+[System: UDF]
+JwlRepStatus : String : 20207
+    ; Label: "Received Date"
+[System: UDF]
+JwlRepRecvDate : Date : 20208
+; =============================================================================
+;  SECTION B - ARITHMETIC AND LIFECYCLE
+; =============================================================================
+[Function: JpRepNet]
+    Param: vGross : Quantity : Optional, vStone : Quantity : Optional
+    Returns: Quantity : Any
+    JpRepNet = JpNetWeight(Param(0), Param(1))
+
+[Function: JpRepBalanceDue]
+    Param: vEstimated : Number : Optional, vAdvance : Number : Optional
+    Returns: Number : Any
+    Var: e : Number, a : Number
+    e = JpNz(Param(0))
+    a = JpNz(Param(1))
+    If (a > e) Then
+    {
+        JpRepBalanceDue = 0
+        Exit
+    }
+    JpRepBalanceDue = JpRound(e - a)
+
+[Function: JpRepCanAdvance]
+    Param: vFrom : String : Optional, vTo : String : Optional
+    Returns: Integer : Any
+    Var: a : String, b : String
+    a = JpBlankIfNull(Param(0))
+    b = JpBlankIfNull(Param(1))
+    If (a = "Received") Then { If (b = "Sent to Karigar") Then { JpRepCanAdvance = 1; Exit; } }
+    If (a = "Sent to Karigar") Then { If (b = "Repairing") Then { JpRepCanAdvance = 1; Exit; } }
+    If (a = "Sent to Karigar") Then { If (b = "Ready") Then { JpRepCanAdvance = 1; Exit; } }
+    If (a = "Repairing") Then { If (b = "Ready") Then { JpRepCanAdvance = 1; Exit; } }
+    If (a = "Ready") Then { If (b = "Delivered") Then { JpRepCanAdvance = 1; Exit; } }
+    If (a = "Delivered") Then { If (b = "Delivered") Then { JpRepCanAdvance = 1; Exit; } }
+    JpRepCanAdvance = 0
+
+[Function: JpRepNextStatus]
+    Param: vFrom : String : Optional
+    Returns: String : Any
+    Var: a : String
+    a = JpBlankIfNull(Param(0))
+    If (a = "Received") Then { JpRepNextStatus = "Sent to Karigar"; Exit; }
+    If (a = "Sent to Karigar") Then { JpRepNextStatus = "Repairing"; Exit; }
+    If (a = "Repairing") Then { JpRepNextStatus = "Ready"; Exit; }
+    If (a = "Ready") Then { JpRepNextStatus = "Delivered"; Exit; }
+    If (a = "Delivered") Then { JpRepNextStatus = "Delivered"; Exit; }
+    JpRepNextStatus = a
+
+[Function: JpRepOverdue]
+    Param: vDelivDate : Date : Optional, vStatus : String : Optional
+    Returns: Integer : Any
+    If (JpRepairOpen(Param(1)) = 0) Then
+    {
+        JpRepOverdue = 0
+        Exit
+    }
+    If (Param(0) is null) Then
+    {
+        JpRepOverdue = 0
+        Exit
+    }
+    If (Param(0) < JpCacheDate) Then
+    {
+        JpRepOverdue = 1
+        Exit
+    }
+    JpRepOverdue = 0
+
+[Function: JpRepValidationText]
+    Returns: String : Any
+    If (JpBlankIfNull($$JpRepNo) = "") Then
+    {
+        JpRepValidationText = "Repair Number is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($$JpRepCust) = "") Then
+    {
+        JpRepValidationText = "Customer is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($$JpRepDesc) = "") Then
+    {
+        JpRepValidationText = "Jewellery Description is mandatory - the counter staff must be able to identify the piece."
+        Exit
+    }
+    If (JpBlankIfNull($$JpRepWork) = "") Then
+    {
+        JpRepValidationText = "Repair Work is mandatory."
+        Exit
+    }
+    If (JpPurityValid($$JpRepPurity) = 0) Then
+    {
+        JpRepValidationText = "Purity '" + JpBlankIfNull($$JpRepPurity) + "' is not valid."
+        Exit
+    }
+    If (JpWeightValid($$JpRepGrossWt) = 0) Then
+    {
+        JpRepValidationText = "Gross Weight of the piece is mandatory."
+        Exit
+    }
+    If ($$JpRepNet <= 0) Then
+    {
+        JpRepValidationText = "Stone weight is greater than or equal to gross weight."
+        Exit
+    }
+    If ($$JpRepEstAmt < 0) Then
+    {
+        JpRepValidationText = "Estimated amount cannot be negative."
+        Exit
+    }
+    If ($$JpRepAdvance < 0) Then
+    {
+        JpRepValidationText = "Advance cannot be negative."
+        Exit
+    }
+    If ($$JpRepAdvance > $$JpRepEstAmt) Then
+    {
+        JpRepValidationText = "Advance is MORE than the estimated amount."
+        Exit
+    }
+    If ($$JpRepDelivDate is null) Then
+    {
+        JpRepValidationText = "Expected delivery date is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($$JpRepStatus) = "") Then
+    {
+        JpRepValidationText = "Repair Status is mandatory."
+        Exit
+    }
+    If ($$JpRepStatus = "Delivered") Then
+    {
+        If ($$JpRepBalance > 0.01) Then
+        {
+            JpRepValidationText = "Cannot deliver with a balance of " + JpFmtAmt($$JpRepBalance) + " still outstanding."
+            Exit
+        }
+    }
+    JpRepValidationText = ""
+
+; =============================================================================
+;  SECTION C - REPAIR SCREEN
+; =============================================================================
+[Variable: JpRepNo        : String]
+[Variable: JpRepCustNm    : String]
+[Variable: JpRepContactNm : String]
+[Variable: JpRepDescTx    : String]
+[Variable: JpRepMetal     : String]
+[Variable: JpRepPurity    : String]
+[Variable: JpRepGrossWt   : Quantity]
+[Variable: JpRepStoneWt   : Quantity]
+[Variable: JpRepNetWt     : Quantity]
+[Variable: JpRepStoneDet  : String]
+[Variable: JpRepWorkTx    : String]
+[Variable: JpRepKarigarNm : String]
+[Variable: JpRepEstAmt    : Number]
+[Variable: JpRepAdvance   : Number]
+[Variable: JpRepBalance   : Number]
+[Variable: JpRepDelivDt   : Date]
+[Variable: JpRepStatusTx  : String]
+[Variable: JpRepMsg       : String]
+
+[Screen: JpRepairScreen]
+    Caption: "JadePro  ::  Jewellery Repair"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           JEWELLERY REPAIR"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Received  ->  Sent to Karigar  ->  Repairing  ->  Ready  ->  Delivered"
+    Style: JpSub
+    Text: "Repairs never change stock - only the karigar's metal accountability is affected."
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Text: " CUSTOMER  AND  PIECE"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1, 1
+    Field: <Field-Id: JpRepNo, Label: "Repair Number *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRepCustNm, Label: "Customer *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRepContactNm, Label: "Contact Number">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRepDescTx, Label: "Jewellery Description *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRepMetal, Label: "Metal Type">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpMetalPick
+    Field: <Field-Id: JpRepPurity, Label: "Purity *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPurityPick
+
+    Line: Spacing
+    Lines: 1
+    Text: " WEIGHTS  AND  STONES"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1, 1
+    Field: <Field-Id: JpRepGrossWt, Label: "Gross Weight *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRepStoneWt, Label: "Stone Weight">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRepNetWt, Label: "Net Weight">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+    Field: <Field-Id: JpRepStoneDet, Label: "Stone Details">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " WORK  AND  MONEY"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1, 1
+    Field: <Field-Id: JpRepWorkTx, Label: "Repair Work *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRepKarigarNm, Label: "Sent To Karigar">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRepEstAmt, Label: "Estimated Amount *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRepAdvance, Label: "Advance">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRepBalance, Label: "Balance Payable">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+        Font: Bold
+    Field: <Field-Id: JpRepDelivDt, Label: "Expected Delivery *">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " STATUS"
+    Style: JpSectionBox
+    Lines: 1, 1
+    Field: <Field-Id: JpRepStatusTx, Label: "Repair Status *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpRepStatusPick
+    Field: <Field-Id: JpRepMsg, Label: " ">
+        Width: 250
+        Style: JpWarn
+
+    Line: Spacing
+    Lines: 1
+    Button: <Recalculate (F7), Key: F7, Action: JpRepCalc>
+    Button: <Advance Status (F8), Key: F8, Action: JpRepNextStatusAction>
+    Button: <Save Repair (F2), Key: F2, Action: JpRepSave>
+    Button: <Repair Register (F4), Key: F4, Action: JpRepRegister>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+[Collection: Source: JpRepStatusPick]
+    Data: JpRepStatusPickRow
+
+[Collection: Data: JpRepStatusPickRow]
+    Fetch: JpRepStatusPickFetch
+    Set: JpRepStatusPickSet
+    Repeat: Over: JpRepStatusPickRow
+
+[Collection: Data: JpRepStatusPickFetch]
+    Include: JpRepStatusPickRow
+
+[Collection: Data: JpRepStatusPickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpRepairStatusList()
+
+; =============================================================================
+;  SECTION D - ACTIONS
+; =============================================================================
+[Function: JpRepCalc]
+    Returns: Integer : Any
+    $$JpRepNetWt = JpRepNet($$JpRepGrossWt, $$JpRepStoneWt)
+    $$JpRepBalance = JpRepBalanceDue($$JpRepEstAmt, $$JpRepAdvance)
+    JpRepMsg = JpRepValidationText()
+    JpRepCalc = 1
+
+[Function: JpRepNextStatusAction]
+    Returns: Integer : Any
+    Var: nxt : String
+    nxt = JpRepNextStatus($$JpRepStatusTx)
+    If (JpRepCanAdvance($$JpRepStatusTx, nxt) = 0) Then
+    {
+        JpRepMsg = "Cannot move from '" + JpBlankIfNull($$JpRepStatusTx) + "' to '" + nxt + "'."
+        JpRepNextStatusAction = 0
+        Exit
+    }
+    $$JpRepStatusTx = nxt
+    JpRepCalc
+    JpRepNextStatusAction = 1
+
+[Function: JpRepSave]
+    Returns: Integer : Any
+    JpRepCalc
+    If (JpRepValidationText() <> "") Then
+    {
+        JpRepSave = 0
+        Exit
+    }
+    Create: Journal
+    Modify Group: JpRepSaveGroup
+        Add: Field-id: JwlVchKind
+            Set: Value: "Repair"
+        Add: Field-id: JwlRepNo
+            Set: Value: $$JpRepNo
+        Add: Field-id: JwlRepCust
+            Set: Value: $$JpRepCustNm
+        Add: Field-id: JwlRepContact
+            Set: Value: JpBlankIfNull($$JpRepContactNm)
+        Add: Field-id: JwlRepDesc
+            Set: Value: $$JpRepDescTx
+        Add: Field-id: JwlRepMetal
+            Set: Value: JpBlankIfNull($$JpRepMetal)
+        Add: Field-id: JwlRepPurity
+            Set: Value: $$JpRepPurity
+        Add: Field-id: JwlRepGrossWt
+            Set: Value: $$JpRepGrossWt
+        Add: Field-id: JwlRepStoneWt
+            Set: Value: $$JpRepStoneWt
+        Add: Field-id: JwlRepNetWt
+            Set: Value: $$JpRepNetWt
+        Add: Field-id: JwlRepStoneDetail
+            Set: Value: JpBlankIfNull($$JpRepStoneDet)
+        Add: Field-id: JwlRepWork
+            Set: Value: $$JpRepWorkTx
+        Add: Field-id: JwlRepKarigar
+            Set: Value: JpBlankIfNull($$JpRepKarigarNm)
+        Add: Field-id: JwlRepEstAmt
+            Set: Value: $$JpRepEstAmt
+        Add: Field-id: JwlRepAdvance
+            Set: Value: $$JpRepAdvance
+        Add: Field-id: JwlRepBalance
+            Set: Value: $$JpRepBalance
+        Add: Field-id: JwlRepDelivDate
+            Set: Value: $$JpRepDelivDt
+        Add: Field-id: JwlRepStatus
+            Set: Value: $$JpRepStatusTx
+        Add: Field-id: JwlRepRecvDate
+            Set: Value: JpBlankIfNull(JpCacheDate)
+    Accept: JpRepSaved
+    JpRepSave = 1
+
+[Function: JpRepSaved]
+    Returns: Integer : Any
+    JpRepMsg = "Repair " + ##JwlRepNo + " saved. Status: " + ##JwlRepStatus + ".  Balance " + JpFmtAmt(##JwlRepBalance) + "."
+    JpRepSaved = 1
+
+[Function: JpRepRegister]
+    Returns: Integer : Any
+    If (JpHasRight(JpRtReports()) = 0) Then
+    {
+        JpRepMsg = JpDeniedMsg
+        JpRepRegister = 0
+        Exit
+    }
+    Alter: JpRepairRegister
+    JpRepRegister = 1
+
+; =============================================================================
+;  SECTION E - REPAIR REGISTER
+; =============================================================================
+[Collection: Report: JpRepairRegister]
+    Source: JpRepairRegisterSQL
+    Var: JpFromDate, JpToDate, JpRepStatusFilter
+    Title: <1000,###,#a##"  JEWELLERY REPAIR REGISTER">
+    Print: JpRepairRegisterPrint
+    Export: JpRepairRegisterExport
+    Key: JpRepairRegisterKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>, <JpRepStatusFilter, <String, "Status">>
+
+[Variable: JpRepairRegisterSQL : String]
+    Type: String
+    Value: "SELECT * FROM $$JOURNAL$$ WHERE $JwlVchKind$$ = 'Repair' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$"
+
+[Variable: JpRepairRegisterKey : String]
+    Type: String
+    Value: "JwlRepNo"
+
+
+; [Print: JpRepairRegisterPrint] -> [Form: JpRepairRegisterPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpRepairRegisterPrint]
+    Parts : JpRepairRegisterPrintLines
+
+[Part: JpRepairRegisterPrintLines]
+    Lines : Spacing, JpRepairRegisterPrintLine1, JpRepairRegisterPrintLine2, JpRepairRegisterPrintLine3, JpRepairRegisterPrintLine4, JpRepairRegisterPrintLine5, JpRepairRegisterPrintLine6, JpRepairRegisterPrintLine7, JpRepairRegisterPrintLine8, JpRepairRegisterPrintLine9, JpRepairRegisterPrintLine10, JpRepairRegisterPrintLine11, JpRepairRegisterPrintLine12, JpRepairRegisterPrintLine13, JpRepairRegisterPrintLine14, JpRepairRegisterPrintLine15, JpRepairRegisterPrintLine16, JpRepairRegisterPrintLine17, JpRepairRegisterPrintLine18, JpRepairRegisterPrintLine19, JpRepairRegisterPrintLine20, JpRepairRegisterPrintLine21, JpRepairRegisterPrintLine22, JpRepairRegisterPrintLine23, JpRepairRegisterPrintLine24, JpRepairRegisterPrintLine25, JpRepairRegisterPrintLine26, JpRepairRegisterPrintLine27, JpRepairRegisterPrintLine28, JpRepairRegisterPrintLine29, JpRepairRegisterPrintLine30, JpRepairRegisterPrintLine31, JpRepairRegisterPrintLine32, JpRepairRegisterPrintLine33, JpRepairRegisterPrintLine34, JpRepairRegisterPrintLine35, JpRepairRegisterPrintLine36, JpRepairRegisterPrintLine37, JpRepairRegisterPrintLine38, JpRepairRegisterPrintLine39, JpRepairRegisterPrintLine40, JpRepairRegisterPrintLine41, JpRepairRegisterPrintLine42, JpRepairRegisterPrintLine43, JpRepairRegisterPrintLine44, JpRepairRegisterPrintLine45, JpRepairRegisterPrintLine46, JpRepairRegisterPrintLine47, JpRepairRegisterPrintLine48, JpRepairRegisterPrintLine49, JpRepairRegisterPrintLine50, JpRepairRegisterPrintLine51, JpRepairRegisterPrintLine52, JpRepairRegisterPrintLine53
+
+[Line: JpRepairRegisterPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpRepairRegisterPrintLine2]
+    Field: JpRepairRegisterPrintLine2F1
+
+[Field: JpRepairRegisterPrintLine2F1]
+    Set As : Upr(##JwlShopName) + "   -   Repairs"
+    Style : JpFontBold
+[Line: JpRepairRegisterPrintLine3]
+    Field: JpRepairRegisterPrintLine3F1
+
+[Field: JpRepairRegisterPrintLine3F1]
+    Set As : "From " + JpFmtDate($$JpFromDate) + "   To " + JpFmtDate($$JpToDate)
+[Line: JpRepairRegisterPrintLine4]
+    Field: JpRepairRegisterPrintLine4F1
+
+[Field: JpRepairRegisterPrintLine4F1]
+    Set As : "Repair No"
+[Line: JpRepairRegisterPrintLine5]
+    Field: JpRepairRegisterPrintLine5F1
+
+[Field: JpRepairRegisterPrintLine5F1]
+    Style : JpGridHead
+[Line: JpRepairRegisterPrintLine6]
+    Field: JpRepairRegisterPrintLine6F1
+
+[Field: JpRepairRegisterPrintLine6F1]
+    Set As : "Customer"
+[Line: JpRepairRegisterPrintLine7]
+    Field: JpRepairRegisterPrintLine7F1
+
+[Field: JpRepairRegisterPrintLine7F1]
+    Style : JpGridHead
+[Line: JpRepairRegisterPrintLine8]
+    Field: JpRepairRegisterPrintLine8F1
+
+[Field: JpRepairRegisterPrintLine8F1]
+    Set As : "Description"
+[Line: JpRepairRegisterPrintLine9]
+    Field: JpRepairRegisterPrintLine9F1
+
+[Field: JpRepairRegisterPrintLine9F1]
+    Style : JpGridHead
+[Line: JpRepairRegisterPrintLine10]
+    Field: JpRepairRegisterPrintLine10F1
+
+[Field: JpRepairRegisterPrintLine10F1]
+    Set As : "Gross g"
+[Line: JpRepairRegisterPrintLine11]
+    Field: JpRepairRegisterPrintLine11F1
+
+[Field: JpRepairRegisterPrintLine11F1]
+    Style : JpGridHead
+[Line: JpRepairRegisterPrintLine12]
+    Field: JpRepairRegisterPrintLine12F1
+
+[Field: JpRepairRegisterPrintLine12F1]
+    Set As : "Net g"
+[Line: JpRepairRegisterPrintLine13]
+    Field: JpRepairRegisterPrintLine13F1
+
+[Field: JpRepairRegisterPrintLine13F1]
+    Style : JpGridHead
+[Line: JpRepairRegisterPrintLine14]
+    Field: JpRepairRegisterPrintLine14F1
+
+[Field: JpRepairRegisterPrintLine14F1]
+    Set As : "Estimated"
+[Line: JpRepairRegisterPrintLine15]
+    Field: JpRepairRegisterPrintLine15F1
+
+[Field: JpRepairRegisterPrintLine15F1]
+    Style : JpGridHead
+[Line: JpRepairRegisterPrintLine16]
+    Field: JpRepairRegisterPrintLine16F1
+
+[Field: JpRepairRegisterPrintLine16F1]
+    Set As : "Advance"
+[Line: JpRepairRegisterPrintLine17]
+    Field: JpRepairRegisterPrintLine17F1
+
+[Field: JpRepairRegisterPrintLine17F1]
+    Style : JpGridHead
+[Line: JpRepairRegisterPrintLine18]
+    Field: JpRepairRegisterPrintLine18F1
+
+[Field: JpRepairRegisterPrintLine18F1]
+    Set As : "Balance"
+[Line: JpRepairRegisterPrintLine19]
+    Field: JpRepairRegisterPrintLine19F1
+
+[Field: JpRepairRegisterPrintLine19F1]
+    Style : JpGridHead
+[Line: JpRepairRegisterPrintLine20]
+    Field: JpRepairRegisterPrintLine20F1
+
+[Field: JpRepairRegisterPrintLine20F1]
+    Set As : "Delivery"
+[Line: JpRepairRegisterPrintLine21]
+    Field: JpRepairRegisterPrintLine21F1
+
+[Field: JpRepairRegisterPrintLine21F1]
+    Style : JpGridHead
+[Line: JpRepairRegisterPrintLine22]
+    Field: JpRepairRegisterPrintLine22F1
+
+[Field: JpRepairRegisterPrintLine22F1]
+    Set As : "Status"
+[Line: JpRepairRegisterPrintLine23]
+    Field: JpRepairRegisterPrintLine23F1
+
+[Field: JpRepairRegisterPrintLine23F1]
+    Style : JpGridHead
+[Line: JpRepairRegisterPrintLine24]
+    Field: JpRepairRegisterPrintLine24F1
+
+[Field: JpRepairRegisterPrintLine24F1]
+    Set As : $JwlRepNo
+[Line: JpRepairRegisterPrintLine25]
+    Field: JpRepairRegisterPrintLine25F1
+
+[Field: JpRepairRegisterPrintLine25F1]
+    Style : JpGrid
+[Line: JpRepairRegisterPrintLine26]
+    Field: JpRepairRegisterPrintLine26F1
+
+[Field: JpRepairRegisterPrintLine26F1]
+    Set As : $JwlRepCust
+[Line: JpRepairRegisterPrintLine27]
+    Field: JpRepairRegisterPrintLine27F1
+
+[Field: JpRepairRegisterPrintLine27F1]
+    Style : JpGrid
+[Line: JpRepairRegisterPrintLine28]
+    Field: JpRepairRegisterPrintLine28F1
+
+[Field: JpRepairRegisterPrintLine28F1]
+    Set As : $JwlRepDesc
+[Line: JpRepairRegisterPrintLine29]
+    Field: JpRepairRegisterPrintLine29F1
+
+[Field: JpRepairRegisterPrintLine29F1]
+    Style : JpGrid
+[Line: JpRepairRegisterPrintLine30]
+    Field: JpRepairRegisterPrintLine30F1
+
+[Field: JpRepairRegisterPrintLine30F1]
+    Set As : $JwlRepGrossWt
+[Line: JpRepairRegisterPrintLine31]
+    Field: JpRepairRegisterPrintLine31F1
+
+[Field: JpRepairRegisterPrintLine31F1]
+    Style : JpWeight
+[Line: JpRepairRegisterPrintLine32]
+    Field: JpRepairRegisterPrintLine32F1
+
+[Field: JpRepairRegisterPrintLine32F1]
+    Set As : $JwlRepNetWt
+[Line: JpRepairRegisterPrintLine33]
+    Field: JpRepairRegisterPrintLine33F1
+
+[Field: JpRepairRegisterPrintLine33F1]
+    Style : JpWeight
+[Line: JpRepairRegisterPrintLine34]
+    Field: JpRepairRegisterPrintLine34F1
+
+[Field: JpRepairRegisterPrintLine34F1]
+    Set As : $JwlRepEstAmt
+[Line: JpRepairRegisterPrintLine35]
+    Field: JpRepairRegisterPrintLine35F1
+
+[Field: JpRepairRegisterPrintLine35F1]
+    Style : JpMoney
+[Line: JpRepairRegisterPrintLine36]
+    Field: JpRepairRegisterPrintLine36F1
+
+[Field: JpRepairRegisterPrintLine36F1]
+    Set As : $JwlRepAdvance
+[Line: JpRepairRegisterPrintLine37]
+    Field: JpRepairRegisterPrintLine37F1
+
+[Field: JpRepairRegisterPrintLine37F1]
+    Style : JpMoney
+[Line: JpRepairRegisterPrintLine38]
+    Field: JpRepairRegisterPrintLine38F1
+
+[Field: JpRepairRegisterPrintLine38F1]
+    Set As : $JwlRepBalance
+[Line: JpRepairRegisterPrintLine39]
+    Field: JpRepairRegisterPrintLine39F1
+
+[Field: JpRepairRegisterPrintLine39F1]
+    Style : JpMoneyBold
+[Line: JpRepairRegisterPrintLine40]
+    Field: JpRepairRegisterPrintLine40F1
+
+[Field: JpRepairRegisterPrintLine40F1]
+    Set As : $JwlRepDelivDate
+[Line: JpRepairRegisterPrintLine41]
+    Field: JpRepairRegisterPrintLine41F1
+
+[Field: JpRepairRegisterPrintLine41F1]
+    Style : JpGrid
+[Line: JpRepairRegisterPrintLine42]
+    Field: JpRepairRegisterPrintLine42F1
+
+[Field: JpRepairRegisterPrintLine42F1]
+    Set As : $JwlRepStatus
+[Line: JpRepairRegisterPrintLine43]
+    Field: JpRepairRegisterPrintLine43F1
+
+[Field: JpRepairRegisterPrintLine43F1]
+    Style : JpGrid
+[Line: JpRepairRegisterPrintLine44]
+    Field: JpRepairRegisterPrintLine44F1
+
+[Field: JpRepairRegisterPrintLine44F1]
+    Set As : "TOTAL"
+[Line: JpRepairRegisterPrintLine45]
+    Field: JpRepairRegisterPrintLine45F1
+
+[Field: JpRepairRegisterPrintLine45F1]
+    Style : JpTotal
+[Line: JpRepairRegisterPrintLine46]
+    Field: JpRepairRegisterPrintLine46F1
+
+[Field: JpRepairRegisterPrintLine46F1]
+    Set As : Sum($JwlRepGrossWt)
+[Line: JpRepairRegisterPrintLine47]
+    Field: JpRepairRegisterPrintLine47F1
+
+[Field: JpRepairRegisterPrintLine47F1]
+    Style : JpTotal
+[Line: JpRepairRegisterPrintLine48]
+    Field: JpRepairRegisterPrintLine48F1
+
+[Field: JpRepairRegisterPrintLine48F1]
+    Set As : Sum($JwlRepEstAmt)
+[Line: JpRepairRegisterPrintLine49]
+    Field: JpRepairRegisterPrintLine49F1
+
+[Field: JpRepairRegisterPrintLine49F1]
+    Style : JpTotal
+[Line: JpRepairRegisterPrintLine50]
+    Field: JpRepairRegisterPrintLine50F1
+
+[Field: JpRepairRegisterPrintLine50F1]
+    Set As : Sum($JwlRepAdvance)
+[Line: JpRepairRegisterPrintLine51]
+    Field: JpRepairRegisterPrintLine51F1
+
+[Field: JpRepairRegisterPrintLine51F1]
+    Style : JpTotal
+[Line: JpRepairRegisterPrintLine52]
+    Field: JpRepairRegisterPrintLine52F1
+
+[Field: JpRepairRegisterPrintLine52F1]
+    Set As : Sum($JwlRepBalance)
+[Line: JpRepairRegisterPrintLine53]
+    Field: JpRepairRegisterPrintLine53F1
+
+[Field: JpRepairRegisterPrintLine53F1]
+    Style : JpTotal
+[Export: JpRepairRegisterExport]
+    Title: <1000, "Repair Register">
+    Repeat: Over: JpRepairRegister
+    Export Title: Detail
+    Export: Value: $JwlRepNo
+    Export: Value: $JwlRepCust
+    Export: Value: $JwlRepDesc
+    Export: Value: $JwlRepGrossWt
+    Export: Value: $JwlRepNetWt
+    Export: Value: $JwlRepEstAmt
+    Export: Value: $JwlRepAdvance
+    Export: Value: $JwlRepBalance
+    Export: Value: $JwlRepDelivDate
+    Export: Value: $JwlRepStatus

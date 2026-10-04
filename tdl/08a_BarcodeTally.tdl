@@ -1,0 +1,547 @@
+; =============================================================================
+;  JadePro  ::  08a_BarcodeTally.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : TALLY-NATIVE barcode printing.
+;            Renders a scannable Code 128 barcode on Tally's own print engine,
+;            so tags print to any printer Tally can drive (laser, inkjet,
+;            Tally's PDF export) with no external software at all.
+;
+;  INDEPENDENT MODULE
+;    Load AFTER 00_Core, 02_ItemMaster and 08_Barcode. Does NOT require
+;    08b_BarcodeZPL - enable either module, or both, independently.
+;
+;  SINGLE SOURCE OF TRUTH
+;    Tag PRINTING never generates a barcode - it only reads the item's stored
+;    JwlBarcode. The "Mint Barcode" button is the only thing here that writes,
+;    and it calls JpBarcodeEnsure() in 08_Barcode.tdl, which mints a value only
+;    if the item has none. The Zebra module reads the same field, so a
+;    Tally-printed tag and a Zebra-printed tag always carry identical data.
+;
+;  ---------------------------------------------------------------------------
+;  TWO RENDERING PATHS - READ THIS BEFORE LOADING
+;  ---------------------------------------------------------------------------
+;  PATH A (default)  : Code 128 BARCODE FONT.
+;      The barcode value is printed in a font whose glyphs ARE the bars. This
+;      needs no special TDL construct at all, so it works on every Tally
+;      release. It requires a Code 128 font installed on the machine
+;      (e.g. "CCITTC128" / "Code 128" / "IDAutomation" style fonts, freely
+;      available). Configure Tally to use that font for this print style.
+;
+;  PATH B (optional)  : TDL Barcode: section.
+;      The Barcode: definition below renders true bars in the print layout
+;      with no font installed. Switch it on by setting JpUseTdlBarcode = 1.
+;
+;      >>> VERIFY ON YOUR BUILD <<<
+;      If PATH B fails to compile on your Tally release, that is the ONE
+;      construct to change - set JpUseTdlBarcode back to 0 and use PATH A.
+;      Nothing else in JadePro depends on it. The safe default is 0 because a
+;      font-based tag always works, whereas an unverified Barcode: section
+;      could stop the whole module loading.
+;
+;  203 DPI NOTE
+;    Path A is resolution-independent (it is a font). Path B's bar height is
+;    expressed in Tally's print units, not dots. For a Zebra 203 dpi printer
+;    (8 dots/mm) use 08b_BarcodeZPL.tdl instead - it speaks the printer's own
+;    dot-based language and gives exact control over geometry.
+; =============================================================================
+
+[Function: JpUseTdlBarcode]
+    Returns: String : Any
+    JpUseTdlBarcode = "0"
+[Function: JpBcFontStyle]
+    Returns: String : Any
+    JpBcFontStyle = "JpBarcodeFont"
+[Function: JpBcFontName]
+    Returns: String : Any
+    JpBcFontName = "Code 128"
+[Function: JpBcFontHeight]
+    Returns: String : Any
+    JpBcFontHeight = "30"
+[Function: JpBcHumanText]
+    Returns: String : Any
+    JpBcHumanText = "10"
+[Function: JpBarcodeSymb]
+    Returns: String : Any
+    JpBarcodeSymb = "Code 128"
+
+; =============================================================================
+;  PATH B - TDL BARCODE DEFINITION  ->  SEE 08c_BarcodeSection.tdl
+;  The `Barcode:` sections that back PATH B live in their own optional module,
+;  which is NOT part of the default bundle. TDL parses a whole function before
+;  running any of it, so an unrecognised `Barcode:` section would stop the
+;  entire load - it cannot be switched off with JpUseTdlBarcode, which only
+;  picks a rendering path at run time. To enable PATH B: load
+;  08c_BarcodeSection.tdl and set JpUseTdlBarcode to 1.
+; =============================================================================
+
+; =============================================================================
+;  STYLES
+; =============================================================================
+[Style: JpBarcodeFont]
+    Font: Code 128
+    Height: 30
+
+[Style: JpBarcodeText]
+    Font: Arial
+    Height: 10
+    Align: CENTRE
+
+[Style: JpBarcodeHead]
+    Font: Arial Bold
+    Height: 12
+    Align: CENTRE
+
+[Style: JpBarcodeSub]
+    Font: Arial
+    Height: 10
+    Align: CENTRE
+
+; =============================================================================
+;  THE TAG PART - the barcode block, identical data whichever path is used
+; =============================================================================
+[Part: JpTallyBarcodeBlock]
+    Height: 30
+    Line: JpTallyBarcodeBlockLine1, JpTallyBarcodeBlockLine2, JpTallyBarcodeBlockLine3, JpTallyBarcodeBlockLine4, JpTallyBarcodeBlockLine5
+
+[Line: JpTallyBarcodeBlockLine1]
+    Part Name: Width
+[Line: JpTallyBarcodeBlockLine2]
+    Field: JpTallyBarcodeBlockLine2F1
+
+[Field: JpTallyBarcodeBlockLine2F1]
+    Set As : $JwlBarcode
+    Style : JpBarcodeFont
+[Line: JpTallyBarcodeBlockLine3]
+    Field: JpTallyBarcodeBlockLine3F1
+
+[Field: JpTallyBarcodeBlockLine3F1]
+    Align : CENTRE
+[Line: JpTallyBarcodeBlockLine4]
+    Field: JpTallyBarcodeBlockLine4F1
+
+[Field: JpTallyBarcodeBlockLine4F1]
+    Set As : $JwlBarcode
+    Style : JpBarcodeText
+    Align : CENTRE
+[Line: JpTallyBarcodeBlockLine5]
+    Field: JpTallyBarcodeBlockLine5F1
+
+[Field: JpTallyBarcodeBlockLine5F1]
+    Set As : JpBarcodeSymb()
+    Style : JpBarcodeSub
+    Align : CENTRE
+[Report: JpTallyTag]
+    Title: <1000, "Jewellery Tag (Code 128)">
+    Print: JpTallyTagPrint
+
+
+; [Print: JpTallyTagPrint] -> [Form: JpTallyTagPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+
+[Form: JpTallyTagPrint]
+    Height : 30
+    Parts : JpTallyTagPrintLines
+
+[Part: JpTallyTagPrintLines]
+    Lines : JpTallyTagPrintLine1, JpTallyTagPrintLine2, JpTallyTagPrintLine3, JpTallyTagPrintLine4, JpTallyTagPrintLine5, JpTallyTagPrintLine6, JpTallyTagPrintLine7, JpTallyTagPrintLine8, JpTallyTagPrintLine9, JpTallyTagPrintLine10, JpTallyTagPrintLine11, JpTallyTagPrintLine12, JpTallyTagPrintLine13, JpTallyTagPrintLine14, JpTallyTagPrintLine15, JpTallyTagPrintLine16, JpTallyTagPrintLine17, JpTallyTagPrintLine18, JpTallyTagPrintLine19, JpTallyTagPrintLine20
+
+[Line: JpTallyTagPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-left is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-top is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpTallyTagPrintLine2]
+    Field: JpTallyTagPrintLine2F1
+
+[Field: JpTallyTagPrintLine2F1]
+    Set As : Upr($JwlShopName)
+    Style : JpBarcodeHead
+[Line: JpTallyTagPrintLine3]
+    Field: JpTallyTagPrintLine3F1
+
+[Field: JpTallyTagPrintLine3F1]
+    Set As : $JwlShopAddress
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine4]
+    Field: JpTallyTagPrintLine4F1
+
+[Field: JpTallyTagPrintLine4F1]
+    Set As : "GSTIN " + $JwlCompanyGSTIN
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine5]
+    Field: JpTallyTagPrintLine5F1
+
+[Field: JpTallyTagPrintLine5F1]
+    Set As : "------------------------------"
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine6]
+    Field: JpTallyTagPrintLine6F1
+
+[Field: JpTallyTagPrintLine6F1]
+    Set As : $JwlBarcode
+    Style : JpBarcodeFont
+[Line: JpTallyTagPrintLine7]
+    Field: JpTallyTagPrintLine7F1
+
+[Field: JpTallyTagPrintLine7F1]
+    Align : CENTRE
+[Line: JpTallyTagPrintLine8]
+    Field: JpTallyTagPrintLine8F1
+
+[Field: JpTallyTagPrintLine8F1]
+    Set As : $JwlBarcode
+    Style : JpBarcodeText
+    Align : CENTRE
+[Line: JpTallyTagPrintLine9]
+    Field: JpTallyTagPrintLine9F1
+
+[Field: JpTallyTagPrintLine9F1]
+    Set As : "------------------------------"
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine10]
+    Field: JpTallyTagPrintLine10F1
+
+[Field: JpTallyTagPrintLine10F1]
+    Set As : "Item Code : " + $JwlBarcode
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine11]
+    Field: JpTallyTagPrintLine11F1
+
+[Field: JpTallyTagPrintLine11F1]
+    Set As : "Design No : " + $JwlDesignNo
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine12]
+    Field: JpTallyTagPrintLine12F1
+
+[Field: JpTallyTagPrintLine12F1]
+    Set As : "Purity    : " + $JwlPurity + "   " + $JwlMetalType
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine13]
+    Field: JpTallyTagPrintLine13F1
+
+[Field: JpTallyTagPrintLine13F1]
+    Set As : "Gross     : " + JpFmtWt($JwlGrossWt) + " gms"
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine14]
+    Field: JpTallyTagPrintLine14F1
+
+[Field: JpTallyTagPrintLine14F1]
+    Set As : "Stone     : " + JpFmtWt($JwlStoneWt) + " gms"
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine15]
+    Field: JpTallyTagPrintLine15F1
+
+[Field: JpTallyTagPrintLine15F1]
+    Set As : "Net Wt    : " + JpFmtWt($JwlNetMetalWt) + " gms"
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine16]
+    Field: JpTallyTagPrintLine16F1
+
+[Field: JpTallyTagPrintLine16F1]
+    Set As : "Diamond   : " + JpFmtWt($JwlDiamondCarat) + " ct"
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine17]
+    Field: JpTallyTagPrintLine17F1
+
+[Field: JpTallyTagPrintLine17F1]
+    Set As : "HUID      : " + $JwlHuid
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine18]
+    Field: JpTallyTagPrintLine18F1
+
+[Field: JpTallyTagPrintLine18F1]
+    Set As : "MRP       : Rs. " + JpFmtAmt($JwlMRP)
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine19]
+    Field: JpTallyTagPrintLine19F1
+
+[Field: JpTallyTagPrintLine19F1]
+    Set As : "------------------------------"
+    Style : JpBarcodeSub
+[Line: JpTallyTagPrintLine20]
+    Field: JpTallyTagPrintLine20F1
+
+[Field: JpTallyTagPrintLine20F1]
+    Set As : "We certify the metal purity stated. Hallmarked gold must carry a valid BIS HUID."
+    Style : JpBarcodeSub
+[Collection: Report: JpTallyTagBulk]
+    Source: JpTallyTagBulkSQL
+    Var: JpTagCat, JpTagCounter, JpTagPurity
+    Title: <1000,###,#a##"  BULK JEWELLERY TAG PRINTING (CODE 128)">
+    Print: JpTallyTagBulkPrint
+    Export: JpTallyTagBulkExport
+    Key: JpTallyTagBulkKey
+    Filters: <JpTagCat, <String, "Category">>, <JpTagCounter, <String, "Counter">>, <JpTagPurity, <String, "Purity">>
+
+[Variable: JpTallyTagBulkSQL : String]
+    Type: String
+    Value: "SELECT $$NAME$$ AS JwlItemName, $JwlBarcode$$ AS JwlBarcode, $JwlDesignNo$$ AS JwlDesignNo, $JwlPurity$$ AS JwlPurity, $JwlMetalType$$ AS JwlMetalType, $JwlGrossWt$$ AS JwlGrossWt, $JwlStoneWt$$ AS JwlStoneWt, $JwlNetMetalWt$$ AS JwlNetMetalWt, $JwlDiamondCarat$$ AS JwlDiamondCarat, $JwlHuid$$ AS JwlHuid, $JwlMRP$$ AS JwlMRP, $JwlCategory$$ AS JwlCategory, $JwlLocation$$ AS JwlLocation FROM $$ITEMS$$ WHERE $JwlIsJewellery$$ = 1 AND $JwlBarcode$$ <> ''"
+
+[Variable: JpTallyTagBulkKey : String]
+    Type: String
+    Value: "JwlBarcode"
+
+
+; [Print: JpTallyTagBulkPrint] -> [Form: JpTallyTagBulkPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+
+[Form: JpTallyTagBulkPrint]
+    Height : 30
+    Parts : JpTallyTagBulkPrintLines
+
+[Part: JpTallyTagBulkPrintLines]
+    Lines : JpTallyTagBulkPrintLine1, JpTallyTagBulkPrintLine2, JpTallyTagBulkPrintLine3, JpTallyTagBulkPrintLine4, JpTallyTagBulkPrintLine5, JpTallyTagBulkPrintLine6, JpTallyTagBulkPrintLine7, JpTallyTagBulkPrintLine8, JpTallyTagBulkPrintLine9, JpTallyTagBulkPrintLine10, JpTallyTagBulkPrintLine11, JpTallyTagBulkPrintLine12, JpTallyTagBulkPrintLine13, JpTallyTagBulkPrintLine14, JpTallyTagBulkPrintLine15, JpTallyTagBulkPrintLine16, JpTallyTagBulkPrintLine17
+
+[Line: JpTallyTagBulkPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-left is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-top is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    New-Page: Yes
+[Line: JpTallyTagBulkPrintLine2]
+    Field: JpTallyTagBulkPrintLine2F1
+
+[Field: JpTallyTagBulkPrintLine2F1]
+    Set As : Upr($JwlShopName)
+    Style : JpBarcodeHead
+[Line: JpTallyTagBulkPrintLine3]
+    Field: JpTallyTagBulkPrintLine3F1
+
+[Field: JpTallyTagBulkPrintLine3F1]
+    Set As : $JwlCategory + " / " + $JwlLocation
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine4]
+    Field: JpTallyTagBulkPrintLine4F1
+
+[Field: JpTallyTagBulkPrintLine4F1]
+    Set As : $JwlBarcode
+    Style : JpBarcodeFont
+[Line: JpTallyTagBulkPrintLine5]
+    Field: JpTallyTagBulkPrintLine5F1
+
+[Field: JpTallyTagBulkPrintLine5F1]
+    Align : CENTRE
+[Line: JpTallyTagBulkPrintLine6]
+    Field: JpTallyTagBulkPrintLine6F1
+
+[Field: JpTallyTagBulkPrintLine6F1]
+    Set As : $JwlBarcode
+    Style : JpBarcodeText
+    Align : CENTRE
+[Line: JpTallyTagBulkPrintLine7]
+    Field: JpTallyTagBulkPrintLine7F1
+
+[Field: JpTallyTagBulkPrintLine7F1]
+    Set As : "Item    : " + $$JwlItemName
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine8]
+    Field: JpTallyTagBulkPrintLine8F1
+
+[Field: JpTallyTagBulkPrintLine8F1]
+    Set As : "Design  : " + $JwlDesignNo
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine9]
+    Field: JpTallyTagBulkPrintLine9F1
+
+[Field: JpTallyTagBulkPrintLine9F1]
+    Set As : "Purity  : " + $JwlPurity + "   " + $JwlMetalType
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine10]
+    Field: JpTallyTagBulkPrintLine10F1
+
+[Field: JpTallyTagBulkPrintLine10F1]
+    Set As : "Gross   : " + JpFmtWt($JwlGrossWt) + " gms"
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine11]
+    Field: JpTallyTagBulkPrintLine11F1
+
+[Field: JpTallyTagBulkPrintLine11F1]
+    Set As : "Net Wt  : " + JpFmtWt($JwlNetMetalWt) + " gms"
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine12]
+    Field: JpTallyTagBulkPrintLine12F1
+
+[Field: JpTallyTagBulkPrintLine12F1]
+    Set As : "Stone   : " + JpFmtWt($JwlStoneWt) + " gms"
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine13]
+    Field: JpTallyTagBulkPrintLine13F1
+
+[Field: JpTallyTagBulkPrintLine13F1]
+    Set As : "Diamond : " + JpFmtWt($JwlDiamondCarat) + " ct"
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine14]
+    Field: JpTallyTagBulkPrintLine14F1
+
+[Field: JpTallyTagBulkPrintLine14F1]
+    Set As : "HUID    : " + $JwlHuid
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine15]
+    Field: JpTallyTagBulkPrintLine15F1
+
+[Field: JpTallyTagBulkPrintLine15F1]
+    Set As : "MRP     : Rs. " + JpFmtAmt($JwlMRP)
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine16]
+    Field: JpTallyTagBulkPrintLine16F1
+
+[Field: JpTallyTagBulkPrintLine16F1]
+    Set As : "------------------------------"
+    Style : JpBarcodeSub
+[Line: JpTallyTagBulkPrintLine17]
+    Field: JpTallyTagBulkPrintLine17F1
+
+[Field: JpTallyTagBulkPrintLine17F1]
+    Set As : "Hallmarked metal must carry a valid BIS HUID."
+    Style : JpBarcodeSub
+[Export: JpTallyTagBulkExport]
+    Title: <1000, "Bulk Tag Listing">
+    Repeat: Over: JpTallyTagBulk
+    Export Title: Detail
+    Export: Value: $JwlBarcode
+    Export: Value: $$JwlItemName
+    Export: Value: $JwlDesignNo
+    Export: Value: $JwlPurity
+    Export: Value: $JwlGrossWt
+    Export: Value: $JwlNetMetalWt
+    Export: Value: $JwlHuid
+    Export: Value: $JwlMRP
+
+
+; =============================================================================
+;  SCANNER INTEGRATION
+;  A keyboard-wedge scanner types the barcode into the Item field and Tally
+;  resolves it by name. This screen mints a missing barcode for a named item
+;  and prints tags, and explains the scanner wiring to the operator.
+;  Printing only READS the stored value - minting is an explicit operator
+;  action, never a side effect of rendering a report.
+; =============================================================================
+[Variable: JpTallyMsg     : String]
+[Variable: JpTallySymbTxt : String]
+[Variable: JpTallyMintItem : String]
+
+[Function: JpTallySymbologyText]
+    Returns: String : Any
+    If (Number(JpUseTdlBarcode()) = 1) Then
+    {
+        JpTallySymbologyText = "TDL Barcode: section (true bars, no font needed)"
+        Exit
+    }
+    JpTallySymbologyText = "Code 128 font - install a Code 128 font and select it for this print style"
+
+[Screen: JpTallyBarcodeScreen]
+    Caption: "JadePro  ::  Barcode Printing (Tally-native)"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           BARCODE PRINTING  -  TALLY NATIVE"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Code 128 tags printed by Tally itself. No external software, no driver."
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Text: " RENDERING PATH"
+    Style: JpSectionBox
+    Lines: 1, 1, 1
+    Text: "   Active path ........ " + JpTallySymbologyText()
+    Text: "   Barcode value ...... generated ONCE in 08_Barcode.tdl and shared with the Zebra module."
+    Text: "   Changing a path .... edit Constant JpUseTdlBarcode() at the top of 08a_BarcodeTally.tdl."
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Text: " SCANNER AT THE COUNTER"
+    Style: JpSectionBox
+    Lines: 1, 1, 1
+    Text: "   A USB barcode scanner is a keyboard. It types the barcode and presses Enter."
+    Text: "   Leave the Item field focused in the Sales voucher and simply scan."
+    Text: "   Every sales line already carries JwlLnBarcode, so the scanned piece is recorded on the invoice."
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1, 1
+    Field: <Field-Id: JpTallyMsg, Label: " ">
+        Width: 100
+        Style: JpWarn
+
+    Line: Spacing
+    Lines: 1
+    Text: " MINT A MISSING BARCODE"
+    Style: JpSectionBox
+    Lines: 1, 1, 1
+    Text: "   Tag printing only READS the stored barcode. If a piece has none, mint one here first"
+    Text: "   and it is written to the item - the Zebra module then prints the identical value."
+    Style: JpMuted
+    Lines: 1, 1
+    Field: <Field-Id: JpTallyMintItem, Label: "Item name">
+        Width: 40
+    Button: <Mint Barcode (F3), Key: F3, Action: JpTallyMintAction>
+
+    Line: Spacing
+    Lines: 1
+    Button: <Bulk Tag Print (F2), Key: F2, Action: JpTallyOpenBulk>
+    Button: <Barcode Register (F4), Key: F4, Action: JpTallyOpenReg>
+    Button: <Back to JadePro menu, Key: Esc, Action: System: Quit>
+
+; Mints a barcode for one item by calling the single source of truth.
+; JpBarcodeEnsure is idempotent: an item that already has a valid barcode is
+; returned unchanged, so pressing this repeatedly can never renumber a piece
+; that is already on the shelf.
+[Function: JpTallyMintAction]
+    Returns: Integer : Any
+    Var: n : String, bc : String
+    If (JpHasRight(JpRtBarcode()) = 0) Then
+    {
+        JpTallyMsg = JpDeniedMsg
+        JpTallyMintAction = 0
+        Exit
+    }
+    n = JpBlankIfNull($$JpTallyMintItem)
+    If (n = "") Then
+    {
+        JpTallyMsg = "Type the exact item name, then press F3."
+        JpTallyMintAction = 0
+        Exit
+    }
+    bc = JpBarcodeEnsure(n)
+    If (bc = "") Then
+    {
+        JpTallyMsg = "No such item: " + n
+        JpTallyMintAction = 0
+        Exit
+    }
+    JpTallyMsg = "Barcode on " + n + " = " + bc
+    JpTallyMintAction = 1
+
+[Function: JpTallyOpenBulk]
+    Returns: Integer : Any
+    If (JpHasRight(JpRtReports()) = 0) Then
+    {
+        JpTallyMsg = JpDeniedMsg
+        JpTallyOpenBulk = 0
+        Exit
+    }
+    JpTallyMsg = ""
+    Alter: JpTallyTagBulk
+    JpTallyOpenBulk = 1
+
+[Function: JpTallyOpenReg]
+    Returns: Integer : Any
+    If (JpHasRight(JpRtReports()) = 0) Then
+    {
+        JpTallyMsg = JpDeniedMsg
+        JpTallyOpenReg = 0
+        Exit
+    }
+    JpTallyMsg = ""
+    Alter: JpBarcodeReg
+    JpTallyOpenReg = 1

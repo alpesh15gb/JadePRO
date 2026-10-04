@@ -1,0 +1,8 @@
+; p26 - Function parameters and return.
+; JadePro uses `Var:` / `Param:` / `Returns:` in 471 places. The reference
+; documents Parameter, Variable, Local Formula and Return, with body
+; statements introduced by a 3-digit step number.
+[Function: ZzP26Add]
+    Parameter : a : Number
+    Parameter : b : Number
+    100 : Return : ##a + ##b

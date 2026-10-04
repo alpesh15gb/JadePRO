@@ -1,0 +1,17 @@
+; p21 - Is `Set As : "literal"` how a Field renders literal text?
+; route-line-to-field.mjs used this for all 838 `Text:` occurrences.
+[Report: ZzP21Report]
+    Form: ZzP21Form
+
+[Form: ZzP21Form]
+    Parts: ZzP21Part
+
+[Part: ZzP21Part]
+    Lines: ZzP21Line
+
+[Line: ZzP21Line]
+    Field: ZzP21Field
+
+[Field: ZzP21Field]
+    Set As : "Literal text line"
+    Width : 25

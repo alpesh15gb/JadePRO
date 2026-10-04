@@ -1,0 +1,8 @@
+; P04  Alter: BRACKETED, two args
+[Alter: Item, ZzP04Grp]
+    Add: Field
+        Field-id: ZzP04Chk
+        Label: "P04"
+        Type: Logical
+        Value: No
+        Width: 100

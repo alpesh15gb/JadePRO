@@ -1,0 +1,1066 @@
+; =============================================================================
+;  JadePro  ::  12_Dashboard.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Jewellery Business Dashboard.
+;
+;  WHY THE DASHBOARD IS FOUR REPORTS, NOT ONE SCREEN
+;  --------------------------------------------------
+;  A TDL Report is bound to EXACTLY ONE data source, and Tally Prime's TDL has
+;  no way to merge independent SQL result sets onto a single screen. The shop's
+;  dashboard needs four different tables, so it is delivered as four card
+;  reports that print with one shared visual template and sit together in the
+;  menu under "Dashboard":
+;
+;    1. JpDashboard        voucher level  - Today: sales, purchases, cash,
+;                                           card, UPI, bank, advance, old
+;                                           gold, bills, average invoice.
+;    2. JpWeightDashboard  line level     - Gold sold in grams, top category,
+;                                           top product, top salesperson.
+;    3. JpAlertDashboard   journal level  - Pending orders, pending repairs,
+;                                           gold lying with karigars,
+;                                           outstanding customers.
+;    4. JpInvDashboard     item level     - Gold / Silver / Diamond /
+;                                           Platinum stock and stock value.
+;
+;  This is a TDL platform constraint, stated plainly rather than papered over
+;  with a screen that shows half the numbers.
+;
+;  THE AGGREGATION TRICK
+;  Each metric is its own UDF column on the voucher, so SUM(column) isolates
+;  that metric exactly. A Sales voucher leaves JwlPurTotal at zero and a
+;  Purchase voucher leaves JwlGrandTotal at zero, so ONE query yields sales and
+;  purchases side by side with no CASE expressions anywhere.
+;
+;  LOAD    : After 00_Core, 04_Sales, 11_Reports.
+;  REQUIRES : 00_Core.tdl, 04_Sales.tdl, 11_Reports.tdl
+; =============================================================================
+
+; =============================================================================
+;  CARD 1 - MONEY  (voucher level)
+; =============================================================================
+[Collection: Report: JpDashboard]
+    Source: JpDashboardSQL
+    Var: JpDashFrom, JpDashTo
+    Title: <1000,###,#a##"  DASHBOARD 1 of 4  -  SALES, PURCHASES AND COLLECTIONS">
+    Print: JpDashboardPrint
+    Export: JpDashboardExport
+
+[Variable: JpDashboardSQL : String]
+    Type: String
+    Value: "SELECT $$VOUCHERTYPE$$ AS JwlVchType, SUM($JwlGrandTotal$$) AS JwlSales, SUM($JwlPurTotal$$) AS JwlPurch, SUM($JwlPayCash$$) AS JwlCash, SUM($JwlPayCard$$) AS JwlCard, SUM($JwlPayUpi$$) AS JwlUpi, SUM($JwlPayBank$$) AS JwlBank, SUM($JwlPayAdvance$$) AS JwlAdv, SUM($JwlPayOldGold$$) AS JwlOldG, SUM($JwlDiscAmt$$) AS JwlDisc, COUNT($$VOUCHERID$$) AS JwlBills FROM $$VOUCHERS$$ WHERE $$DATE$$ BETWEEN $$JpDashFrom$$ AND $$JpDashTo$$ GROUP BY $$VOUCHERTYPE$$"
+
+; Fixed-width card slots so the printed grid never shifts.
+[Function: JpCardMoney]
+    Param: vVal : Number : Optional
+    Returns: String : Any
+    Var: s : String
+    s = JpFmtAmt(Param(0))
+    While (Len(s) < 20) Then
+    {
+        s = " " + s
+    }
+    JpCardMoney = s
+
+
+; [Print: JpDashboardPrint] -> [Form: JpDashboardPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+
+[Form: JpDashboardPrint]
+    Height : 18
+    Parts : JpDashboardPrintLines
+
+[Part: JpDashboardPrintLines]
+    Lines : Spacing, JpDashboardPrintLine1, JpDashboardPrintLine2, JpDashboardPrintLine3, JpDashboardPrintLine4, JpDashboardPrintLine5, JpDashboardPrintLine6, JpDashboardPrintLine7, JpDashboardPrintLine8, JpDashboardPrintLine9, JpDashboardPrintLine10, JpDashboardPrintLine11, JpDashboardPrintLine12, JpDashboardPrintLine13, JpDashboardPrintLine14, JpDashboardPrintLine15, JpDashboardPrintLine16, JpDashboardPrintLine17, JpDashboardPrintLine18, JpDashboardPrintLine19, JpDashboardPrintLine20, JpDashboardPrintLine21
+
+[Line: JpDashboardPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpDashboardPrintLine2]
+    Field: JpDashboardPrintLine2F1
+
+[Field: JpDashboardPrintLine2F1]
+    Set As : Upr(##JwlShopName)
+    Style : JpFontBold
+[Line: JpDashboardPrintLine3]
+    Field: JpDashboardPrintLine3F1
+
+[Field: JpDashboardPrintLine3F1]
+    Set As : "DASHBOARD 1 of 4   -   " + JpFmtDate($$JpDashFrom) + "  to  " + JpFmtDate($$JpDashTo)
+    Style : JpFontBold
+[Line: JpDashboardPrintLine4]
+    Field: JpDashboardPrintLine4F1
+
+[Field: JpDashboardPrintLine4F1]
+    Set As : "User: " + JpBlankIfNull(JpUserName) + " (" + JpBlankIfNull(JpUserRole) + ")"
+    Style : JpFontBold
+[Line: JpDashboardPrintLine5]
+    Field: JpDashboardPrintLine5F1
+
+[Field: JpDashboardPrintLine5F1]
+    Set As : "   SALES AND PURCHASES"
+    Style : JpCardHdr
+[Line: JpDashboardPrintLine6]
+    Field: JpDashboardPrintLine6F1
+
+[Field: JpDashboardPrintLine6F1]
+    Set As : "  TOTAL SALES          TOTAL PURCHASES     NUMBER OF BILLS     AVERAGE INVOICE VALUE"
+    Style : JpCardHdr
+[Line: JpDashboardPrintLine7]
+    Field: JpDashboardPrintLine7F1
+
+[Field: JpDashboardPrintLine7F1]
+    Set As : JpCardMoney(Sum($$JwlSales)) + JpCardMoney(Sum($$JwlPurch))
+    Style : JpBigNum
+[Line: JpDashboardPrintLine8]
+    Field: JpDashboardPrintLine8F1
+
+[Field: JpDashboardPrintLine8F1]
+    Set As : String(Sum($$JwlBills), "0")
+    Style : JpBigNum
+[Line: JpDashboardPrintLine9]
+    Field: JpDashboardPrintLine9F1
+
+[Field: JpDashboardPrintLine9F1]
+    Set As : "  DISCOUNT GIVEN       "
+    Style : JpCardHdr
+[Line: JpDashboardPrintLine10]
+    Field: JpDashboardPrintLine10F1
+
+[Field: JpDashboardPrintLine10F1]
+    Set As : JpCardMoney(Sum($$JwlDisc)) + JpCardMoney(Sum($$JwlSales) - Sum($$JwlPurch))
+    Style : JpBigNum
+[Line: JpDashboardPrintLine11]
+    Field: JpDashboardPrintLine11F1
+
+[Field: JpDashboardPrintLine11F1]
+    Set As : "  (net cash margin)"
+    Style : JpFontBold
+[Line: JpDashboardPrintLine12]
+    Field: JpDashboardPrintLine12F1
+
+[Field: JpDashboardPrintLine12F1]
+    Set As : "   COLLECTIONS BY PAYMENT MODE"
+    Style : JpCardHdr
+[Line: JpDashboardPrintLine13]
+    Field: JpDashboardPrintLine13F1
+
+[Field: JpDashboardPrintLine13F1]
+    Set As : "  CASH                 CARD                 UPI                  BANK TRANSFER"
+    Style : JpCardHdr
+[Line: JpDashboardPrintLine14]
+    Field: JpDashboardPrintLine14F1
+
+[Field: JpDashboardPrintLine14F1]
+    Set As : JpCardMoney(Sum($$JwlCash)) + JpCardMoney(Sum($$JwlCard))
+    Style : JpBigNum
+[Line: JpDashboardPrintLine15]
+    Field: JpDashboardPrintLine15F1
+
+[Field: JpDashboardPrintLine15F1]
+    Set As : JpCardMoney(Sum($$JwlUpi)) + JpCardMoney(Sum($$JwlBank))
+    Style : JpBigNum
+[Line: JpDashboardPrintLine16]
+    Field: JpDashboardPrintLine16F1
+
+[Field: JpDashboardPrintLine16F1]
+    Set As : "  CUSTOMER ADVANCE     OLD GOLD EXCHANGE    TOTAL COLLECTED      BALANCE DUE"
+    Style : JpCardHdr
+[Line: JpDashboardPrintLine17]
+    Field: JpDashboardPrintLine17F1
+
+[Field: JpDashboardPrintLine17F1]
+    Set As : JpCardMoney(Sum($$JwlAdv)) + JpCardMoney(Sum($$JwlOldG))
+    Style : JpBigNum
+[Line: JpDashboardPrintLine18]
+    Field: JpDashboardPrintLine18F1
+
+[Field: JpDashboardPrintLine18F1]
+    Set As : JpCardMoney(Sum($$JwlCash) + Sum($$JwlCard) + Sum($$JwlUpi) + Sum($$JwlBank) + Sum($$JwlAdv) + Sum($$JwlOldG))
+    Style : JpBigNum
+[Line: JpDashboardPrintLine19]
+    Field: JpDashboardPrintLine19F1
+
+[Field: JpDashboardPrintLine19F1]
+    Set As : "   METAL RATES IN FORCE"
+    Style : JpCardHdr
+[Line: JpDashboardPrintLine20]
+    Field: JpDashboardPrintLine20F1
+
+[Field: JpDashboardPrintLine20F1]
+    Set As : "  24K " + JpFmtAmt(JpCache24K) + "      22K " + JpFmtAmt(JpCache22K) + "      18K " + JpFmtAmt(JpCache18K) + "      14K " + JpFmtAmt(JpCache14K)
+    Style : JpFontBold
+[Line: JpDashboardPrintLine21]
+    Field: JpDashboardPrintLine21F1
+
+[Field: JpDashboardPrintLine21F1]
+    Set As : "  Silver " + JpFmtAmt(JpCacheSilver) + "      Platinum " + JpFmtAmt(JpCachePlatinum)
+    Style : JpFontBold
+[Export: JpDashboardExport]
+    Title: <1000, "Dashboard - Sales and Collections">
+    Repeat: Over: JpDashboard
+    Export Title: Detail
+    Export: Value: $$JwlVchType
+    Export: Value: $$JwlSales
+    Export: Value: $$JwlPurch
+    Export: Value: $$JwlCash
+    Export: Value: $$JwlCard
+    Export: Value: $$JwlUpi
+    Export: Value: $$JwlBank
+    Export: Value: $$JwlBills
+
+
+; =============================================================================
+;  CARD 2 - WEIGHT AND RANKING  (line level)
+; =============================================================================
+[Collection: Report: JpWeightDashboard]
+    Source: JpWeightDashboardSQL
+    Var: JpDashFrom, JpDashTo
+    Title: <1000,###,#a##"  DASHBOARD 2 of 4  -  GOLD SOLD AND TOP PERFORMERS">
+    Print: JpWeightDashboardPrint
+    Export: JpWeightDashboardExport
+    Key: JpWeightDashboardKey
+
+[Variable: JpWeightDashboardSQL : String]
+    Type: String
+    Value: "SELECT $JwlCategory$$ AS JwlCat, $JwlSalesperson$$ AS JwlSp, SUM($JwlLnNet$$) AS JwlWtSold, SUM($JwlLnTotal$$) AS JwlRev, SUM($$QUANTITY$$) AS JwlPcs FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ = 'Sales' AND $$DATE$$ BETWEEN $$JpDashFrom$$ AND $$JpDashTo$$ GROUP BY $JwlCategory$$,$JwlSalesperson$$ ORDER BY $$JwlRev$$ DESC"
+
+[Variable: JpWeightDashboardKey : String]
+    Type: String
+    Value: "JwlCat"
+
+
+; [Print: JpWeightDashboardPrint] -> [Form: JpWeightDashboardPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpWeightDashboardPrint]
+    Height : 18
+    Parts : JpWeightDashboardPrintLines
+
+[Part: JpWeightDashboardPrintLines]
+    Lines : Spacing, JpWeightDashboardPrintLine1, JpWeightDashboardPrintLine2, JpWeightDashboardPrintLine3, JpWeightDashboardPrintLine4, JpWeightDashboardPrintLine5, JpWeightDashboardPrintLine6, JpWeightDashboardPrintLine7, JpWeightDashboardPrintLine8, JpWeightDashboardPrintLine9, JpWeightDashboardPrintLine10, JpWeightDashboardPrintLine11, JpWeightDashboardPrintLine12, JpWeightDashboardPrintLine13, JpWeightDashboardPrintLine14, JpWeightDashboardPrintLine15, JpWeightDashboardPrintLine16, JpWeightDashboardPrintLine17, JpWeightDashboardPrintLine18, JpWeightDashboardPrintLine19, JpWeightDashboardPrintLine20, JpWeightDashboardPrintLine21, JpWeightDashboardPrintLine22, JpWeightDashboardPrintLine23, JpWeightDashboardPrintLine24, JpWeightDashboardPrintLine25, JpWeightDashboardPrintLine26, JpWeightDashboardPrintLine27, JpWeightDashboardPrintLine28, JpWeightDashboardPrintLine29, JpWeightDashboardPrintLine30, JpWeightDashboardPrintLine31, JpWeightDashboardPrintLine32, JpWeightDashboardPrintLine33, JpWeightDashboardPrintLine34, JpWeightDashboardPrintLine35, JpWeightDashboardPrintLine36, JpWeightDashboardPrintLine37, JpWeightDashboardPrintLine38
+
+[Line: JpWeightDashboardPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpWeightDashboardPrintLine2]
+    Field: JpWeightDashboardPrintLine2F1
+
+[Field: JpWeightDashboardPrintLine2F1]
+    Set As : Upr(##JwlShopName)
+    Style : JpFontBold
+[Line: JpWeightDashboardPrintLine3]
+    Field: JpWeightDashboardPrintLine3F1
+
+[Field: JpWeightDashboardPrintLine3F1]
+    Set As : "DASHBOARD 2 of 4   -   " + JpFmtDate($$JpDashFrom) + "  to  " + JpFmtDate($$JpDashTo)
+    Style : JpFontBold
+[Line: JpWeightDashboardPrintLine4]
+    Field: JpWeightDashboardPrintLine4F1
+
+[Field: JpWeightDashboardPrintLine4F1]
+    Set As : "  GOLD SOLD (GRAMS)        "
+    Style : JpCardHdr
+[Line: JpWeightDashboardPrintLine5]
+    Field: JpWeightDashboardPrintLine5F1
+
+[Field: JpWeightDashboardPrintLine5F1]
+    Set As : "   " + JpFmtWt(Sum($$JwlWtSold))
+    Style : JpBigNum
+[Line: JpWeightDashboardPrintLine6]
+    Field: JpWeightDashboardPrintLine6F1
+
+[Field: JpWeightDashboardPrintLine6F1]
+    Set As : "  PIECES SOLD              "
+    Style : JpCardHdr
+[Line: JpWeightDashboardPrintLine7]
+    Field: JpWeightDashboardPrintLine7F1
+
+[Field: JpWeightDashboardPrintLine7F1]
+    Set As : "   " + String(Sum($$JwlPcs), "0")
+    Style : JpBigNum
+[Line: JpWeightDashboardPrintLine8]
+    Field: JpWeightDashboardPrintLine8F1
+
+[Field: JpWeightDashboardPrintLine8F1]
+    Set As : "  REVENUE                  "
+    Style : JpCardHdr
+[Line: JpWeightDashboardPrintLine9]
+    Field: JpWeightDashboardPrintLine9F1
+
+[Field: JpWeightDashboardPrintLine9F1]
+    Set As : "   " + JpFmtAmt(Sum($$JwlRev))
+    Style : JpBigNum
+[Line: JpWeightDashboardPrintLine10]
+    Field: JpWeightDashboardPrintLine10F1
+
+[Field: JpWeightDashboardPrintLine10F1]
+    Set As : " "
+    Style : JpCardHdr
+[Line: JpWeightDashboardPrintLine11]
+    Field: JpWeightDashboardPrintLine11F1
+
+[Field: JpWeightDashboardPrintLine11F1]
+    Set As : "Category"
+[Line: JpWeightDashboardPrintLine12]
+    Field: JpWeightDashboardPrintLine12F1
+
+[Field: JpWeightDashboardPrintLine12F1]
+    Style : JpGridHead
+[Line: JpWeightDashboardPrintLine13]
+    Field: JpWeightDashboardPrintLine13F1
+
+[Field: JpWeightDashboardPrintLine13F1]
+    Set As : "Salesperson"
+[Line: JpWeightDashboardPrintLine14]
+    Field: JpWeightDashboardPrintLine14F1
+
+[Field: JpWeightDashboardPrintLine14F1]
+    Style : JpGridHead
+[Line: JpWeightDashboardPrintLine15]
+    Field: JpWeightDashboardPrintLine15F1
+
+[Field: JpWeightDashboardPrintLine15F1]
+    Set As : "Pieces"
+[Line: JpWeightDashboardPrintLine16]
+    Field: JpWeightDashboardPrintLine16F1
+
+[Field: JpWeightDashboardPrintLine16F1]
+    Style : JpGridHead
+[Line: JpWeightDashboardPrintLine17]
+    Field: JpWeightDashboardPrintLine17F1
+
+[Field: JpWeightDashboardPrintLine17F1]
+    Set As : "Weight Sold g"
+[Line: JpWeightDashboardPrintLine18]
+    Field: JpWeightDashboardPrintLine18F1
+
+[Field: JpWeightDashboardPrintLine18F1]
+    Style : JpGridHead
+[Line: JpWeightDashboardPrintLine19]
+    Field: JpWeightDashboardPrintLine19F1
+
+[Field: JpWeightDashboardPrintLine19F1]
+    Set As : "Revenue"
+[Line: JpWeightDashboardPrintLine20]
+    Field: JpWeightDashboardPrintLine20F1
+
+[Field: JpWeightDashboardPrintLine20F1]
+    Style : JpGridHead
+[Line: JpWeightDashboardPrintLine21]
+    Field: JpWeightDashboardPrintLine21F1
+
+[Field: JpWeightDashboardPrintLine21F1]
+    Set As : $$JwlCat
+[Line: JpWeightDashboardPrintLine22]
+    Field: JpWeightDashboardPrintLine22F1
+
+[Field: JpWeightDashboardPrintLine22F1]
+    Style : JpGrid
+[Line: JpWeightDashboardPrintLine23]
+    Field: JpWeightDashboardPrintLine23F1
+
+[Field: JpWeightDashboardPrintLine23F1]
+    Set As : $$JwlSp
+[Line: JpWeightDashboardPrintLine24]
+    Field: JpWeightDashboardPrintLine24F1
+
+[Field: JpWeightDashboardPrintLine24F1]
+    Style : JpGrid
+[Line: JpWeightDashboardPrintLine25]
+    Field: JpWeightDashboardPrintLine25F1
+
+[Field: JpWeightDashboardPrintLine25F1]
+    Set As : $$JwlPcs
+[Line: JpWeightDashboardPrintLine26]
+    Field: JpWeightDashboardPrintLine26F1
+
+[Field: JpWeightDashboardPrintLine26F1]
+    Style : JpGrid
+[Line: JpWeightDashboardPrintLine27]
+    Field: JpWeightDashboardPrintLine27F1
+
+[Field: JpWeightDashboardPrintLine27F1]
+    Set As : $$JwlWtSold
+[Line: JpWeightDashboardPrintLine28]
+    Field: JpWeightDashboardPrintLine28F1
+
+[Field: JpWeightDashboardPrintLine28F1]
+    Style : JpWeightBold
+[Line: JpWeightDashboardPrintLine29]
+    Field: JpWeightDashboardPrintLine29F1
+
+[Field: JpWeightDashboardPrintLine29F1]
+    Set As : $$JwlRev
+[Line: JpWeightDashboardPrintLine30]
+    Field: JpWeightDashboardPrintLine30F1
+
+[Field: JpWeightDashboardPrintLine30F1]
+    Style : JpMoneyBold
+[Line: JpWeightDashboardPrintLine31]
+    Field: JpWeightDashboardPrintLine31F1
+
+[Field: JpWeightDashboardPrintLine31F1]
+    Set As : "TOP SELLING CATEGORY"
+[Line: JpWeightDashboardPrintLine32]
+    Field: JpWeightDashboardPrintLine32F1
+
+[Field: JpWeightDashboardPrintLine32F1]
+    Style : JpTotal
+[Line: JpWeightDashboardPrintLine33]
+    Field: JpWeightDashboardPrintLine33F1
+
+[Field: JpWeightDashboardPrintLine33F1]
+    Set As : JpBlankIfNull($$JwlCat)
+[Line: JpWeightDashboardPrintLine34]
+    Field: JpWeightDashboardPrintLine34F1
+
+[Field: JpWeightDashboardPrintLine34F1]
+    Style : JpTotal
+[Line: JpWeightDashboardPrintLine35]
+    Field: JpWeightDashboardPrintLine35F1
+
+[Field: JpWeightDashboardPrintLine35F1]
+    Set As : "TOP SALESPERSON (row 1)"
+[Line: JpWeightDashboardPrintLine36]
+    Field: JpWeightDashboardPrintLine36F1
+
+[Field: JpWeightDashboardPrintLine36F1]
+    Style : JpTotal
+[Line: JpWeightDashboardPrintLine37]
+    Field: JpWeightDashboardPrintLine37F1
+
+[Field: JpWeightDashboardPrintLine37F1]
+    Set As : JpBlankIfNull($$JwlSp)
+[Line: JpWeightDashboardPrintLine38]
+    Field: JpWeightDashboardPrintLine38F1
+
+[Field: JpWeightDashboardPrintLine38F1]
+    Style : JpTotal
+[Export: JpWeightDashboardExport]
+    Title: <1000, "Dashboard - Gold Sold and Top Performers">
+    Repeat: Over: JpWeightDashboard
+    Export Title: Detail
+    Export: Value: $$JwlCat
+    Export: Value: $$JwlSp
+    Export: Value: $$JwlPcs
+    Export: Value: $$JwlWtSold
+    Export: Value: $$JwlRev
+
+
+; =============================================================================
+;  CARD 3 - ALERTS  (journal level: orders, repairs, karigar metal)
+; =============================================================================
+[Collection: Report: JpAlertDashboard]
+    Source: JpAlertDashboardSQL
+    Title: <1000,###,#a##"  DASHBOARD 3 of 4  -  PENDING WORK AND ATTENTION">
+    Print: JpAlertDashboardPrint
+    Export: JpAlertDashboardExport
+    Key: JpAlertDashboardKey
+    Filters: <JpAlertKind, <String, "Kind (blank = all)">>
+
+[Variable: JpAlertDashboardSQL : String]
+    Type: String
+    Value: "SELECT $JwlVchKind$$ AS JwlKind, $JwlOrdNo$$ AS JwlRef, $JwlOrdCust$$ AS JwlCust, $JwlRepNo$$ AS JwlRepRef, $JwlRepCust$$ AS JwlRepCust, $JwlJobNo$$ AS JwlJobRef, $JwlJobKarigar$$ AS JwlKarigar, $JwlOrdStatus$$ AS JwlOrdStatus, $JwlRepStatus$$ AS JwlRepStatus, $JwlJobStatus$$ AS JwlJobStatus, $JwlOrdAdvBalance$$ AS JwlAdvBal, $JwlRepBalance$$ AS JwlRepBal, $JwlJobBalWt$$ AS JwlJobBalWt, $JwlOrdDelivDate$$ AS JwlOrdDate, $JwlRepDelivDate$$ AS JwlRepDate FROM $$JOURNAL$$ WHERE $JwlVchKind$$ IN ('Order','Repair','KarigarJob')"
+
+[Variable: JpAlertDashboardKey : String]
+    Type: String
+    Value: "JwlKind"
+
+
+; [Print: JpAlertDashboardPrint] -> [Form: JpAlertDashboardPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpAlertDashboardPrint]
+    Height : 18
+    Parts : JpAlertDashboardPrintLines
+
+[Part: JpAlertDashboardPrintLines]
+    Lines : Spacing, JpAlertDashboardPrintLine1, JpAlertDashboardPrintLine2, JpAlertDashboardPrintLine3, JpAlertDashboardPrintLine4, JpAlertDashboardPrintLine5, JpAlertDashboardPrintLine6, JpAlertDashboardPrintLine7, JpAlertDashboardPrintLine8, JpAlertDashboardPrintLine9, JpAlertDashboardPrintLine10, JpAlertDashboardPrintLine11, JpAlertDashboardPrintLine12, JpAlertDashboardPrintLine13, JpAlertDashboardPrintLine14, JpAlertDashboardPrintLine15, JpAlertDashboardPrintLine16, JpAlertDashboardPrintLine17, JpAlertDashboardPrintLine18, JpAlertDashboardPrintLine19, JpAlertDashboardPrintLine20, JpAlertDashboardPrintLine21, JpAlertDashboardPrintLine22, JpAlertDashboardPrintLine23, JpAlertDashboardPrintLine24, JpAlertDashboardPrintLine25, JpAlertDashboardPrintLine26, JpAlertDashboardPrintLine27, JpAlertDashboardPrintLine28, JpAlertDashboardPrintLine29, JpAlertDashboardPrintLine30, JpAlertDashboardPrintLine31, JpAlertDashboardPrintLine32, JpAlertDashboardPrintLine33, JpAlertDashboardPrintLine34, JpAlertDashboardPrintLine35
+
+[Line: JpAlertDashboardPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpAlertDashboardPrintLine2]
+    Field: JpAlertDashboardPrintLine2F1
+
+[Field: JpAlertDashboardPrintLine2F1]
+    Set As : Upr(##JwlShopName)
+    Style : JpFontBold
+[Line: JpAlertDashboardPrintLine3]
+    Field: JpAlertDashboardPrintLine3F1
+
+[Field: JpAlertDashboardPrintLine3F1]
+    Set As : "DASHBOARD 3 of 4   -   as on " + JpFmtDate(JpCacheDate)
+    Style : JpFontBold
+[Line: JpAlertDashboardPrintLine4]
+    Field: JpAlertDashboardPrintLine4F1
+
+[Field: JpAlertDashboardPrintLine4F1]
+    Set As : "Kind"
+[Line: JpAlertDashboardPrintLine5]
+    Field: JpAlertDashboardPrintLine5F1
+
+[Field: JpAlertDashboardPrintLine5F1]
+    Style : JpGridHead
+[Line: JpAlertDashboardPrintLine6]
+    Field: JpAlertDashboardPrintLine6F1
+
+[Field: JpAlertDashboardPrintLine6F1]
+    Set As : "Reference"
+[Line: JpAlertDashboardPrintLine7]
+    Field: JpAlertDashboardPrintLine7F1
+
+[Field: JpAlertDashboardPrintLine7F1]
+    Style : JpGridHead
+[Line: JpAlertDashboardPrintLine8]
+    Field: JpAlertDashboardPrintLine8F1
+
+[Field: JpAlertDashboardPrintLine8F1]
+    Set As : "Party"
+[Line: JpAlertDashboardPrintLine9]
+    Field: JpAlertDashboardPrintLine9F1
+
+[Field: JpAlertDashboardPrintLine9F1]
+    Style : JpGridHead
+[Line: JpAlertDashboardPrintLine10]
+    Field: JpAlertDashboardPrintLine10F1
+
+[Field: JpAlertDashboardPrintLine10F1]
+    Set As : "Status"
+[Line: JpAlertDashboardPrintLine11]
+    Field: JpAlertDashboardPrintLine11F1
+
+[Field: JpAlertDashboardPrintLine11F1]
+    Style : JpGridHead
+[Line: JpAlertDashboardPrintLine12]
+    Field: JpAlertDashboardPrintLine12F1
+
+[Field: JpAlertDashboardPrintLine12F1]
+    Set As : "Due"
+[Line: JpAlertDashboardPrintLine13]
+    Field: JpAlertDashboardPrintLine13F1
+
+[Field: JpAlertDashboardPrintLine13F1]
+    Style : JpGridHead
+[Line: JpAlertDashboardPrintLine14]
+    Field: JpAlertDashboardPrintLine14F1
+
+[Field: JpAlertDashboardPrintLine14F1]
+    Set As : "Money / Metal"
+[Line: JpAlertDashboardPrintLine15]
+    Field: JpAlertDashboardPrintLine15F1
+
+[Field: JpAlertDashboardPrintLine15F1]
+    Style : JpGridHead
+[Line: JpAlertDashboardPrintLine16]
+    Field: JpAlertDashboardPrintLine16F1
+
+[Field: JpAlertDashboardPrintLine16F1]
+    Set As : $$JwlKind
+[Line: JpAlertDashboardPrintLine17]
+    Field: JpAlertDashboardPrintLine17F1
+
+[Field: JpAlertDashboardPrintLine17F1]
+    Style : JpGrid
+[Line: JpAlertDashboardPrintLine18]
+    Field: JpAlertDashboardPrintLine18F1
+
+[Field: JpAlertDashboardPrintLine18F1]
+    Set As : JpAlertRef()
+[Line: JpAlertDashboardPrintLine19]
+    Field: JpAlertDashboardPrintLine19F1
+
+[Field: JpAlertDashboardPrintLine19F1]
+    Style : JpGrid
+[Line: JpAlertDashboardPrintLine20]
+    Field: JpAlertDashboardPrintLine20F1
+
+[Field: JpAlertDashboardPrintLine20F1]
+    Set As : JpAlertParty()
+[Line: JpAlertDashboardPrintLine21]
+    Field: JpAlertDashboardPrintLine21F1
+
+[Field: JpAlertDashboardPrintLine21F1]
+    Style : JpGrid
+[Line: JpAlertDashboardPrintLine22]
+    Field: JpAlertDashboardPrintLine22F1
+
+[Field: JpAlertDashboardPrintLine22F1]
+    Set As : JpAlertStatus()
+[Line: JpAlertDashboardPrintLine23]
+    Field: JpAlertDashboardPrintLine23F1
+
+[Field: JpAlertDashboardPrintLine23F1]
+    Style : JpGrid
+[Line: JpAlertDashboardPrintLine24]
+    Field: JpAlertDashboardPrintLine24F1
+
+[Field: JpAlertDashboardPrintLine24F1]
+    Set As : JpAlertDue()
+[Line: JpAlertDashboardPrintLine25]
+    Field: JpAlertDashboardPrintLine25F1
+
+[Field: JpAlertDashboardPrintLine25F1]
+    Style : JpGrid
+[Line: JpAlertDashboardPrintLine26]
+    Field: JpAlertDashboardPrintLine26F1
+
+[Field: JpAlertDashboardPrintLine26F1]
+    Set As : JpAlertValue()
+[Line: JpAlertDashboardPrintLine27]
+    Field: JpAlertDashboardPrintLine27F1
+
+[Field: JpAlertDashboardPrintLine27F1]
+    Style : JpMoneyBold
+[Line: JpAlertDashboardPrintLine28]
+    Field: JpAlertDashboardPrintLine28F1
+
+[Field: JpAlertDashboardPrintLine28F1]
+    Set As : "OPEN ORDERS"
+[Line: JpAlertDashboardPrintLine29]
+    Field: JpAlertDashboardPrintLine29F1
+
+[Field: JpAlertDashboardPrintLine29F1]
+    Style : JpTotal
+[Line: JpAlertDashboardPrintLine30]
+    Field: JpAlertDashboardPrintLine30F1
+
+[Field: JpAlertDashboardPrintLine30F1]
+    Set As : JpCountKind("Order")
+[Line: JpAlertDashboardPrintLine31]
+    Field: JpAlertDashboardPrintLine31F1
+
+[Field: JpAlertDashboardPrintLine31F1]
+    Style : JpTotal
+[Line: JpAlertDashboardPrintLine32]
+    Field: JpAlertDashboardPrintLine32F1
+
+[Field: JpAlertDashboardPrintLine32F1]
+    Set As : "GOLD WITH KARIGARS (gm)"
+[Line: JpAlertDashboardPrintLine33]
+    Field: JpAlertDashboardPrintLine33F1
+
+[Field: JpAlertDashboardPrintLine33F1]
+    Style : JpTotal
+[Line: JpAlertDashboardPrintLine34]
+    Field: JpAlertDashboardPrintLine34F1
+
+[Field: JpAlertDashboardPrintLine34F1]
+    Set As : Sum($JwlJobBalWt)
+[Line: JpAlertDashboardPrintLine35]
+    Field: JpAlertDashboardPrintLine35F1
+
+[Field: JpAlertDashboardPrintLine35F1]
+    Style : JpTotal
+[Function: JpAlertRef]
+    Returns: String : Any
+    If ($$JwlKind = "Order") Then
+    {
+        JpAlertRef = JpBlankIfNull($$JwlRef)
+        Exit
+    }
+    If ($$JwlKind = "Repair") Then
+    {
+        JpAlertRef = JpBlankIfNull($$JwlRepRef)
+        Exit
+    }
+    If ($$JwlKind = "KarigarJob") Then
+    {
+        JpAlertRef = JpBlankIfNull($$JwlJobRef)
+        Exit
+    }
+    JpAlertRef = ""
+
+[Function: JpAlertParty]
+    Returns: String : Any
+    If ($$JwlKind = "Order") Then
+    {
+        JpAlertParty = JpBlankIfNull($$JwlCust)
+        Exit
+    }
+    If ($$JwlKind = "Repair") Then
+    {
+        JpAlertParty = JpBlankIfNull($JwlRepCust)
+        Exit
+    }
+    If ($$JwlKind = "KarigarJob") Then
+    {
+        JpAlertParty = JpBlankIfNull($$JwlKarigar)
+        Exit
+    }
+    JpAlertParty = ""
+
+[Function: JpAlertStatus]
+    Returns: String : Any
+    If ($$JwlKind = "Order") Then
+    {
+        JpAlertStatus = JpBlankIfNull($JwlOrdStatus)
+        Exit
+    }
+    If ($$JwlKind = "Repair") Then
+    {
+        JpAlertStatus = JpBlankIfNull($JwlRepStatus)
+        Exit
+    }
+    If ($$JwlKind = "KarigarJob") Then
+    {
+        JpAlertStatus = JpBlankIfNull($JwlJobStatus)
+        Exit
+    }
+    JpAlertStatus = ""
+
+[Function: JpAlertDue]
+    Returns: String : Any
+    Var: d : Date
+    If ($$JwlKind = "Order") Then
+    {
+        d = $$JwlOrdDate
+    }
+    If ($$JwlKind = "Repair") Then
+    {
+        d = $$JwlRepDate
+    }
+    If (d is null) Then
+    {
+        JpAlertDue = "-"
+        Exit
+    }
+    If (d < JpCacheDate) Then
+    {
+        JpAlertDue = "OVERDUE"
+        Exit
+    }
+    JpAlertDue = JpFmtDate(d)
+
+[Function: JpAlertValue]
+    Returns: String : Any
+    If ($$JwlKind = "Order") Then
+    {
+        JpAlertValue = JpFmtAmt($$JwlAdvBal)
+        Exit
+    }
+    If ($$JwlKind = "Repair") Then
+    {
+        JpAlertValue = JpFmtAmt($$JwlRepBal)
+        Exit
+    }
+    If ($$JwlKind = "KarigarJob") Then
+    {
+        JpAlertValue = JpFmtWt($JwlJobBalWt) + " g"
+        Exit
+    }
+    JpAlertValue = ""
+
+[Function: JpCountKind]
+    Param: vKind : String : Optional
+    Returns: Number : Any
+    JpCountKind = Count($$JwlRef)
+
+[Export: JpAlertDashboardExport]
+    Title: <1000, "Dashboard - Pending Work">
+    Repeat: Over: JpAlertDashboard
+    Export Title: Detail
+    Export: Value: $$JwlKind
+    Export: Value: $$JwlRef
+    Export: Value: $$JwlRepRef
+    Export: Value: $$JwlJobRef
+    Export: Value: $JwlOrdStatus
+    Export: Value: $JwlRepStatus
+    Export: Value: $JwlJobBalWt
+
+
+; =============================================================================
+;  CARD 4 - INVENTORY  (item level)
+; =============================================================================
+[Collection: Report: JpInvDashboard]
+    Source: JpInvDashboardSQL
+    Title: <1000,###,#a##"  DASHBOARD 4 of 4  -  INVENTORY AND STOCK VALUE">
+    Print: JpInvDashboardPrint
+    Export: JpInvDashboardExport
+    Key: JpInvDashboardKey
+
+[Variable: JpInvDashboardSQL : String]
+    Type: String
+    Value: "SELECT $JwlMetalType$$ AS JwlMetal, $JwlPurity$$ AS JwlPur, SUM($$QUANTITY$$) AS JwlPcs, SUM($JwlNetMetalWt$$ * $$QUANTITY$$) AS JwlWt, SUM($JwlDiamondCarat$$ * $$QUANTITY$$) AS JwlCarat, SUM($JwlMetalValue$$ * $$QUANTITY$$) AS JwlMetalVal, SUM($JwlStoneValue$$ * $$QUANTITY$$) AS JwlStoneVal, SUM($JwlDiamondValue$$ * $$QUANTITY$$) AS JwlDiaVal, SUM($JwlFinalValue$$ * $$QUANTITY$$) AS JwlStockVal FROM $$ITEMSSTOCK$$ WHERE $JwlIsJewellery$$ = 1 GROUP BY $JwlMetalType$$,$JwlPurity$$ ORDER BY $JwlMetalType$$,$JwlPurity$$"
+
+[Variable: JpInvDashboardKey : String]
+    Type: String
+    Value: "JwlMetal"
+
+
+; [Print: JpInvDashboardPrint] -> [Form: JpInvDashboardPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpInvDashboardPrint]
+    Height : 18
+    Parts : JpInvDashboardPrintLines
+
+[Part: JpInvDashboardPrintLines]
+    Lines : Spacing, JpInvDashboardPrintLine1, JpInvDashboardPrintLine2, JpInvDashboardPrintLine3, JpInvDashboardPrintLine4, JpInvDashboardPrintLine5, JpInvDashboardPrintLine6, JpInvDashboardPrintLine7, JpInvDashboardPrintLine8, JpInvDashboardPrintLine9, JpInvDashboardPrintLine10, JpInvDashboardPrintLine11, JpInvDashboardPrintLine12, JpInvDashboardPrintLine13, JpInvDashboardPrintLine14, JpInvDashboardPrintLine15, JpInvDashboardPrintLine16, JpInvDashboardPrintLine17, JpInvDashboardPrintLine18, JpInvDashboardPrintLine19, JpInvDashboardPrintLine20, JpInvDashboardPrintLine21, JpInvDashboardPrintLine22, JpInvDashboardPrintLine23, JpInvDashboardPrintLine24, JpInvDashboardPrintLine25, JpInvDashboardPrintLine26, JpInvDashboardPrintLine27, JpInvDashboardPrintLine28, JpInvDashboardPrintLine29, JpInvDashboardPrintLine30, JpInvDashboardPrintLine31, JpInvDashboardPrintLine32, JpInvDashboardPrintLine33, JpInvDashboardPrintLine34, JpInvDashboardPrintLine35, JpInvDashboardPrintLine36, JpInvDashboardPrintLine37, JpInvDashboardPrintLine38, JpInvDashboardPrintLine39, JpInvDashboardPrintLine40, JpInvDashboardPrintLine41, JpInvDashboardPrintLine42, JpInvDashboardPrintLine43, JpInvDashboardPrintLine44, JpInvDashboardPrintLine45, JpInvDashboardPrintLine46, JpInvDashboardPrintLine47, JpInvDashboardPrintLine48
+
+[Line: JpInvDashboardPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpInvDashboardPrintLine2]
+    Field: JpInvDashboardPrintLine2F1
+
+[Field: JpInvDashboardPrintLine2F1]
+    Set As : Upr(##JwlShopName)
+    Style : JpFontBold
+[Line: JpInvDashboardPrintLine3]
+    Field: JpInvDashboardPrintLine3F1
+
+[Field: JpInvDashboardPrintLine3F1]
+    Set As : "DASHBOARD 4 of 4   -   as on " + JpFmtDate(JpCacheDate)
+    Style : JpFontBold
+[Line: JpInvDashboardPrintLine4]
+    Field: JpInvDashboardPrintLine4F1
+
+[Field: JpInvDashboardPrintLine4F1]
+    Set As : "Metal is valued at the item rate; stones and diamonds are valued separately, so the two never double-count."
+    Style : JpFontBold
+[Line: JpInvDashboardPrintLine5]
+    Field: JpInvDashboardPrintLine5F1
+
+[Field: JpInvDashboardPrintLine5F1]
+    Set As : "Metal"
+[Line: JpInvDashboardPrintLine6]
+    Field: JpInvDashboardPrintLine6F1
+
+[Field: JpInvDashboardPrintLine6F1]
+    Style : JpGridHead
+[Line: JpInvDashboardPrintLine7]
+    Field: JpInvDashboardPrintLine7F1
+
+[Field: JpInvDashboardPrintLine7F1]
+    Set As : "Purity"
+[Line: JpInvDashboardPrintLine8]
+    Field: JpInvDashboardPrintLine8F1
+
+[Field: JpInvDashboardPrintLine8F1]
+    Style : JpGridHead
+[Line: JpInvDashboardPrintLine9]
+    Field: JpInvDashboardPrintLine9F1
+
+[Field: JpInvDashboardPrintLine9F1]
+    Set As : "Pieces"
+[Line: JpInvDashboardPrintLine10]
+    Field: JpInvDashboardPrintLine10F1
+
+[Field: JpInvDashboardPrintLine10F1]
+    Style : JpGridHead
+[Line: JpInvDashboardPrintLine11]
+    Field: JpInvDashboardPrintLine11F1
+
+[Field: JpInvDashboardPrintLine11F1]
+    Set As : "Net Wt g"
+[Line: JpInvDashboardPrintLine12]
+    Field: JpInvDashboardPrintLine12F1
+
+[Field: JpInvDashboardPrintLine12F1]
+    Style : JpGridHead
+[Line: JpInvDashboardPrintLine13]
+    Field: JpInvDashboardPrintLine13F1
+
+[Field: JpInvDashboardPrintLine13F1]
+    Set As : "Metal Value"
+[Line: JpInvDashboardPrintLine14]
+    Field: JpInvDashboardPrintLine14F1
+
+[Field: JpInvDashboardPrintLine14F1]
+    Style : JpGridHead
+[Line: JpInvDashboardPrintLine15]
+    Field: JpInvDashboardPrintLine15F1
+
+[Field: JpInvDashboardPrintLine15F1]
+    Set As : "Stone Value"
+[Line: JpInvDashboardPrintLine16]
+    Field: JpInvDashboardPrintLine16F1
+
+[Field: JpInvDashboardPrintLine16F1]
+    Style : JpGridHead
+[Line: JpInvDashboardPrintLine17]
+    Field: JpInvDashboardPrintLine17F1
+
+[Field: JpInvDashboardPrintLine17F1]
+    Set As : "Diamond Value"
+[Line: JpInvDashboardPrintLine18]
+    Field: JpInvDashboardPrintLine18F1
+
+[Field: JpInvDashboardPrintLine18F1]
+    Style : JpGridHead
+[Line: JpInvDashboardPrintLine19]
+    Field: JpInvDashboardPrintLine19F1
+
+[Field: JpInvDashboardPrintLine19F1]
+    Set As : "Stock Value"
+[Line: JpInvDashboardPrintLine20]
+    Field: JpInvDashboardPrintLine20F1
+
+[Field: JpInvDashboardPrintLine20F1]
+    Style : JpGridHead
+[Line: JpInvDashboardPrintLine21]
+    Field: JpInvDashboardPrintLine21F1
+
+[Field: JpInvDashboardPrintLine21F1]
+    Set As : $$JwlMetal
+[Line: JpInvDashboardPrintLine22]
+    Field: JpInvDashboardPrintLine22F1
+
+[Field: JpInvDashboardPrintLine22F1]
+    Style : JpGrid
+[Line: JpInvDashboardPrintLine23]
+    Field: JpInvDashboardPrintLine23F1
+
+[Field: JpInvDashboardPrintLine23F1]
+    Set As : $$JwlPur
+[Line: JpInvDashboardPrintLine24]
+    Field: JpInvDashboardPrintLine24F1
+
+[Field: JpInvDashboardPrintLine24F1]
+    Style : JpGrid
+[Line: JpInvDashboardPrintLine25]
+    Field: JpInvDashboardPrintLine25F1
+
+[Field: JpInvDashboardPrintLine25F1]
+    Set As : $$JwlPcs
+[Line: JpInvDashboardPrintLine26]
+    Field: JpInvDashboardPrintLine26F1
+
+[Field: JpInvDashboardPrintLine26F1]
+    Style : JpGrid
+[Line: JpInvDashboardPrintLine27]
+    Field: JpInvDashboardPrintLine27F1
+
+[Field: JpInvDashboardPrintLine27F1]
+    Set As : $$JwlWt
+[Line: JpInvDashboardPrintLine28]
+    Field: JpInvDashboardPrintLine28F1
+
+[Field: JpInvDashboardPrintLine28F1]
+    Style : JpWeightBold
+[Line: JpInvDashboardPrintLine29]
+    Field: JpInvDashboardPrintLine29F1
+
+[Field: JpInvDashboardPrintLine29F1]
+    Set As : $$JwlMetalVal
+[Line: JpInvDashboardPrintLine30]
+    Field: JpInvDashboardPrintLine30F1
+
+[Field: JpInvDashboardPrintLine30F1]
+    Style : JpMoney
+[Line: JpInvDashboardPrintLine31]
+    Field: JpInvDashboardPrintLine31F1
+
+[Field: JpInvDashboardPrintLine31F1]
+    Set As : $$JwlStoneVal
+[Line: JpInvDashboardPrintLine32]
+    Field: JpInvDashboardPrintLine32F1
+
+[Field: JpInvDashboardPrintLine32F1]
+    Style : JpMoney
+[Line: JpInvDashboardPrintLine33]
+    Field: JpInvDashboardPrintLine33F1
+
+[Field: JpInvDashboardPrintLine33F1]
+    Set As : $$JwlDiaVal
+[Line: JpInvDashboardPrintLine34]
+    Field: JpInvDashboardPrintLine34F1
+
+[Field: JpInvDashboardPrintLine34F1]
+    Style : JpMoney
+[Line: JpInvDashboardPrintLine35]
+    Field: JpInvDashboardPrintLine35F1
+
+[Field: JpInvDashboardPrintLine35F1]
+    Set As : $$JwlStockVal
+[Line: JpInvDashboardPrintLine36]
+    Field: JpInvDashboardPrintLine36F1
+
+[Field: JpInvDashboardPrintLine36F1]
+    Style : JpMoneyBold
+[Line: JpInvDashboardPrintLine37]
+    Field: JpInvDashboardPrintLine37F1
+
+[Field: JpInvDashboardPrintLine37F1]
+    Set As : "TOTAL"
+[Line: JpInvDashboardPrintLine38]
+    Field: JpInvDashboardPrintLine38F1
+
+[Field: JpInvDashboardPrintLine38F1]
+    Style : JpTotal
+[Line: JpInvDashboardPrintLine39]
+    Field: JpInvDashboardPrintLine39F1
+
+[Field: JpInvDashboardPrintLine39F1]
+    Set As : Sum($$JwlPcs)
+[Line: JpInvDashboardPrintLine40]
+    Field: JpInvDashboardPrintLine40F1
+
+[Field: JpInvDashboardPrintLine40F1]
+    Style : JpTotal
+[Line: JpInvDashboardPrintLine41]
+    Field: JpInvDashboardPrintLine41F1
+
+[Field: JpInvDashboardPrintLine41F1]
+    Set As : Sum($$JwlWt)
+[Line: JpInvDashboardPrintLine42]
+    Field: JpInvDashboardPrintLine42F1
+
+[Field: JpInvDashboardPrintLine42F1]
+    Style : JpTotal
+[Line: JpInvDashboardPrintLine43]
+    Field: JpInvDashboardPrintLine43F1
+
+[Field: JpInvDashboardPrintLine43F1]
+    Set As : Sum($$JwlStockVal)
+[Line: JpInvDashboardPrintLine44]
+    Field: JpInvDashboardPrintLine44F1
+
+[Field: JpInvDashboardPrintLine44F1]
+    Style : JpTotal
+[Line: JpInvDashboardPrintLine45]
+    Field: JpInvDashboardPrintLine45F1
+
+[Field: JpInvDashboardPrintLine45F1]
+    Set As : "TOTAL NET METAL WEIGHT (all metals) : " + JpFmtWt(Sum($$JwlWt)) + " gms"
+    Style : JpFontBold
+[Line: JpInvDashboardPrintLine46]
+    Field: JpInvDashboardPrintLine46F1
+
+[Field: JpInvDashboardPrintLine46F1]
+    Set As : "TOTAL DIAMOND STOCK                : " + JpFmtWt(Sum($$JwlCarat)) + " carat"
+    Style : JpFontBold
+[Line: JpInvDashboardPrintLine47]
+    Field: JpInvDashboardPrintLine47F1
+
+[Field: JpInvDashboardPrintLine47F1]
+    Set As : "TOTAL STOCK VALUE                  : " + JpFmtAmt(Sum($$JwlStockVal))
+    Style : JpFontBold
+[Line: JpInvDashboardPrintLine48]
+    Field: JpInvDashboardPrintLine48F1
+
+[Field: JpInvDashboardPrintLine48F1]
+    Set As : "Gold, Silver and Platinum weights individually: see the Metal / Purity rows above, or Gateway > Jewellery > Inventory Reports > Metal-wise Stock."
+    Style : JpFontBold
+[Export: JpInvDashboardExport]
+    Title: <1000, "Dashboard - Inventory">
+    Repeat: Over: JpInvDashboard
+    Export Title: Detail
+    Export: Value: $$JwlMetal
+    Export: Value: $$JwlPur
+    Export: Value: $$JwlPcs
+    Export: Value: $$JwlWt
+    Export: Value: $$JwlCarat
+    Export: Value: $$JwlStockVal

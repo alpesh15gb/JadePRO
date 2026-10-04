@@ -1,0 +1,16 @@
+; P00 CONTROL - must load clean. Proves the harness itself is valid.
+; Deliberately uses only constructs already proven to parse (Function at line 66,
+; Screen, Collection). No Report body attributes, so a failure here is unambiguous.
+[Function: ZzP00Fn]
+    Type: Number
+    Returns: Number
+    ZzP00Fn = 21 * 2
+
+[Collection: ZzP00Coll]
+    Var: ZzP00Item, String
+
+[Screen: ZzP00Screen]
+    Title: <1000, "ZzP00">
+    Lines: 1, 1
+    Field: <Field-Id: ZzP00Field, Label: "X">
+        Width: 100

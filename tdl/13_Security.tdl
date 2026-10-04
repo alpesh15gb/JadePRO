@@ -1,0 +1,516 @@
+; =============================================================================
+;  JadePro  ::  13_Security.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Role-based permissions.
+;            Roles  : Owner, Manager, Accountant, Salesperson, Cashier
+;            Rights : JADE_CHANGE_RATE, JADE_OVERRIDE_RATE, JADE_HIGH_DISCOUNT,
+;                     JADE_DELETE_VOUCHER, JADE_VIEW_PROFIT, JADE_PURCHASE,
+;                     JADE_KARIGAR_MGMT, JADE_REPORTS, JADE_COUNTER_CLOSE
+;
+;  HOW THE ROLE IS DECIDED
+;    Tally itself has no notion of a role, so each Tally user is mapped to a
+;    JadePro role ONCE, on the Company master, as a delimited list:
+;        Owner,Manager|Meera|Manager|Ravi|Salesperson|Priya|Cashier
+;    JpLoadRole() reads the ACTIVE Tally user and looks the role up here.
+;
+;  FAIL-SAFE BEHAVIOUR
+;    If the active user cannot be detected, or has no entry in the map, the
+;    module does NOT lock the shop out of rate changes and profit reports. It
+;    runs in an explicitly flagged "unassigned" mode and shows a warning on
+;    every screen. Failing CLOSED would stop a working shop from opening at
+;    all if a Tally release changed the user variable - the opposite of safe.
+;
+;  LOAD    : After 00_Core. Safe to load in any position after that.
+;  REQUIRES : 00_Core.tdl
+; =============================================================================
+
+    ; Label: "JadePro User to Role Map"
+[System: UDF]
+JwlUserRoleMap : String : 20217
+    ; Label: "JadePro Roles Configured"
+[System: UDF]
+JwlRoleSetupDone : Logical : 20218
+; Runtime state - filled by JpLoadRole().
+[Variable: JpRoleDetected : String]
+[Variable: JpRoleSource   : String]
+[Variable: JpRoleWarned   : Number]
+[Variable: JpSecurityOn  : Number]
+[Variable: JpSalesTarget : Number]
+
+; =============================================================================
+;  SECTION A - THE RIGHTS TABLE
+;  One place that decides everything. Changing a permission is editing this
+;  function, never hunting through the modules.
+; =============================================================================
+[Function: JpHasRightFor]
+    Param: vRole : String : Optional, vRight : String : Optional
+    Returns: Integer : Any
+    Var: r : String
+    r = JpBlankIfNull(Param(0))
+    If (r = "") Then
+    {
+        ; Unassigned user - fail open but flagged (see header note).
+        JpHasRightFor = 1
+        Exit
+    }
+
+    ; ---- Owner: everything -----------------------------------------------
+    If (r = "Owner") Then
+    {
+        JpHasRightFor = 1
+        Exit
+    }
+
+    ; ---- Manager: rates, overrides, profit, deletes ----------------------
+    If (r = "Manager") Then
+    {
+        If (vRight = JpRtChangeRate()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtOverride()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtHighDiscount()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtDeleteVch()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtProfit()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtPurchase()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtKarigarMgmt()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtReports()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtCounterClose()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtBarcode()) Then { JpHasRightFor = 1; Exit; }
+        JpHasRightFor = 0
+        Exit
+    }
+
+    ; ---- Accountant: purchases, karigar, reports. No rate override -------
+    If (r = "Accountant") Then
+    {
+        If (vRight = JpRtPurchase()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtKarigarMgmt()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtReports()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtChangeRate()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtDeleteVch()) Then { JpHasRightFor = 1; Exit; }
+        If (vRight = JpRtBarcode()) Then { JpHasRightFor = 1; Exit; }
+        JpHasRightFor = 0
+        Exit
+    }
+
+    ; ---- Salesperson: may sell and see their own numbers. NO cost, NO
+    ;      profit, NO rates, NO purchases, NO deletes. --------------------
+    If (r = "Salesperson") Then
+    {
+        If (vRight = JpRtCounterClose()) Then { JpHasRightFor = 1; Exit; }
+        JpHasRightFor = 0
+        Exit
+    }
+
+    ; ---- Cashier: may bill and collect. Nothing else. --------------------
+    If (r = "Cashier") Then
+    {
+        If (vRight = JpRtCounterClose()) Then { JpHasRightFor = 1; Exit; }
+        JpHasRightFor = 0
+        Exit
+    }
+
+    ; Unknown role string - same safe fallback as no role.
+    JpHasRightFor = 1
+
+; Human readable list of a role's rights, shown on the billing screen.
+[Function: JpRoleSummary]
+    Param: vRole : String : Optional
+    Returns: String : Any
+    Var: r : String
+    r = JpBlankIfNull(Param(0))
+    If (r = "Salesperson") Then
+    {
+        JpRoleSummary = "Sales and counter close only. Cost price and profit are hidden."
+        Exit
+    }
+    If (r = "Cashier") Then
+    {
+        JpRoleSummary = "Billing and collections only."
+        Exit
+    }
+    If (r = "Accountant") Then
+    {
+        JpRoleSummary = "Purchases, karigar and reports. Cannot override the metal rate."
+        Exit
+    }
+    If (r = "Manager") Then
+    {
+        JpRoleSummary = "Rates, overrides, profit and deletions."
+        Exit
+    }
+    If (r = "Owner") Then
+    {
+        JpRoleSummary = "Full access."
+        Exit
+    }
+    JpRoleSummary = "Unassigned user - running with full access and a warning."
+
+; =============================================================================
+;  SECTION B - USER DETECTION AND ROLE LOOK-UP
+; =============================================================================
+
+; Reads the active Tally user. JpUserName is set once at startup.
+[Function: JpDetectUser]
+    Returns: Integer : Any
+    Var: u : String
+    u = ""
+    ; Tally exposes the signed-in user through User Personalization.
+    u = JpBlankIfNull($$UPCurrentUser)
+    If (u = "") Then
+    {
+        u = JpBlankIfNull($$Local:JpLoggedInUser)
+    }
+    If (u = "") Then
+    {
+        JpRoleDetected = ""
+        JpRoleSource = "detection unavailable"
+        JpDetectUser = 0
+        Exit
+    }
+    JpUserName = u
+    JpDetectUser = 1
+
+; Looks the detected user up in the "User|Role|User|Role|..." map on the
+; Company master and sets JpUserRole / JpIsOwner / JpIsManager.
+[Function: JpLoadRole]
+    Returns: Integer : Any
+    Var: map : String, u : String, found : Number
+    JpDetectUser
+    u = JpBlankIfNull(JpUserName)
+    found = 0
+    If (u <> "") Then
+    {
+        map = JpBlankIfNull(##JwlUserRoleMap)
+        map = JpRoleLookup(map, u)
+        If (map <> "") Then
+        {
+            JpUserRole = map
+            found = 1
+        }
+    }
+    If (found = 0) Then
+    {
+        JpUserRole = ""
+        JpRoleDetected = ""
+        JpRoleSource = "no mapping for this user"
+    }
+    JpRoleDetected = JpUserRole
+    JpIsOwner = 0
+    JpIsManager = 0
+    If (JpUserRole = "Owner") Then { JpIsOwner = 1; }
+    If (JpUserRole = "Manager") Then { JpIsManager = 1; }
+    JpSecurityOn = 1
+    JpLoadRole = found
+
+; Pure string search over the "User|Role|User|Role" map.
+[Function: JpRoleLookup]
+    Param: vMap : String : Optional, vUser : String : Optional
+    Returns: String : Any
+    Var: m : String, u : String, parts : Number, i : Number, seg : String, a : String, b : String
+    m = JpBlankIfNull(Param(0))
+    u = JpBlankIfNull(Param(1))
+    JpRoleLookup = ""
+    If (m = "") Then { JpRoleLookup = ""; Exit; }
+    If (u = "") Then { JpRoleLookup = ""; Exit; }
+    parts = 0
+    While (1 = 1)
+    {
+        seg = JpRoleNextSeg(m, parts)
+        If (seg = "") Then
+        {
+            JpRoleLookup = ""
+            Exit
+        }
+        parts = parts + 1
+        a = JpRoleToken(seg, 0)
+        b = JpRoleToken(seg, 1)
+        If (a = u) Then
+        {
+            JpRoleLookup = b
+            Exit
+        }
+    }
+
+; Returns the n-th "|"-separated segment, or "" past the end.
+[Function: JpRoleNextSeg]
+    Param: vMap : String : Optional, vIndex : Number : Optional
+    Returns: String : Any
+    Var: m : String, i : Number, n : Number, start : Number, pos : Number
+    m = Param(0)
+    i = Param(1)
+    If (m is null) Then { m = ""; }
+    If (i is null) Then { i = 0; }
+    start = 1
+    n = 0
+    pos = 1
+    While (pos <= Len(m))
+    {
+        If (Mid(m, pos, 1) = "|") Then
+        {
+            n = n + 1
+            If (n = i) Then
+            {
+                start = pos + 1
+            }
+            pos = pos + 1
+        }
+        Else
+        {
+            pos = pos + 1
+        }
+    }
+    If (i = 0) Then
+    {
+        start = 1
+    }
+    If (start > Len(m)) Then
+    {
+        JpRoleNextSeg = ""
+        Exit
+    }
+    ; find the next pipe after start
+    pos = start
+    While (pos <= Len(m))
+    {
+        If (Mid(m, pos, 1) = "|") Then
+        {
+            JpRoleNextSeg = Mid(m, start, pos - start)
+            Exit
+        }
+        pos = pos + 1
+    }
+    JpRoleNextSeg = Mid(m, start, Len(m) - start + 1)
+
+; Returns the n-th ","-separated token of a segment, or "" if absent.
+[Function: JpRoleToken]
+    Param: vSeg : String : Optional, vIndex : Number : Optional
+    Returns: String : Any
+    Var: s : String, i : Number, n : Number, start : Number, pos : Number
+    s = Param(0)
+    i = Param(1)
+    If (s is null) Then { s = ""; }
+    If (i is null) Then { i = 0; }
+    start = 1
+    n = 0
+    pos = 1
+    While (pos <= Len(s))
+    {
+        If (Mid(s, pos, 1) = ",") Then
+        {
+            n = n + 1
+            If (n = i) Then
+            {
+                start = pos + 1
+            }
+            pos = pos + 1
+        }
+        Else
+        {
+            pos = pos + 1
+        }
+    }
+    If (i = 0) Then
+    {
+        start = 1
+    }
+    If (start > Len(s)) Then
+    {
+        JpRoleToken = ""
+        Exit
+    }
+    pos = start
+    While (pos <= Len(s))
+    {
+        If (Mid(s, pos, 1) = ",") Then
+        {
+            JpRoleToken = Mid(s, start, pos - start)
+            Exit
+        }
+        pos = pos + 1
+    }
+    JpRoleToken = Mid(s, start, Len(s) - start + 1)
+
+; Trim spaces and separators from a captured token.
+[Function: JpRoleClean]
+    Param: vText : String : Optional
+    Returns: String : Any
+    Var: s : String
+    s = JpBlankIfNull(Param(0))
+    While (Left(s, 1) = " ") Then
+    {
+        s = Right(s, Len(s) - 1)
+    }
+    While (Right(s, 1) = " ") Then
+    {
+        s = Left(s, Len(s) - 1)
+    }
+    JpRoleClean = s
+
+; =============================================================================
+;  SECTION C - ROLE SETUP SCREEN
+; =============================================================================
+[Variable: JpRoleMapEdit : String]
+[Variable: JpRoleMsg     : String]
+[Variable: JpRoleSelf    : String]
+
+[Screen: JpRoleSetupScreen]
+    Caption: "JadePro  ::  Role Setup"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           JADEPRO ROLE SETUP"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Map each Tally user name to a role:  TallyUserName|Role|TallyUserName|Role"
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Text: " CURRENT SESSION"
+    Style: JpSectionBox
+    Lines: 1, 1, 1
+    Text: "   Detected Tally user : " + JpBlankIfNull(JpUserName)
+    Text: "   Assigned role ...... : " + JpRoleSummary(JpBlankIfNull(JpUserRole))
+    Text: "   Detection source ... : " + JpRoleSource
+    Style: JpWarn
+
+    Line: Spacing
+    Lines: 1
+    Text: " ROLE DEFINITIONS"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1
+    Text: "   Owner        - everything"
+    Text: "   Manager      - change rate, override rate, high discount, delete, view profit, barcode"
+    Text: "   Accountant   - purchase, karigar, reports, change rate, delete, barcode"
+    Text: "   Salesperson  - sell and close counter only. No cost, no profit, no rates."
+    Text: "   Cashier      - billing and collections only."
+
+    Line: Spacing
+    Lines: 1, 1
+    Field: <Field-Id: JpRoleMapEdit, Label: "User|Role Map">
+        Width: 100
+        Style: UseFormCtrl
+    Field: <Field-Id: JpRoleMsg, Label: " ">
+        Width: 100
+        Style: JpWarn
+
+    Line: Spacing
+    Lines: 1
+    Text: "Example:  Owner,Owner|Meera,Manager|Ravi,Salesperson|Priya,Cashier"
+    Style: JpMuted
+    Lines: 1
+    Button: <Save Mapping (F2), Key: F2, Action: JpRoleSave>
+    Button: <Reload My Role (F7), Key: F7, Action: JpRoleReload>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+[Function: JpRoleSave]
+    Returns: Integer : Any
+    If (JpIsOwner = 0) Then
+    {
+        JpRoleMsg = "Only the Owner may change the user-to-role mapping."
+        JpRoleSave = 0
+        Exit
+    }
+    Alter: Company
+    Modify Group: JpRoleSaveGroup
+        Add: Field-id: JwlUserRoleMap
+            Set: Value: $$JpRoleMapEdit
+        Add: Field-id: JwlRoleSetupDone
+            Set: Value: 1
+    Accept: JpRoleSaved
+    JpRoleSave = 1
+
+[Function: JpRoleSaved]
+    Returns: Integer : Any
+    JpLoadRole
+    JpRoleMsg = "Mapping saved. Current role: " + JpBlankIfNull(JpUserRole) + "."
+    JpRoleSaved = 1
+
+[Function: JpRoleReload]
+    Returns: Integer : Any
+    JpLoadRole
+    JpRoleReload = 1
+
+; =============================================================================
+;  SECTION D - SALESPERSON MONTHLY TARGETS
+;  Data on the Company master, not code - each salesperson gets a new row by
+;  editing one master field.
+; =============================================================================
+    ; Label: "Salesperson Monthly Targets"
+[System: UDF]
+JwlSalesTargets : String : 20219
+[Function: JpTargetFor]
+    Param: vSalesperson : String : Optional
+    Returns: Number : Any
+    Var: m : String, s : String, segs : Number, a : String, b : String
+    m = JpBlankIfNull(##JwlSalesTargets)
+    JpTargetFor = 0
+    If (m = "") Then { JpTargetFor = 0; Exit; }
+    segs = 0
+    While (1 = 1)
+    {
+        seg = JpRoleNextSeg(m, segs)
+        If (seg = "") Then { JpTargetFor = 0; Exit; }
+        segs = segs + 1
+        a = JpRoleClean(JpRoleToken(seg, 0))
+        b = JpRoleToken(seg, 1)
+        If (a = JpBlankIfNull(Param(0))) Then
+        {
+            JpTargetFor = JpNz(b)
+            Exit
+        }
+    }
+
+[Variable: JpTargetMapEdit : String]
+[Variable: JpTargetMsg     : String]
+
+[Screen: JpTargetScreen]
+    Caption: "JadePro  ::  Salesperson Monthly Targets"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           SALESPERSON MONTHLY TARGETS"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Format:  SalespersonName,Target|SalespersonName,Target"
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+    Lines: 1, 1, 1
+    Field: <Field-Id: JpTargetMapEdit, Label: "Target Map">
+        Width: 100
+        Style: UseFormCtrl
+    Field: <Field-Id: JpTargetMsg, Label: " ">
+        Width: 100
+        Style: JpWarn
+    Text: "Example:  Ravi,250000|Priya,180000"
+    Style: JpMuted
+    Lines: 1
+    Button: <Save Targets (F2), Key: F2, Action: JpTargetSave>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+[Function: JpTargetSave]
+    Returns: Integer : Any
+    If (JpIsOwner = 0) Then
+    {
+        If (JpIsManager = 0) Then
+        {
+            JpTargetMsg = JpDeniedMsg
+            JpTargetSave = 0
+            Exit
+        }
+    }
+    Alter: Company
+    Modify Group: JpTargetSaveGroup
+        Add: Field-id: JwlSalesTargets
+            Set: Value: $$JpTargetMapEdit
+    Accept: JpTargetSaved
+    JpTargetSave = 1
+
+[Function: JpTargetSaved]
+    Returns: Integer : Any
+    JpTargetMsg = "Targets saved."
+    JpTargetSaved = 1

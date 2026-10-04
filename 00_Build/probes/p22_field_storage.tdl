@@ -1,0 +1,18 @@
+; p22 - Is `Storage : <UDF>` how a Field reads a user defined field?
+; Used for all 84 former `Field-Id:` occurrences.
+[Report: ZzP22Report]
+    Form: ZzP22Form
+
+[Form: ZzP22Form]
+    Parts: ZzP22Part
+
+[Part: ZzP22Part]
+    Lines: ZzP22Line
+
+[Line: ZzP22Line]
+    Field: ZzP22Field
+
+[Field: ZzP22Field]
+    Storage : JwlShopName
+    Set As : $JwlShopName
+    Width : 40

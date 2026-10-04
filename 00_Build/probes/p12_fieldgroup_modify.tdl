@@ -1,0 +1,12 @@
+; P12  Add: Field Group: then Modify Group: with Add: Field-id / Set: Value:
+;      (mirrors the Item-module calculation group in 02_ItemMaster.tdl)
+Alter: Item
+    Add: Field Group: ZzP12Group
+        Add: Field-id: ZzP12Chk
+            Label: "P12"
+            Type: Logical
+
+Alter: Item, ZzP12Group
+    Modify Group: ZzP12Group
+        Add: Field-id: ZzP12Chk
+            Set: Value: No

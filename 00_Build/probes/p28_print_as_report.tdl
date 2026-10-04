@@ -1,0 +1,25 @@
+; p28 - A print layout is a Report with a `Print :` attribute, not [Print:].
+; Decides the rewrite of all 35 `[Print:]` blocks in JadePro.
+[Report: ZzP28PrintReport]
+    Form : ZzP28PrintForm
+    Print : ZzP28PrintForm
+    Title : "ZzP28 print layout"
+
+[Form: ZzP28PrintForm]
+    Parts : ZzP28PrintPart
+    Width : 100% Page
+    Height : 100% Page
+
+[Part: ZzP28PrintPart]
+    Lines : ZzP28PrintLine
+    Border : ZzP28PrintBorder
+
+[Line: ZzP28PrintLine]
+    Field : ZzP28PrintField
+    Height : 2
+
+[Field: ZzP28PrintField]
+    Set As : "printed"
+
+[Border: ZzP28PrintBorder]
+    Bottom : Thick

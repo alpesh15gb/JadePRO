@@ -1,0 +1,738 @@
+; =============================================================================
+;  JadePro  ::  08b_BarcodeZPL.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Zebra thermal label printing (ZPL II).
+;            Produces the per-label ZPL specification from Tally and hands it
+;            to the companion emitter, 00_Build/zpl-emit.mjs, which writes real
+;            .zpl files for the printer.
+;
+;  INDEPENDENT MODULE
+;    Load AFTER 00_Core, 02_ItemMaster and 08_Barcode. Does NOT require
+;    08a_BarcodeTally - enable either module, or both, independently.
+;
+;  ---------------------------------------------------------------------------
+;  WHY THIS IS TWO FILES AND NOT ONE  -  READ THIS FIRST
+;  ---------------------------------------------------------------------------
+;  A Zebra printer speaks ZPL II, not PDF and not Tally's print language.
+;  Producing a .zpl file requires TDL to WRITE A FILE TO DISK, and opening a
+;  COM/USB printer port from inside Tally. TDL can do NEITHER. Its only
+;  outputs are:
+;
+;      * Tally's print engine (PDF / paper), and
+;      * its XML request-response interface (inbound data, not file writes).
+;
+;  So a pure-TDL ZPL emitter is not possible, and shipping something that
+;  merely LOOKS like one would be dishonest. This module therefore does the
+;  half that TDL genuinely can do - it turns the item master into a precise,
+;  complete, per-label specification - and the tiny Node emitter does the
+;  part that needs a filesystem. Both ship in this repository.
+;
+;  THE WORKFLOW
+;      1. Jewellery > System > Zebra Label Setup  -  set geometry and quality
+;      2. Jewellery > Zebra Label Print Queue        -  filter, export CSV
+;      3. node 00_Build/zpl-emit.mjs labels.csv      -  writes .zpl files
+;      4. Point a Zebra hot folder (e.g. FolderMill) at the output folder, or
+;         send the files over the network share. Labels print unattended.
+;
+;  ---------------------------------------------------------------------------
+;  203 DPI FIRST, AS REQUESTED
+;  ---------------------------------------------------------------------------
+;    Target        : 203 dpi  (8 dots/mm, ~200 dpi) - Zebra ZD421, GK420,
+;                    DS2208, ZT411 and most common Indian-market desktop units
+;    Label default : 54 mm x 28 mm (a standard jewellery counter tag, ~2.1" x 1.1")
+;    Every geometry value below is in DOTS and is fully configurable, so a
+;    300 dpi printer is a settings edit, not a code change:
+;        203 dpi -> 8 dots/mm      300 dpi -> 12 dots/mm
+;
+;  SINGLE SOURCE OF TRUTH
+;    Reads the item's stored JwlBarcode - the same field 08a_BarcodeTally
+;    renders - so both printers always agree on the value. It never regenerates
+;    an existing barcode. Minting a MISSING one is an explicit operator action
+;    (the "Mint Barcode" button below) that calls the shared
+;    JpBarcodeEnsure(), which is idempotent: an item that already has a valid
+;    barcode is returned unchanged and never renumbered.
+; =============================================================================
+
+; =============================================================================
+;  SECTION A - CONFIGURATION  (stored on the Company master)
+;
+;  Held as ONE delimited string rather than a dozen separate fields so the
+;  whole printer profile can be copied, version-controlled and pasted between
+;  shops in a single action. Format:  key=value;key=value;...
+; =============================================================================
+    ; Label: "Zebra ZPL Printer Profile"
+[System: UDF]
+JplZplSettings : String : 20176
+[Function: JpZplDefaultProfile]
+    Returns: String : Any
+    JpZplDefaultProfile = "dpi=203;w=54;h=40;dark=12;speed=4;copies=1;bcY=200;bcH=64;shopY=2;addrY=34;itemY=56;desY=82;purY=104;wtY=126;huidY=148;mrpY=170"
+
+; =============================================================================
+;  SECTION B - SETTINGS PARSER
+; =============================================================================
+
+; Read one key from the profile, falling back to a supplied default.
+;   JpZplGet("dark", "12")
+[Function: JpZplGet]
+    Param: vKey : String : Optional, vDefault : String : Optional
+    Returns: String : Any
+    Var: s : String, k : String, parts : Number, seg : String, a : String, b : String
+    s = JpBlankIfNull(##JplZplSettings)
+    If (s = "") Then
+    {
+        s = JpZplDefaultProfile()
+    }
+    k = JpBlankIfNull(Param(0))
+    parts = 0
+    While (1 = 1)
+    {
+        seg = JpZplNextSeg(s, parts)
+        If (seg = "") Then
+        {
+            JpZplGet = JpBlankIfNull(Param(1))
+            Exit
+        }
+        parts = parts + 1
+        a = JpZplToken(seg, 0)
+        b = JpZplToken(seg, 1)
+        If (a = k) Then
+        {
+            JpZplGet = b
+            Exit
+        }
+    }
+
+; n-th ";"-separated segment, or "" past the end.
+[Function: JpZplNextSeg]
+    Param: vMap : String : Optional, vIndex : Number : Optional
+    Returns: String : Any
+    Var: m : String, i : Number, n : Number, start : Number, pos : Number
+    m = Param(0)
+    i = Param(1)
+    If (m is null) Then { m = ""; }
+    If (i is null) Then { i = 0; }
+    start = 1
+    n = 0
+    pos = 1
+    While (pos <= Len(m))
+    {
+        If (Mid(m, pos, 1) = ";") Then
+        {
+            n = n + 1
+            If (n = i) Then { start = pos + 1; }
+        }
+        pos = pos + 1
+    }
+    If (start > Len(m)) Then
+    {
+        JpZplNextSeg = ""
+        Exit
+    }
+    pos = start
+    While (pos <= Len(m))
+    {
+        If (Mid(m, pos, 1) = ";") Then
+        {
+            JpZplNextSeg = Mid(m, start, pos - start)
+            Exit
+        }
+        pos = pos + 1
+    }
+    JpZplNextSeg = Mid(m, start, Len(m) - start + 1)
+
+; n-th "="-separated token of a segment, or "" if absent.
+[Function: JpZplToken]
+    Param: vSeg : String : Optional, vIndex : Number : Optional
+    Returns: String : Any
+    Var: s : String, i : Number, n : Number, start : Number, pos : Number
+    s = Param(0)
+    i = Param(1)
+    If (s is null) Then { s = ""; }
+    If (i is null) Then { i = 0; }
+    start = 1
+    n = 0
+    pos = 1
+    While (pos <= Len(s))
+    {
+        If (Mid(s, pos, 1) = "=") Then
+        {
+            n = n + 1
+            If (n = i) Then { start = pos + 1; }
+        }
+        pos = pos + 1
+    }
+    If (start > Len(s)) Then
+    {
+        JpZplToken = ""
+        Exit
+    }
+    pos = start
+    While (pos <= Len(s))
+    {
+        If (Mid(s, pos, 1) = "=") Then
+        {
+            JpZplToken = Mid(s, start, pos - start)
+            Exit
+        }
+        pos = pos + 1
+    }
+    JpZplToken = Mid(s, start, Len(s) - start + 1)
+
+; Numeric convenience wrapper.
+[Function: JpZplNum]
+    Param: vKey : String : Optional, vDefault : Number : Optional
+    Returns: Number : Any
+    JpZplNum = JpNz(JpZplGet(Param(0), String(Param(1), "0")))
+
+; dots per millimetre for the configured resolution
+[Function: JpZplDotsPerMm]
+    Returns: Number : Any
+    JpZplDotsPerMm = JpZplNum("dpi", 203) / 25.4
+
+; mm -> dots
+[Function: JpZplMmToDots]
+    Param: vMm : Number : Optional
+    Returns: Number : Any
+    JpZplMmToDots = Round(JpNz(Param(0)) * JpZplDotsPerMm)
+
+; =============================================================================
+;  SECTION C - SETUP SCREEN
+;  Geometry, darkness, speed and every field's Y position are configured HERE
+;  and stored on the Company master. Nothing about the printer is hard-coded.
+; =============================================================================
+[Variable: JpZplProfile : String]
+[Variable: JpZplMsg     : String]
+[Variable: JpZplMintItem : String]
+
+[Screen: JpZplConfigScreen]
+    Caption: "JadePro  ::  Zebra Label Setup"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           ZEBRA LABEL SETUP"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Profile format:  dpi=203;w=54;h=40;dark=12;speed=4;copies=1;bcY=200;bcH=64;..."
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1, 1, 1
+    Field: <Field-Id: JpZplProfile, Label: "Printer Profile">
+        Width: 100
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " WHAT EACH SETTING MEANS"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+    Text: "   dpi ....... resolution. 203 -> 8 dots/mm. 300 -> 12 dots/mm. Default 203."
+    Text: "   w, h ...... label width and length in MILLIMETRES. Default 54 x 40."
+    Text: "   dark ...... ^MD darkness, 0 (lightest) to 30 (darkest). Default 12."
+    Text: "   speed ..... ^PR print speed in inches/second. Default 4."
+    Text: "   copies .... ^PQ copies per label. Default 1."
+    Text: "   bcY ....... vertical position of the barcode, in DOTS from the top."
+    Text: "   bcH ....... barcode height in DOTS. 64 dots = 8 mm at 203 dpi."
+    Text: "   shopY ..... vertical position of the shop name line, in DOTS."
+    Text: "   addrY ..... vertical position of the shop address line, in DOTS."
+    Text: "   itemY ..... vertical position of the item name line, in DOTS."
+    Text: "   desY ...... vertical position of the design number line, in DOTS."
+    Text: "   purY ...... vertical position of the purity line, in DOTS."
+    Text: "   wtY ....... vertical position of the weight line, in DOTS."
+    Text: "   huidY ..... vertical position of the HUID line, in DOTS."
+    Text: "   mrpY ...... vertical position of the MRP line, in DOTS."
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Text: "   Save, then export from Zebra Label Print Queue and run:"
+    Style: JpMuted
+    Text: "   node 00_Build/zpl-emit.mjs labels.csv"
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1, 1
+    Field: <Field-Id: JpZplMsg, Label: " ">
+        Width: 100
+        Style: JpWarn
+
+    Line: Spacing
+    Lines: 1
+    Text: " MINT A MISSING BARCODE"
+    Style: JpSectionBox
+    Lines: 1, 1, 1
+    Text: "   The queue exports the item's stored barcode. A piece with none exports empty and"
+    Text: "   zpl-emit.mjs skips it, so mint one here first - the Tally tag module then prints"
+    Text: "   the identical value."
+    Style: JpMuted
+    Lines: 1, 1
+    Field: <Field-Id: JpZplMintItem, Label: "Item name">
+        Width: 40
+    Button: <Mint Barcode (F3), Key: F3, Action: JpZplMintAction>
+
+    Line: Spacing
+    Lines: 1
+    Button: <Load Defaults (F8), Key: F8, Action: JpZplLoadDefaults>
+    Button: <Save Profile (F2), Key: F2, Action: JpZplSaveProfile>
+    Button: <Print Queue (F4), Key: F4, Action: JpZplOpenQueue>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+[Function: JpZplLoadDefaults]
+    Returns: Integer : Any
+    $$JpZplProfile = JpZplDefaultProfile()
+    JpZplMsg = ""
+    JpZplLoadDefaults = 1
+
+[Function: JpZplSaveProfile]
+    Returns: Integer : Any
+    Var: p : String
+    p = JpBlankIfNull($$JpZplProfile)
+    If (p = "") Then
+    {
+        JpZplMsg = "Profile is blank - nothing to save."
+        JpZplSaveProfile = 0
+        Exit
+    }
+    If (JpZplNum("dpi", 0) <= 0) Then
+    {
+        JpZplMsg = "dpi must be a positive number (203 or 300)."
+        JpZplSaveProfile = 0
+        Exit
+    }
+    If (JpZplNum("w", 0) <= 0) Then
+    {
+        JpZplMsg = "Label width (w) must be greater than zero."
+        JpZplSaveProfile = 0
+        Exit
+    }
+    If (JpZplNum("h", 0) <= 0) Then
+    {
+        JpZplMsg = "Label length (h) must be greater than zero."
+        JpZplSaveProfile = 0
+        Exit
+    }
+    If (JpZplNum("dark", -1) < 0) Then
+    {
+        JpZplMsg = "Darkness (dark) must be between 0 and 30."
+        JpZplSaveProfile = 0
+        Exit
+    }
+    Alter: Company
+    Modify Group: JpZplSaveGroup
+        Add: Field-id: JplZplSettings
+            Set: Value: p
+    Accept: JpZplProfileSaved
+    JpZplSaveProfile = 1
+
+[Function: JpZplProfileSaved]
+    Returns: Integer : Any
+    JpZplMsg = "Profile saved. Label is " + JpFmtAmt(JpZplNum("w", 54)) + " mm x " + JpFmtAmt(JpZplNum("h", 28)) + " mm at " + JpFmtAmt(JpZplNum("dpi", 203)) + " dpi."
+    JpZplProfileSaved = 1
+
+; Mints a barcode for one item via the shared JpBarcodeEnsure(). Idempotent,
+; so an item that already has a valid barcode comes back unchanged.
+[Function: JpZplMintAction]
+    Returns: Integer : Any
+    Var: n : String, bc : String
+    If (JpHasRight(JpRtBarcode()) = 0) Then
+    {
+        JpZplMsg = JpDeniedMsg
+        JpZplMintAction = 0
+        Exit
+    }
+    n = JpBlankIfNull($$JpZplMintItem)
+    If (n = "") Then
+    {
+        JpZplMsg = "Type the exact item name, then press F3."
+        JpZplMintAction = 0
+        Exit
+    }
+    bc = JpBarcodeEnsure(n)
+    If (bc = "") Then
+    {
+        JpZplMsg = "No such item: " + n
+        JpZplMintAction = 0
+        Exit
+    }
+    JpZplMsg = "Barcode on " + n + " = " + bc
+    JpZplMintAction = 1
+
+[Function: JpZplOpenQueue]
+    Returns: Integer : Any
+    If (JpHasRight(JpRtReports()) = 0) Then
+    {
+        JpZplMsg = JpDeniedMsg
+        JpZplOpenQueue = 0
+        Exit
+    }
+    JpZplMsg = ""
+    Alter: JpZplLabelQueue
+    JpZplOpenQueue = 1
+
+; =============================================================================
+;  SECTION D - LABEL PRINT QUEUE
+;  One row per label, carrying BOTH the label data and the geometry, so the
+;  exported CSV is self-describing. The emitter can therefore run with no
+;  configuration file at all, or be overridden by one.
+; =============================================================================
+[Collection: Report: JpZplLabelQueue]
+    Source: JpZplQueueSQL
+    Var: JpZplCat, JpZplCounter, JpZplPurity, JpZplOnlyNoBc
+    Title: <1000,###,#a##"  ZEBRA LABEL PRINT QUEUE">
+    Print: JpZplQueuePrint
+    Export: JpZplQueueExport
+    Key: JpZplQueueKey
+    Filters: <JpZplCat, <String, "Category">>, <JpZplCounter, <String, "Counter">>, <JpZplPurity, <String, "Purity">>, <JpZplOnlyNoBc, <Yes/No, "Only items with no barcode">>
+
+[Variable: JpZplQueueSQL : String]
+    Type: String
+    Value: "SELECT $$NAME$$ AS ZplItem, $JwlBarcode$$ AS ZplBarcode, $JwlDesignNo$$ AS ZplDesign, $JwlCategory$$ AS ZplCategory, $JwlMetalType$$ AS ZplMetal, $JwlPurity$$ AS ZplPurity, $JwlGrossWt$$ AS ZplGrossWt, $JwlStoneWt$$ AS ZplStoneWt, $JwlNetMetalWt$$ AS ZplNetWt, $JwlDiamondCarat$$ AS ZplCarat, $JwlHuid$$ AS ZplHuid, $JwlMRP$$ AS ZplMrp FROM $$ITEMS$$ WHERE $JwlIsJewellery$$ = 1"
+
+[Variable: JpZplQueueKey : String]
+    Type: String
+    Value: "ZplBarcode"
+
+; ---------------------------------------------------------------- geometry
+; Mirrored into the export so the emitter needs no external config file.
+[Function: JpZplDpi      : Returns: Number : Any]
+    JpZplDpi = JpZplNum("dpi", 203)
+[Function: JpZplLabelW   : Returns: Number : Any]
+    JpZplLabelW = JpZplMmToDots(JpZplNum("w", 54))
+[Function: JpZplLabelH   : Returns: Number : Any]
+    JpZplLabelH = JpZplMmToDots(JpZplNum("h", 40))
+[Function: JpZplDarkness : Returns: Number : Any]
+    JpZplDarkness = JpZplNum("dark", 12)
+[Function: JpZplSpeed    : Returns: Number : Any]
+    JpZplSpeed = JpZplNum("speed", 4)
+[Function: JpZplCopies   : Returns: Number : Any]
+    JpZplCopies = JpZplNum("copies", 1)
+[Function: JpZplBcY      : Returns: Number : Any]
+    JpZplBcY = JpZplNum("bcY", 200)
+[Function: JpZplBcH      : Returns: Number : Any]
+    JpZplBcH = JpZplNum("bcH", 64)
+
+; ------------------------------------------------------------ label content
+[Function: JpZplShopLine]
+    Returns: String : Any
+    JpZplShopLine = JpBlankIfNull($JwlShopName)
+
+[Function: JpZplAddrLine]
+    Returns: String : Any
+    JpZplAddrLine = JpBlankIfNull($JwlShopAddress)
+
+[Function: JpZplWeightLine]
+    Returns: String : Any
+    JpZplWeightLine = "G " + JpFmtWt($$ZplGrossWt) + "  N " + JpFmtWt($$ZplNetWt) + "  S " + JpFmtWt($$ZplStoneWt)
+
+[Function: JpZplPurityLine]
+    Returns: String : Any
+    JpZplPurityLine = JpBlankIfNull($$ZplPurity) + " " + JpBlankIfNull($$ZplMetal)
+
+[Function: JpZplMrpLine]
+    Returns: String : Any
+    JpZplMrpLine = "MRP Rs. " + JpFmtAmt($$ZplMrp)
+
+
+; [Print: JpZplQueuePrint] -> [Form: JpZplQueuePrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpZplQueuePrint]
+    Parts : JpZplQueuePrintLines
+
+[Part: JpZplQueuePrintLines]
+    Lines : Spacing, JpZplQueuePrintLine1, JpZplQueuePrintLine2, JpZplQueuePrintLine3, JpZplQueuePrintLine4, JpZplQueuePrintLine5, JpZplQueuePrintLine6, JpZplQueuePrintLine7, JpZplQueuePrintLine8, JpZplQueuePrintLine9, JpZplQueuePrintLine10, JpZplQueuePrintLine11, JpZplQueuePrintLine12, JpZplQueuePrintLine13, JpZplQueuePrintLine14, JpZplQueuePrintLine15, JpZplQueuePrintLine16, JpZplQueuePrintLine17, JpZplQueuePrintLine18, JpZplQueuePrintLine19, JpZplQueuePrintLine20, JpZplQueuePrintLine21, JpZplQueuePrintLine22, JpZplQueuePrintLine23, JpZplQueuePrintLine24, JpZplQueuePrintLine25, JpZplQueuePrintLine26, JpZplQueuePrintLine27, JpZplQueuePrintLine28, JpZplQueuePrintLine29, JpZplQueuePrintLine30, JpZplQueuePrintLine31, JpZplQueuePrintLine32, JpZplQueuePrintLine33, JpZplQueuePrintLine34, JpZplQueuePrintLine35, JpZplQueuePrintLine36, JpZplQueuePrintLine37, JpZplQueuePrintLine38, JpZplQueuePrintLine39, JpZplQueuePrintLine40, JpZplQueuePrintLine41, JpZplQueuePrintLine42, JpZplQueuePrintLine43, JpZplQueuePrintLine44, JpZplQueuePrintLine45, JpZplQueuePrintLine46, JpZplQueuePrintLine47, JpZplQueuePrintLine48, JpZplQueuePrintLine49, JpZplQueuePrintLine50
+
+[Line: JpZplQueuePrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpZplQueuePrintLine2]
+    Field: JpZplQueuePrintLine2F1
+
+[Field: JpZplQueuePrintLine2F1]
+    Set As : Upr(##JwlShopName) + "   -   Zebra Label Print Queue"
+    Style : JpFontBold
+[Line: JpZplQueuePrintLine3]
+    Field: JpZplQueuePrintLine3F1
+
+[Field: JpZplQueuePrintLine3F1]
+    Set As : "Printer profile: " + ##JplZplSettings
+    Style : JpFontBold
+[Line: JpZplQueuePrintLine4]
+    Field: JpZplQueuePrintLine4F1
+
+[Field: JpZplQueuePrintLine4F1]
+    Set As : "Label " + JpFmtAmt(JpZplNum("w", 54)) + "mm x " + JpFmtAmt(JpZplNum("h", 28)) + "mm at " + JpFmtAmt(JpZplNum("dpi", 203)) + " dpi   |   darkness " + JpFmtAmt(JpZplDarkness()) + "   speed " + JpFmtAmt(JpZplSpeed())
+    Style : JpFontBold
+[Line: JpZplQueuePrintLine5]
+    Field: JpZplQueuePrintLine5F1
+
+[Field: JpZplQueuePrintLine5F1]
+    Set As : "Barcode"
+[Line: JpZplQueuePrintLine6]
+    Field: JpZplQueuePrintLine6F1
+
+[Field: JpZplQueuePrintLine6F1]
+    Style : JpGridHead
+[Line: JpZplQueuePrintLine7]
+    Field: JpZplQueuePrintLine7F1
+
+[Field: JpZplQueuePrintLine7F1]
+    Set As : "Item"
+[Line: JpZplQueuePrintLine8]
+    Field: JpZplQueuePrintLine8F1
+
+[Field: JpZplQueuePrintLine8F1]
+    Style : JpGridHead
+[Line: JpZplQueuePrintLine9]
+    Field: JpZplQueuePrintLine9F1
+
+[Field: JpZplQueuePrintLine9F1]
+    Set As : "Design"
+[Line: JpZplQueuePrintLine10]
+    Field: JpZplQueuePrintLine10F1
+
+[Field: JpZplQueuePrintLine10F1]
+    Style : JpGridHead
+[Line: JpZplQueuePrintLine11]
+    Field: JpZplQueuePrintLine11F1
+
+[Field: JpZplQueuePrintLine11F1]
+    Set As : "Purity"
+[Line: JpZplQueuePrintLine12]
+    Field: JpZplQueuePrintLine12F1
+
+[Field: JpZplQueuePrintLine12F1]
+    Style : JpGridHead
+[Line: JpZplQueuePrintLine13]
+    Field: JpZplQueuePrintLine13F1
+
+[Field: JpZplQueuePrintLine13F1]
+    Set As : "Gross g"
+[Line: JpZplQueuePrintLine14]
+    Field: JpZplQueuePrintLine14F1
+
+[Field: JpZplQueuePrintLine14F1]
+    Style : JpGridHead
+[Line: JpZplQueuePrintLine15]
+    Field: JpZplQueuePrintLine15F1
+
+[Field: JpZplQueuePrintLine15F1]
+    Set As : "Net g"
+[Line: JpZplQueuePrintLine16]
+    Field: JpZplQueuePrintLine16F1
+
+[Field: JpZplQueuePrintLine16F1]
+    Style : JpGridHead
+[Line: JpZplQueuePrintLine17]
+    Field: JpZplQueuePrintLine17F1
+
+[Field: JpZplQueuePrintLine17F1]
+    Set As : "Carat"
+[Line: JpZplQueuePrintLine18]
+    Field: JpZplQueuePrintLine18F1
+
+[Field: JpZplQueuePrintLine18F1]
+    Style : JpGridHead
+[Line: JpZplQueuePrintLine19]
+    Field: JpZplQueuePrintLine19F1
+
+[Field: JpZplQueuePrintLine19F1]
+    Set As : "HUID"
+[Line: JpZplQueuePrintLine20]
+    Field: JpZplQueuePrintLine20F1
+
+[Field: JpZplQueuePrintLine20F1]
+    Style : JpGridHead
+[Line: JpZplQueuePrintLine21]
+    Field: JpZplQueuePrintLine21F1
+
+[Field: JpZplQueuePrintLine21F1]
+    Set As : "MRP"
+[Line: JpZplQueuePrintLine22]
+    Field: JpZplQueuePrintLine22F1
+
+[Field: JpZplQueuePrintLine22F1]
+    Style : JpGridHead
+[Line: JpZplQueuePrintLine23]
+    Field: JpZplQueuePrintLine23F1
+
+[Field: JpZplQueuePrintLine23F1]
+    Set As : "Labels"
+[Line: JpZplQueuePrintLine24]
+    Field: JpZplQueuePrintLine24F1
+
+[Field: JpZplQueuePrintLine24F1]
+    Style : JpGridHead
+[Line: JpZplQueuePrintLine25]
+    Field: JpZplQueuePrintLine25F1
+
+[Field: JpZplQueuePrintLine25F1]
+    Set As : $$ZplBarcode
+[Line: JpZplQueuePrintLine26]
+    Field: JpZplQueuePrintLine26F1
+
+[Field: JpZplQueuePrintLine26F1]
+    Style : JpGrid
+[Line: JpZplQueuePrintLine27]
+    Field: JpZplQueuePrintLine27F1
+
+[Field: JpZplQueuePrintLine27F1]
+    Set As : $$ZplItem
+[Line: JpZplQueuePrintLine28]
+    Field: JpZplQueuePrintLine28F1
+
+[Field: JpZplQueuePrintLine28F1]
+    Style : JpGrid
+[Line: JpZplQueuePrintLine29]
+    Field: JpZplQueuePrintLine29F1
+
+[Field: JpZplQueuePrintLine29F1]
+    Set As : $$ZplDesign
+[Line: JpZplQueuePrintLine30]
+    Field: JpZplQueuePrintLine30F1
+
+[Field: JpZplQueuePrintLine30F1]
+    Style : JpGrid
+[Line: JpZplQueuePrintLine31]
+    Field: JpZplQueuePrintLine31F1
+
+[Field: JpZplQueuePrintLine31F1]
+    Set As : $$ZplPurity
+[Line: JpZplQueuePrintLine32]
+    Field: JpZplQueuePrintLine32F1
+
+[Field: JpZplQueuePrintLine32F1]
+    Style : JpGrid
+[Line: JpZplQueuePrintLine33]
+    Field: JpZplQueuePrintLine33F1
+
+[Field: JpZplQueuePrintLine33F1]
+    Set As : $$ZplGrossWt
+[Line: JpZplQueuePrintLine34]
+    Field: JpZplQueuePrintLine34F1
+
+[Field: JpZplQueuePrintLine34F1]
+    Style : JpWeight
+[Line: JpZplQueuePrintLine35]
+    Field: JpZplQueuePrintLine35F1
+
+[Field: JpZplQueuePrintLine35F1]
+    Set As : $$ZplNetWt
+[Line: JpZplQueuePrintLine36]
+    Field: JpZplQueuePrintLine36F1
+
+[Field: JpZplQueuePrintLine36F1]
+    Style : JpWeightBold
+[Line: JpZplQueuePrintLine37]
+    Field: JpZplQueuePrintLine37F1
+
+[Field: JpZplQueuePrintLine37F1]
+    Set As : $$ZplCarat
+[Line: JpZplQueuePrintLine38]
+    Field: JpZplQueuePrintLine38F1
+
+[Field: JpZplQueuePrintLine38F1]
+    Style : JpWeight
+[Line: JpZplQueuePrintLine39]
+    Field: JpZplQueuePrintLine39F1
+
+[Field: JpZplQueuePrintLine39F1]
+    Set As : $$ZplHuid
+[Line: JpZplQueuePrintLine40]
+    Field: JpZplQueuePrintLine40F1
+
+[Field: JpZplQueuePrintLine40F1]
+    Style : JpGrid
+[Line: JpZplQueuePrintLine41]
+    Field: JpZplQueuePrintLine41F1
+
+[Field: JpZplQueuePrintLine41F1]
+    Set As : $$ZplMrp
+[Line: JpZplQueuePrintLine42]
+    Field: JpZplQueuePrintLine42F1
+
+[Field: JpZplQueuePrintLine42F1]
+    Style : JpMoney
+[Line: JpZplQueuePrintLine43]
+    Field: JpZplQueuePrintLine43F1
+
+[Field: JpZplQueuePrintLine43F1]
+    Set As : JpZplCopies()
+[Line: JpZplQueuePrintLine44]
+    Field: JpZplQueuePrintLine44F1
+
+[Field: JpZplQueuePrintLine44F1]
+    Style : JpGrid
+[Line: JpZplQueuePrintLine45]
+    Field: JpZplQueuePrintLine45F1
+
+[Field: JpZplQueuePrintLine45F1]
+    Set As : "TOTAL LABELS"
+[Line: JpZplQueuePrintLine46]
+    Field: JpZplQueuePrintLine46F1
+
+[Field: JpZplQueuePrintLine46F1]
+    Style : JpTotal
+[Line: JpZplQueuePrintLine47]
+    Field: JpZplQueuePrintLine47F1
+
+[Field: JpZplQueuePrintLine47F1]
+    Set As : Count()
+[Line: JpZplQueuePrintLine48]
+    Field: JpZplQueuePrintLine48F1
+
+[Field: JpZplQueuePrintLine48F1]
+    Style : JpTotal
+[Line: JpZplQueuePrintLine49]
+    Field: JpZplQueuePrintLine49F1
+
+[Field: JpZplQueuePrintLine49F1]
+    Set As : JpZplCopies() * Count()
+[Line: JpZplQueuePrintLine50]
+    Field: JpZplQueuePrintLine50F1
+
+[Field: JpZplQueuePrintLine50F1]
+    Style : JpTotal
+[Export: JpZplQueueExport]
+    Title: <1000, "Zebra Label Queue">
+    Repeat: Over: JpZplLabelQueue
+    Export Title: Detail
+    Export: Value: $$ZplBarcode
+    Export: Value: $$ZplItem
+    Export: Value: $$ZplDesign
+    Export: Value: $$ZplCategory
+    Export: Value: $$ZplMetal
+    Export: Value: $$ZplPurity
+    Export: Value: $$ZplGrossWt
+    Export: Value: $$ZplStoneWt
+    Export: Value: $$ZplNetWt
+    Export: Value: $$ZplCarat
+    Export: Value: $$ZplHuid
+    Export: Value: $$ZplMrp
+    Export: Value: JpZplShopLine()
+    Export: Value: JpZplAddrLine()
+    Export: Value: JpZplWeightLine()
+    Export: Value: JpZplPurityLine()
+    Export: Value: JpZplMrpLine()
+    Export: Value: JpZplDpi()
+    Export: Value: JpZplLabelW()
+    Export: Value: JpZplLabelH()
+    Export: Value: JpZplDarkness()
+    Export: Value: JpZplSpeed()
+    Export: Value: JpZplCopies()
+    Export: Value: JpZplBcY()
+    Export: Value: JpZplBcH()
+    Export: Value: JpZplNum("shopY", 2)
+    Export: Value: JpZplNum("addrY", 34)
+    Export: Value: JpZplNum("itemY", 56)
+    Export: Value: JpZplNum("desY", 82)
+    Export: Value: JpZplNum("purY", 104)
+    Export: Value: JpZplNum("wtY", 126)
+    Export: Value: JpZplNum("huidY", 148)
+    Export: Value: JpZplNum("mrpY", 170)

@@ -1,0 +1,8 @@
+; P03  Alter: UNBRACKETED, two args (object, field-group)
+Alter: Item, ZzP03Grp
+    Add: Field
+        Field-id: ZzP03Chk
+        Label: "P03"
+        Type: Logical
+        Value: No
+        Width: 100

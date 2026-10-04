@@ -1,0 +1,17 @@
+; Sentinel: proves whether a TDL file compiled+loaded. Defines one report whose
+; title is unique to this file. If the gateway can find it, the file compiled.
+[Report: ZzSentinelReport]
+    Title: <1000, "ZzSentinelOk">
+
+[Form: ZzSentinelForm]
+    Part  : ZzSentinelPart
+
+[Part: ZzSentinelPart]
+    Line  : ZzSentinelLine
+
+[Line: ZzSentinelLine]
+    Field : ZzSentinelField
+
+[Field: ZzSentinelField]
+    Use     : Name Field
+    Set As  : "JadePro compile-check sentinel"

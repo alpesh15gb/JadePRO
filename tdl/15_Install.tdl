@@ -1,0 +1,411 @@
+; =============================================================================
+;  JadePro  ::  15_Install.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : One-time master setup.
+;            Creates the ledger groups, ledgers and godowns a jewellery shop
+;            needs, and walks the user through the settings that only they can
+;            decide (shop name, GSTIN, discount ceiling, user-to-role map).
+;
+;  WHY THIS IS A SCREEN AND NOT SILENT SCRIPTING
+;    Creating masters changes the company's data permanently. The installer
+;    therefore never runs by itself: the user opens it, sees exactly what will
+;    be created, and presses F2. Nothing is created behind their back.
+;
+;  WHAT IT CREATES
+;    Ledger Groups : Jewellery Metal Stock, Old Gold, Karigar, Jewellers
+;    Ledgers       : Gold, Silver, Platinum, Diamond, Loose Stones,
+;                    Old Gold Received, Karigar Payable, Karigar Metal Held,
+;                    Customer Advance, Jewellery Purchase, Jewellery Sales,
+;                    Repairs Income, Order Advance Received
+;    Godowns       : Main Counter, Store Room, Karigar Workshop
+;
+;  It deliberately does NOT create tax ledgers or set a GST percentage - those
+;  belong to Tally's own GST setup so that the statutory reports stay correct.
+;
+;  LOAD    : After every other module. Safe to open from the menu.
+;  REQUIRES : 00_Core.tdl, 15 modules in total
+; =============================================================================
+
+[Variable: JpInstGroup    : String]
+[Variable: JpInstLedger   : String]
+[Variable: JpInstParent   : String]
+[Variable: JpInstGodown   : String]
+[Variable: JpInstMsg      : String]
+[Variable: JpInstLog      : String]
+
+[Function: JpInstAppend]
+    Param: vLog : String : Optional, vLine : String : Optional
+    Returns: String : Any
+    Var: l : String
+    l = JpBlankIfNull(Param(0))
+    If (l = "") Then
+    {
+        JpInstAppend = Param(1)
+        Exit
+    }
+    JpInstAppend = l + "\n" + Param(1)
+
+[Screen: JpInstallerScreen]
+    Caption: "JadePro  ::  Setup"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           JADEPRO JEWELLERY  -  SETUP"
+    Style: JpTitle
+    Line Height: 1
+    Text: "Nothing is created until you press F2. Run this once, in a new company or just before going live."
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Text: " COMPANY DETAILS  (needed on the invoice)"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1, 1
+    Field: <Field-Id: ##JwlShopName, Label: "Shop Name">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: ##JwlShopAddress, Label: "Address">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: ##JwlCompanyGSTIN, Label: "Company GSTIN">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: ##JwlCompanyPhone, Label: "Phone">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: ##JwlCompanyState, Label: "State">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " BUSINESS RULES"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1
+    Field: <Field-Id: ##JwlDefaultGstRate, Label: "Default GST Rate %">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: ##JwlMaxDiscountPc, Label: "Discount Ceiling %">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: ##JwlOldGoldDedPc, Label: "Old Gold Deduction %">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: ##JwlInvoiceTerms, Label: "Invoice Terms">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " CREATE MASTERS"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1
+    Field: <Field-Id: JpInstGroup, Label: "Ledger Group to Create">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpInstLedger, Label: "Ledger to Create">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpInstParent, Label: "Parent Group">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpInstGodown, Label: "Godown to Create">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1, 1
+    Field: <Field-Id: JpInstMsg, Label: " ">
+        Width: 100
+        Style: JpWarn
+    Text: "One click creates the FULL standard set below. Create individual masters from this screen only when you want something different."
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1, 1
+    Text: "Groups : Jewellery Metal Stock  |  Old Gold  |  Karigar  |  Jewellers  |  Repair Income"
+    Style: JpMuted
+    Text: "Ledgers: Gold / Silver / Platinum / Diamond / Loose Stones / Old Gold Received / Karigar Payable / Karigar Metal Held / Customer Advance / Jewellery Purchase / Jewellery Sales / Repairs Income / Order Advance Received"
+    Style: JpMuted
+    Text: "Godowns: Main Counter  |  Store Room  |  Karigar Workshop"
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Button: <Create Standard Set (F2), Key: F2, Action: JpInstStandard>
+    Button: <Create What Is Typed (F4), Key: F4, Action: JpInstOne>
+    Button: <Check Setup (F7), Key: F7, Action: JpInstCheck>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+; =============================================================================
+;  ACTIONS
+; =============================================================================
+
+; Creates the whole standard master set in one pass.
+[Function: JpInstStandard]
+    Returns: Integer : Any
+    Var: log : String
+    log = ""
+
+    ; ---- ledger groups ---------------------------------------------------
+    Create: Group: Jewellery Metal Stock
+    Create: Group: Old Gold
+    Create: Group: Karigar
+    Create: Group: Jewellers
+    Create: Group: Order & Repair Income
+    log = JpInstAppend(log, "Groups created: Jewellery Metal Stock, Old Gold, Karigar, Jewellers, Order & Repair Income")
+
+    ; ---- stock ledgers under Jewellery Metal Stock -----------------------
+    Create: Ledger: Gold
+    Create: Ledger: Silver
+    Create: Ledger: Platinum
+    Create: Ledger: Diamond
+    Create: Ledger: Loose Stones
+    log = JpInstAppend(log, "Stock ledgers created: Gold, Silver, Platinum, Diamond, Loose Stones")
+
+    ; ---- old gold --------------------------------------------------------
+    Create: Ledger: Old Gold Received
+    Create: Ledger: Old Gold Exchange Payable
+    log = JpInstAppend(log, "Old gold ledgers created: Old Gold Received, Old Gold Exchange Payable")
+
+    ; ---- karigar ---------------------------------------------------------
+    Create: Ledger: Karigar Metal Held
+    Create: Ledger: Karigar Labour Payable
+    log = JpInstAppend(log, "Karigar ledgers created: Karigar Metal Held, Karigar Labour Payable")
+
+    ; ---- trading and advances -------------------------------------------
+    Create: Ledger: Jewellery Purchase
+    Create: Ledger: Jewellery Sales
+    Create: Ledger: Customer Advance
+    Create: Ledger: Order Advance Received
+    Create: Ledger: Repairs Income
+    log = JpInstAppend(log, "Trading ledgers created: Jewellery Purchase, Jewellery Sales, Customer Advance, Order Advance Received, Repairs Income")
+
+    ; ---- godowns ---------------------------------------------------------
+    Create: Godown: Main Counter
+    Create: Godown: Store Room
+    Create: Godown: Karigar Workshop
+    log = JpInstAppend(log, "Godowns created: Main Counter, Store Room, Karigar Workshop")
+
+    JpInstLog = log
+    JpInstMsg = "Standard master set created. Still to do: set today's gold rate, then map Tally users to roles."
+    JpInstStandard = 1
+
+; Creates only what has been typed into the four fields above.
+[Function: JpInstOne]
+    Returns: Integer : Any
+    Var: log : String, g : String, l : String, gd : String, p : String
+    log = ""
+    g = JpBlankIfNull($$JpInstGroup)
+    l = JpBlankIfNull($$JpInstLedger)
+    gd = JpBlankIfNull($$JpInstGodown)
+    p = JpBlankIfNull($$JpInstParent)
+
+    If (g <> "") Then
+    {
+        Create: Group: g
+        log = JpInstAppend(log, "Group created: " + g)
+    }
+    If (l <> "") Then
+    {
+        Create: Ledger: l
+        log = JpInstAppend(log, "Ledger created: " + l)
+    }
+    If (gd <> "") Then
+    {
+        Create: Godown: gd
+        log = JpInstAppend(log, "Godown created: " + gd)
+    }
+    If (log = "") Then
+    {
+        JpInstMsg = "Nothing typed. Fill at least one of the four fields and press F4."
+        JpInstOne = 0
+        Exit
+    }
+    If (p <> "") Then
+    {
+        JpInstMsg = log + "   Parent group to wire up manually: " + p
+        JpInstOne = 1
+        Exit
+    }
+    JpInstMsg = log
+    JpInstOne = 1
+
+; Read-only checklist. TDL cannot query master existence, so this reports what
+; the user should go and verify, plus the settings that are still blank.
+[Function: JpInstCheck]
+    Returns: Integer : Any
+    Var: m : String
+    m = ""
+    If (JpBlankIfNull(##JwlShopName) = "") Then
+    {
+        m = JpInstAppend(m, "Shop Name is blank - the invoice header will print empty.")
+    }
+    If (JpBlankIfNull(##JwlCompanyGSTIN) = "") Then
+    {
+        m = JpInstAppend(m, "Company GSTIN is blank - mandatory on a tax invoice.")
+    }
+    If (JpBlankIfNull(##JwlCompanyState) = "") Then
+    {
+        m = JpInstAppend(m, "Company State is blank - the CGST / SGST vs IGST split cannot be verified.")
+    }
+    If (JpBlankIfNull(##JwlMaxDiscountPc) = 0) Then
+    {
+        m = JpInstAppend(m, "Discount ceiling is blank - every discount will need Owner approval.")
+    }
+    If (JpBlankIfNull(##JwlDefaultGstRate) = 0) Then
+    {
+        m = JpInstAppend(m, "Default GST rate is blank - the cashier must type it on each invoice.")
+    }
+    If (JpBlankIfNull(##JwlOldGoldDedPc) = 0) Then
+    {
+        m = JpInstAppend(m, "Old gold deduction is blank - must be typed on each exchange.")
+    }
+    If (JpBlankIfNull(##JwlUserRoleMap) = "") Then
+    {
+        m = JpInstAppend(m, "User-to-role map is EMPTY. Every user currently has full access. Open Jewellery > Security > Role Setup and map each Tally user.")
+    }
+    If (JpCache24K <= 0) Then
+    {
+        m = JpInstAppend(m, "No gold rate loaded today. Open the Daily Rate Master before the first bill.")
+    }
+    If (m = "") Then
+    {
+        m = "All settings present. Verify the master list by hand (TDL cannot query master existence), then start billing."
+    }
+    JpInstMsg = m
+    JpInstCheck = 1
+
+; =============================================================================
+;  POST-INSTALL CHECKLIST  (printed so the user keeps it)
+; =============================================================================
+[Report: JpInstallChecklist]
+    Title: <1000, "JadePro Setup Checklist">
+    Print: JpInstallChecklistPrint
+
+
+; [Print: JpInstallChecklistPrint] -> [Form: JpInstallChecklistPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+
+[Form: JpInstallChecklistPrint]
+    Height : 18
+    Parts : JpInstallChecklistPrintLines
+
+[Part: JpInstallChecklistPrintLines]
+    Lines : Spacing, JpInstallChecklistPrintLine1, JpInstallChecklistPrintLine2, JpInstallChecklistPrintLine3, JpInstallChecklistPrintLine4, JpInstallChecklistPrintLine5, JpInstallChecklistPrintLine6, JpInstallChecklistPrintLine7, JpInstallChecklistPrintLine8, JpInstallChecklistPrintLine9, JpInstallChecklistPrintLine10, JpInstallChecklistPrintLine11, JpInstallChecklistPrintLine12, JpInstallChecklistPrintLine13, JpInstallChecklistPrintLine14, JpInstallChecklistPrintLine15, JpInstallChecklistPrintLine16, JpInstallChecklistPrintLine17, JpInstallChecklistPrintLine18, JpInstallChecklistPrintLine19
+
+[Line: JpInstallChecklistPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpInstallChecklistPrintLine2]
+    Field: JpInstallChecklistPrintLine2F1
+
+[Field: JpInstallChecklistPrintLine2F1]
+    Set As : "JADEPRO JEWELLERY  -  SETUP CHECKLIST"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine3]
+    Field: JpInstallChecklistPrintLine3F1
+
+[Field: JpInstallChecklistPrintLine3F1]
+    Set As : Upr(##JwlShopName) + "     GSTIN " + ##JwlCompanyGSTIN
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine4]
+    Field: JpInstallChecklistPrintLine4F1
+
+[Field: JpInstallChecklistPrintLine4F1]
+    Set As : "Tick each box before the shop opens for billing."
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine5]
+    Field: JpInstallChecklistPrintLine5F1
+
+[Field: JpInstallChecklistPrintLine5F1]
+    Set As : "[  ]  Gateway > Settings > Enable JadePro Jewellery is ticked (F2 > Alter > Company)"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine6]
+    Field: JpInstallChecklistPrintLine6F1
+
+[Field: JpInstallChecklistPrintLine6F1]
+    Set As : "[  ]  Shop Name, Address, GSTIN, Phone and State are filled in the JadePro company block"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine7]
+    Field: JpInstallChecklistPrintLine7F1
+
+[Field: JpInstallChecklistPrintLine7F1]
+    Set As : "[  ]  Ledger groups and ledgers created by the Setup screen"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine8]
+    Field: JpInstallChecklistPrintLine8F1
+
+[Field: JpInstallChecklistPrintLine8F1]
+    Set As : "[  ]  Every jewellery item has its UOM set to GMS so weight reports are in grams"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine9]
+    Field: JpInstallChecklistPrintLine9F1
+
+[Field: JpInstallChecklistPrintLine9F1]
+    Set As : "[  ]  Jewellery items have the 'Is Jewellery Item' flag and a barcode"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine10]
+    Field: JpInstallChecklistPrintLine10F1
+
+[Field: JpInstallChecklistPrintLine10F1]
+    Set As : "[  ]  Tally users mapped to roles (Security > Role Setup)"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine11]
+    Field: JpInstallChecklistPrintLine11F1
+
+[Field: JpInstallChecklistPrintLine11F1]
+    Set As : "[  ]  Monthly targets entered (Security > Target Setup)"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine12]
+    Field: JpInstallChecklistPrintLine12F1
+
+[Field: JpInstallChecklistPrintLine12F1]
+    Set As : "[  ]  Today's gold, silver and platinum rates entered (Daily Rate Master)"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine13]
+    Field: JpInstallChecklistPrintLine13F1
+
+[Field: JpInstallChecklistPrintLine13F1]
+    Set As : "[  ]  Sales and Purchase voucher print styles set to the JadePro format"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine14]
+    Field: JpInstallChecklistPrintLine14F1
+
+[Field: JpInstallChecklistPrintLine14F1]
+    Set As : "[  ]  One test invoice printed and checked against a manual calculation"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine15]
+    Field: JpInstallChecklistPrintLine15F1
+
+[Field: JpInstallChecklistPrintLine15F1]
+    Set As : "[  ]  One test old gold exchange adjusted against a sales invoice"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine16]
+    Field: JpInstallChecklistPrintLine16F1
+
+[Field: JpInstallChecklistPrintLine16F1]
+    Set As : "[  ]  Tally's own GST report still agrees with the JadePro GST summary"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine17]
+    Field: JpInstallChecklistPrintLine17F1
+
+[Field: JpInstallChecklistPrintLine17F1]
+    Set As : " "
+[Line: JpInstallChecklistPrintLine18]
+    Field: JpInstallChecklistPrintLine18F1
+
+[Field: JpInstallChecklistPrintLine18F1]
+    Set As : "NOT done by this module, on purpose: tax ledgers and GST percentages. Those belong to"
+    Style : JpFontBold
+[Line: JpInstallChecklistPrintLine19]
+    Field: JpInstallChecklistPrintLine19F1
+
+[Field: JpInstallChecklistPrintLine19F1]
+    Set As : "Tally's own GST setup (Gateway > Settings > Taxes and GST), so the statutory reports stay correct."
+    Style : JpFontBold

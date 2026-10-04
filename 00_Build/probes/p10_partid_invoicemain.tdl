@@ -1,0 +1,6 @@
+; P10  Part-id: Invoicemain inside Alter of voucher line "Item Details"
+Alter: Sales Voucher, Item Details
+    Add: Field
+        Field-id: ZzP10Part
+        Part-id: Invoicemain
+        Width: 100

@@ -1,0 +1,1139 @@
+; =============================================================================
+;  JadePro  ::  02_ItemMaster.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Jewellery Item Master.
+;            * Declares every item-level User Defined Field (UDF).
+;            * Adds a "Jewellery" block to Tally's standard Alter Item screen.
+;            * Provides a guided "Create Jewellery Item" screen.
+;            * Auto-computes Net Weight, Metal Value, Wastage, Stone Value,
+;              Diamond Value and the final jewellery value.
+;
+;  LOAD    : After 00_Core.tdl. Before 04_Sales.tdl (which reads these UDFs).
+;
+;  REQUIRES : 00_Core.tdl
+;
+;  SCALE NOTE : Nothing here iterates over items, so the cost of this module
+;               is O(1) regardless of whether the shop holds 500 items or
+;               50,000. Reports that DO iterate use SQL (see 11_Reports.tdl).
+; =============================================================================
+
+; -----------------------------------------------------------------------------
+;  STYLES - the shared look of every JadePro screen.
+; -----------------------------------------------------------------------------
+[Style: JpTitle]
+    Font: Arial Bold
+    Height: 22
+    Colour: White
+    Background Colour: #3B2A14
+    Border: Yes
+    Border Colour: #C8A44D
+    Border Style: Solid
+    Align: Centre
+    Font Color: White
+
+[Style: JpSub]
+    Font: Arial Bold
+    Height: 16
+    Colour: #6B4E1E
+    Border: Yes
+    Border Style: Solid
+    Border Colour: #C8A44D
+    Background Colour: #F7EFDD
+
+[Style: JpSectionBox]
+    Font: Arial Bold
+    Height: 15
+    Colour: #6B4E1E
+    Border: Yes
+    Border Style: Solid
+    Border Colour: #D8C79A
+    Background Colour: #FBF6EA
+
+[Style: JpBody]
+    Font: Arial
+    Height: 15
+    Border: No
+
+[Style: JpMoney]
+    Font: Arial
+    Align: Right
+    Height: 15
+
+[Style: JpMoneyBold]
+    Font: Arial Bold
+    Align: Right
+    Height: 15
+
+[Style: JpWeight]
+    Font: Arial
+    Align: Right
+    Height: 15
+
+[Style: JpWeightBold]
+    Font: Arial Bold
+    Align: Right
+    Height: 15
+
+[Style: JpCenter]
+    Font: Arial
+    Align: Centre
+    Height: 15
+
+[Style: JpTotal]
+    Font: Arial Bold
+    Align: Right
+    Height: 16
+    Background Colour: #EFE6D2
+    Border: Yes
+    Border Style: Solid
+    Border Colour: #C8A44D
+
+[Style: JpWarn]
+    Font: Arial Bold
+    Colour: #A00000
+    Background Colour: #FFE8E8
+    Height: 15
+
+[Style: JpMuted]
+    Font: Arial
+    Colour: #707070
+    Height: 14
+
+[Style: JpCardHdr]
+    Font: Arial Bold
+    Height: 17
+    Colour: White
+    Background Colour: #6B4E1E
+    Align: Centre
+    Border: Yes
+    Border Style: Solid
+    Border Colour: #C8A44D
+
+[Style: JpCardVal]
+    Font: Arial Bold
+    Height: 20
+    Align: Centre
+    Colour: #3B2A14
+
+[Style: JpBigNum]
+    Font: Arial Bold
+    Height: 19
+    Align: Centre
+
+[Style: JpGridHead]
+    Font: Arial Bold
+    Colour: White
+    Background Colour: #4A3420
+    Height: 16
+    Align: Centre
+    Border: Yes
+    Border Style: Solid
+    Border Colour: #C8A44D
+
+[Style: JpGrid]
+    Font: Arial
+    Height: 15
+    Border: Yes
+    Border Style: Solid
+    Border Colour: #C8A44D
+
+; =============================================================================
+;  SECTION A - PICK LISTS
+;  Enum-valued UDFs are declared as Text so that they are always writable; the
+;  form fields below attach a drop-down. If a particular Tally build does not
+;  resolve the drop-down the field still accepts the same values as text.
+; =============================================================================
+
+[Collection: Source: JpMetalPick]
+    Data: JpMetalPickRow
+
+[Collection: Data: JpMetalPickRow]
+    Fetch: JpMetalPickFetch
+    Set: JpMetalPickSet
+    Repeat: Over: JpMetalPickRow
+
+[Collection: Data: JpMetalPickFetch]
+    Include: JpMetalPickRow
+
+[Collection: Data: JpMetalPickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpMetalList()
+
+[Collection: Source: JpPurityPick]
+    Data: JpPurityPickRow
+
+[Collection: Data: JpPurityPickRow]
+    Fetch: JpPurityPickFetch
+    Set: JpPurityPickSet
+    Repeat: Over: JpPurityPickRow
+
+[Collection: Data: JpPurityPickFetch]
+    Include: JpPurityPickRow
+
+[Collection: Data: JpPurityPickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpPurityList()
+
+[Collection: Source: JpMakeTypePick]
+    Data: JpMakeTypePickRow
+
+[Collection: Data: JpMakeTypePickRow]
+    Fetch: JpMakeTypePickFetch
+    Set: JpMakeTypePickSet
+    Repeat: Over: JpMakeTypePickRow
+
+[Collection: Data: JpMakeTypePickFetch]
+    Include: JpMakeTypePickRow
+
+[Collection: Data: JpMakeTypePickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpMakingTypeList()
+
+[Collection: Source: JpPayModePick]
+    Data: JpPayModePickRow
+
+[Collection: Data: JpPayModePickRow]
+    Fetch: JpPayModePickFetch
+    Set: JpPayModePickSet
+    Repeat: Over: JpPayModePickRow
+
+[Collection: Data: JpPayModePickFetch]
+    Include: JpPayModePickRow
+
+[Collection: Data: JpPayModePickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpPayModeList()
+
+; =============================================================================
+;  SECTION B - ITEM USER DEFINED FIELDS
+;  One block per group of the specification. Every name is prefixed Jwl so it
+;  can never collide with another product's custom fields.
+; =============================================================================
+
+    ; Label: "Is Jewellery Item"
+[System: UDF]
+JwlIsJewellery : Logical : 20013
+; --- identity -------------------------------------------------------------
+    ; Label: "Barcode"
+[System: UDF]
+JwlBarcode : String : 20014
+    Validations: Not Blank
+
+    ; Label: "Jewellery Category"
+[System: UDF]
+JwlCategory : String : 20015
+    Validations: Not Blank
+
+    ; Label: "Design Number"
+[System: UDF]
+JwlDesignNo : String : 20016
+    Validations: Not Blank
+
+    ; Label: "HUID / Hallmark Number"
+[System: UDF]
+JwlHuid : String : 20017
+    ; Label: "Certification Number"
+[System: UDF]
+JwlCertNo : String : 20018
+    ; Label: "Supplier / Karigar"
+[System: UDF]
+JwlSupplier : String : 20019
+    ; Label: "Location / Counter"
+[System: UDF]
+JwlLocation : String : 20020
+; --- metal ----------------------------------------------------------------
+    ; Label: "Metal Type"
+[System: UDF]
+JwlMetalType : String : 20021
+    ; Label: "Purity"
+[System: UDF]
+JwlPurity : String : 20022
+    ; Label: "Item Gold Rate"
+[System: UDF]
+JwlGoldRate : Number : 20023
+; --- weights --------------------------------------------------------------
+    ; Label: "Gross Weight"
+[System: UDF]
+JwlGrossWt : Quantity : 20024
+    ; Label: "Stone Weight"
+[System: UDF]
+JwlStoneWt : Quantity : 20025
+    ; Label: "Diamond Weight (Carat)"
+[System: UDF]
+JwlDiamondCarat : Quantity : 20026
+    ; Label: "Other Stone Weight"
+[System: UDF]
+JwlOtherStoneWt : Quantity : 20027
+    ; Label: "Net Metal Weight"
+[System: UDF]
+JwlNetMetalWt : Quantity : 20028
+    ; Label: "Pieces"
+[System: UDF]
+JwlPieces : Quantity : 20029
+; --- pricing --------------------------------------------------------------
+    ; Label: "Stone Rate"
+[System: UDF]
+JwlStoneRate : Number : 20030
+    ; Label: "Diamond Rate"
+[System: UDF]
+JwlDiamondRate : Number : 20031
+    ; Label: "Making Charge"
+[System: UDF]
+JwlMakingCharge : Number : 20032
+    ; Label: "Making Charge Type"
+[System: UDF]
+JwlMakingType : String : 20033
+    ; Label: "Wastage %"
+[System: UDF]
+JwlWastagePc : Number : 20034
+    ; Label: "Minimum Selling Price"
+[System: UDF]
+JwlMSP : Number : 20035
+    ; Label: "MRP"
+[System: UDF]
+JwlMRP : Number : 20036
+; --- computed (stored so that inventory reports never have to re-derive) ----
+    ; Label: "Metal Value"
+[System: UDF]
+JwlMetalValue : Number : 20037
+    ; Label: "Wastage Value"
+[System: UDF]
+JwlWastageValue : Number : 20038
+    ; Label: "Stone Value"
+[System: UDF]
+JwlStoneValue : Number : 20039
+    ; Label: "Diamond Value"
+[System: UDF]
+JwlDiamondValue : Number : 20040
+    ; Label: "Final Jewellery Value"
+[System: UDF]
+JwlFinalValue : Number : 20041
+; Derived making charge. Held separately from JwlMakingCharge (the user input)
+; so the calculation never overwrites what the user typed.
+    ; Label: "Making Charge Calculated"; =============================================================================
+[System: UDF]
+JwlMakingChargeComputed : Number : 20042
+;  SECTION C - THE JEWELLERY BLOCK ON THE ITEM MASTER
+;  Added to Tally's standard Alter Item screen. Tally keeps full control of the
+;  standard fields (UOM, group, opening qty, HSN, rate) - we only append.
+; =============================================================================
+
+Alter: Item
+    Add: Field
+        Field-id: JpIsJewelChk
+        Label: "Is Jewellery Item"
+        Type: Logical
+        Value: ##JwlIsJewellery
+        Width: 160
+        Style: UseFormCtrl
+
+    Add: Field
+        Field-id: JpItemJewel
+        Part-id: JpItemJewelPart
+        Width: 100
+        Invisible: ##JwlIsJewellery = 0
+
+; --- the block itself -----------------------------------------------------
+[Part: JpItemJewelPart]
+           1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+
+    Button: <Recalculate Jewellery Value, OnAction: JpRecalcItem>
+    Button: <Generate Barcode / Tag, OnAction: JpRecalcItemGenBarcode>
+    Line: 1, Spacing, JpItemJewelPartLine1, JpItemJewelPartLine2, JpItemJewelPartLine3, JpItemJewelPartLine4, JpItemJewelPartLine5, JpItemJewelPartLine6, JpItemJewelPartLine7, JpItemJewelPartLine8, JpItemJewelPartLine9, JpItemJewelPartLine10, JpItemJewelPartLine11, JpItemJewelPartLine12, JpItemJewelPartLine13, JpItemJewelPartLine14, JpItemJewelPartLine15, JpItemJewelPartLine16, JpItemJewelPartLine17, JpItemJewelPartLine18, JpItemJewelPartLine19, JpItemJewelPartLine20, JpItemJewelPartLine21, JpItemJewelPartLine22, JpItemJewelPartLine23, JpItemJewelPartLine24, JpItemJewelPartLine25, JpItemJewelPartLine26, JpItemJewelPartLine27, JpItemJewelPartLine28, JpItemJewelPartLine29, JpItemJewelPartLine30, JpItemJewelPartLine31, JpItemJewelPartLine32, JpItemJewelPartLine33, JpItemJewelPartLine34, JpItemJewelPartLine35, JpItemJewelPartLine36, JpItemJewelPartLine37, JpItemJewelPartLine38
+
+[Line: JpItemJewelPartLine1]
+    Height : 1
+    Field: JpItemJewelPartLine1F1
+
+[Field: JpItemJewelPartLine1F1]
+    Set As : "IDENTIFICATION"
+    Style : JpSectionBox
+[Line: JpItemJewelPartLine2]
+    Field: JpItemJewelPartLine2F1
+
+[Field: JpItemJewelPartLine2F1]
+    Storage : JwlBarcode
+    Label : "Barcode / Item Code"
+    Width : 160
+[Line: JpItemJewelPartLine3]
+    Field: JpItemJewelPartLine3F1
+
+[Field: JpItemJewelPartLine3F1]
+    Storage : JwlCategory
+    Label : "Jewellery Category"
+    Width : 160
+[Line: JpItemJewelPartLine4]
+    Field: JpItemJewelPartLine4F1
+
+[Field: JpItemJewelPartLine4F1]
+    Storage : JwlDesignNo
+    Label : "Design Number"
+    Width : 160
+[Line: JpItemJewelPartLine5]
+    Field: JpItemJewelPartLine5F1
+
+[Field: JpItemJewelPartLine5F1]
+    Storage : JwlHuid
+    Label : "HUID / Hallmark No"
+    Width : 160
+[Line: JpItemJewelPartLine6]
+    Field: JpItemJewelPartLine6F1
+
+[Field: JpItemJewelPartLine6F1]
+    Storage : JwlCertNo
+    Label : "Certification No"
+    Width : 160
+[Line: JpItemJewelPartLine7]
+    Field: JpItemJewelPartLine7F1
+
+[Field: JpItemJewelPartLine7F1]
+    Storage : JwlLocation
+    Label : "Location / Counter"
+    Width : 160
+[Line: JpItemJewelPartLine8]
+    Field: JpItemJewelPartLine8F1
+
+[Field: JpItemJewelPartLine8F1]
+    Storage : JwlSupplier
+    Label : "Supplier / Karigar"
+    Width : 160
+[Line: JpItemJewelPartLine9]
+    Height : 1
+    Field: JpItemJewelPartLine9F1
+
+[Field: JpItemJewelPartLine9F1]
+    Set As : "METAL"
+    Style : JpSectionBox
+[Line: JpItemJewelPartLine10]
+    Field: JpItemJewelPartLine10F1
+
+[Field: JpItemJewelPartLine10F1]
+    Storage : JwlMetalType
+    Label : "Metal Type"
+    Width : 160
+    Dynamic : Pick From: JpMetalPick
+[Line: JpItemJewelPartLine11]
+    Field: JpItemJewelPartLine11F1
+
+[Field: JpItemJewelPartLine11F1]
+    Storage : JwlPurity
+    Label : "Purity"
+    Width : 160
+    Dynamic : Pick From: JpPurityPick
+[Line: JpItemJewelPartLine12]
+    Field: JpItemJewelPartLine12F1
+
+[Field: JpItemJewelPartLine12F1]
+    Storage : JwlGoldRate
+    Label : "Gold Rate / gm"
+    Width : 160
+    Format : "##,##0.00"
+[Line: JpItemJewelPartLine13]
+    Field: JpItemJewelPartLine13F1
+
+[Field: JpItemJewelPartLine13F1]
+    Storage : JwlPieces
+    Label : "Pieces"
+    Width : 160
+[Line: JpItemJewelPartLine14]
+    Height : 1
+    Field: JpItemJewelPartLine14F1
+
+[Field: JpItemJewelPartLine14F1]
+    Set As : "WEIGHTS (grams / carat)"
+    Style : JpSectionBox
+[Line: JpItemJewelPartLine15]
+    Field: JpItemJewelPartLine15F1
+
+[Field: JpItemJewelPartLine15F1]
+    Storage : JwlGrossWt
+    Label : "Gross Weight"
+    Width : 160
+[Line: JpItemJewelPartLine16]
+    Field: JpItemJewelPartLine16F1
+
+[Field: JpItemJewelPartLine16F1]
+    Storage : JwlStoneWt
+    Label : "Stone Weight"
+    Width : 160
+[Line: JpItemJewelPartLine17]
+    Field: JpItemJewelPartLine17F1
+
+[Field: JpItemJewelPartLine17F1]
+    Storage : JwlDiamondCarat
+    Label : "Diamond Carat"
+    Width : 160
+[Line: JpItemJewelPartLine18]
+    Field: JpItemJewelPartLine18F1
+
+[Field: JpItemJewelPartLine18F1]
+    Storage : JwlOtherStoneWt
+    Label : "Other Stone Wt"
+    Width : 160
+[Line: JpItemJewelPartLine19]
+    Field: JpItemJewelPartLine19F1
+
+[Field: JpItemJewelPartLine19F1]
+    Storage : JwlNetMetalWt
+    Label : "Net Metal Weight"
+    Style : JpFontBold
+    Width : 160
+    Color : #6B4E1E
+[Line: JpItemJewelPartLine20]
+    Field: JpItemJewelPartLine20F1
+
+[Field: JpItemJewelPartLine20F1]
+    Storage : JpNetCalcMsg
+    Label : " "
+    Width : 160
+    Skip : Yes
+[Line: JpItemJewelPartLine21]
+    Height : 1
+    Field: JpItemJewelPartLine21F1
+
+[Field: JpItemJewelPartLine21F1]
+    Set As : "MAKING CHARGES & STONES"
+    Style : JpSectionBox
+[Line: JpItemJewelPartLine22]
+    Field: JpItemJewelPartLine22F1
+
+[Field: JpItemJewelPartLine22F1]
+    Storage : JwlMakingType
+    Label : "Making Charge Type"
+    Width : 160
+    Dynamic : Pick From: JpMakeTypePick
+[Line: JpItemJewelPartLine23]
+    Field: JpItemJewelPartLine23F1
+
+[Field: JpItemJewelPartLine23F1]
+    Storage : JwlMakingCharge
+    Label : "Making Charge"
+    Width : 160
+    Format : "##,##0.00"
+[Line: JpItemJewelPartLine24]
+    Field: JpItemJewelPartLine24F1
+
+[Field: JpItemJewelPartLine24F1]
+    Storage : JwlWastagePc
+    Label : "Wastage %"
+    Width : 160
+    Format : "##,##0.00"
+[Line: JpItemJewelPartLine25]
+    Field: JpItemJewelPartLine25F1
+
+[Field: JpItemJewelPartLine25F1]
+    Storage : JwlStoneRate
+    Label : "Stone Rate / gm"
+    Width : 160
+    Format : "##,##0.00"
+[Line: JpItemJewelPartLine26]
+    Field: JpItemJewelPartLine26F1
+
+[Field: JpItemJewelPartLine26F1]
+    Storage : JwlDiamondRate
+    Label : "Diamond Rate / carat"
+    Width : 160
+    Format : "##,##0.00"
+[Line: JpItemJewelPartLine27]
+    Height : 1
+    Field: JpItemJewelPartLine27F1
+
+[Field: JpItemJewelPartLine27F1]
+    Set As : "COMPUTED VALUE (refreshed on Recalculate)"
+    Style : JpSectionBox
+[Line: JpItemJewelPartLine28]
+    Field: JpItemJewelPartLine28F1
+
+[Field: JpItemJewelPartLine28F1]
+    Storage : JwlMetalValue
+    Label : "Metal Value"
+    Style : JpFontBold
+    Width : 160
+    Color : #6B4E1E
+[Line: JpItemJewelPartLine29]
+    Field: JpItemJewelPartLine29F1
+
+[Field: JpItemJewelPartLine29F1]
+    Storage : JwlWastageValue
+    Label : "Wastage Value"
+    Style : JpFontBold
+    Width : 160
+    Color : #6B4E1E
+[Line: JpItemJewelPartLine30]
+    Field: JpItemJewelPartLine30F1
+
+[Field: JpItemJewelPartLine30F1]
+    Storage : JwlStoneValue
+    Label : "Stone Value"
+    Style : JpFontBold
+    Width : 160
+    Color : #6B4E1E
+[Line: JpItemJewelPartLine31]
+    Field: JpItemJewelPartLine31F1
+
+[Field: JpItemJewelPartLine31F1]
+    Storage : JwlDiamondValue
+    Label : "Diamond Value"
+    Style : JpFontBold
+    Width : 160
+    Color : #6B4E1E
+[Line: JpItemJewelPartLine32]
+    Field: JpItemJewelPartLine32F1
+
+[Field: JpItemJewelPartLine32F1]
+    Storage : JwlFinalValue
+    Label : "Final Jewellery Value"
+    Style : JpFontBold
+    Width : 200
+    Color : #A06000
+[Line: JpItemJewelPartLine33]
+    Field: JpItemJewelPartLine33F1
+
+[Field: JpItemJewelPartLine33F1]
+    Storage : JwlMakingChargeComputed
+    Label : "Making Charge (calculated)"
+    Style : JpFontBold
+    Width : 160
+    Color : #6B4E1E
+[Line: JpItemJewelPartLine34]
+    Height : 1
+    Field: JpItemJewelPartLine34F1
+
+[Field: JpItemJewelPartLine34F1]
+    Set As : "PRICING CONTROL"
+    Style : JpSectionBox
+[Line: JpItemJewelPartLine35]
+    Field: JpItemJewelPartLine35F1
+
+[Field: JpItemJewelPartLine35F1]
+    Storage : JwlMSP
+    Label : "Minimum Selling Price"
+    Width : 160
+    Format : "##,##0.00"
+[Line: JpItemJewelPartLine36]
+    Field: JpItemJewelPartLine36F1
+
+[Field: JpItemJewelPartLine36F1]
+    Storage : JwlMRP
+    Label : "MRP"
+    Width : 160
+    Format : "##,##0.00"
+[Line: JpItemJewelPartLine37]
+    Field: JpItemJewelPartLine37F1
+
+[Field: JpItemJewelPartLine37F1]
+    Storage : JpRecalcBtn
+    Label : " "
+    Width : 100
+    Skip : Yes
+[Line: JpItemJewelPartLine38]
+    Part Name: JpItemValidateMsg
+
+; --- validation message line ----------------------------------------------
+[Part: JpItemValidateMsg]
+    Line: JpItemValidateMsgLine1, JpItemValidateMsgLine2
+
+[Line: JpItemValidateMsgLine1]
+    Field: JpItemValidateMsgLine1F1
+
+[Field: JpItemValidateMsgLine1F1]
+    Storage : JpItemMsg
+    Label : " "
+    Width : 100
+    Style : JpWarn
+[Line: JpItemValidateMsgLine2]
+    Field: JpItemValidateMsgLine2F1
+
+[Field: JpItemValidateMsgLine2F1]
+    Storage : JpItemFormula
+    Label : " "
+    Width : 100
+    Style : JpMuted
+Alter: Item, JpItemJewelPart
+    Modify Group: JpItemCalcGroup
+        ; --- derived, in dependency order -----------------------------------
+        Add: Field-id: JwlNetMetalWt
+            Set: Value: JpNetWeight($JwlGrossWt, $JwlStoneWt)
+        Add: Field-id: JwlMetalValue
+            Set: Value: JpMetalValue($JwlNetMetalWt, $JwlGoldRate)
+        Add: Field-id: JwlWastageValue
+            Set: Value: JpWastageValue($JwlMetalValue, $JwlWastagePc)
+        Add: Field-id: JwlStoneValue
+            Set: Value: JpStoneValue($JwlStoneWt, $JwlStoneRate)
+        Add: Field-id: JwlDiamondValue
+            Set: Value: JpDiamondValue($JwlDiamondCarat, $JwlDiamondRate)
+        ; Making charge is a DERIVED amount, so it is a reaction on its own
+        ; inputs rather than on the other computed fields.
+        Add: Field-id: JwlMakingChargeComputed
+            Set: Value: JpMakingCharge($JwlMakingType, $JwlNetMetalWt, $JwlMetalValue, $JwlMakingCharge, $JwlGoldRate)
+        Add: Field-id: JwlFinalValue
+            Set: Value: JpRound($JwlMetalValue + $JwlWastageValue + $JwlMakingChargeComputed + $JwlStoneValue + $JwlDiamondValue)
+        Add: Field-id: JpItemFormula
+            Set: Value: "Net = Gross - Stone   |   Value = Metal + Wastage + Making + Stone + Diamond"
+
+    ; --- validation line + actions on the same target ----------------------
+    Add: Field-id: JpItemMsg
+        Set: Value: JpItemValidationText()
+        Accept: JpItemCalc
+        Reject: JpItemCalc
+
+    Add: Field-id: JpRecalcBtn
+        Set: Accept: JpItemCalc
+        Set: Reject: JpItemCalc
+        Set: Buttons: <Recalculate, OnAction: JpRecalcItem>
+        Set: Buttons: <Barcode / Tag, OnAction: JpRecalcItemGenBarcode>
+
+[Function: JpItemCalc]
+    Returns: Integer : Any
+    JpItemCalc = 1
+
+[Function: JpRecalcItem]
+    Returns: Integer : Any
+    If (JpIsOwner = 0) Then
+    {
+        If (JpHasRight(JpRtProfit()) = 0) Then
+        {
+            JpRecalcItem = 0
+            Exit
+        }
+    }
+    JpRecalcItem = 1
+
+[Function: JpRecalcItemGenBarcode]
+    Returns: Integer : Any
+    JpRecalcItemGenBarcode = 1
+
+; Human readable reason a jewellery item is not acceptable yet.
+[Function: JpItemValidationText]
+    Returns: String : Any
+    Var: m : String
+    m = ""
+    If ($JwlBarcode = "") Then
+    {
+        m = "Barcode is mandatory for jewellery items."
+        JpItemValidationText = m
+        Exit
+    }
+    If ($JwlCategory = "") Then
+    {
+        m = "Jewellery Category is mandatory."
+        JpItemValidationText = m
+        Exit
+    }
+    If ($JwlMetalType = "") Then
+    {
+        m = "Metal Type is mandatory."
+        JpItemValidationText = m
+        Exit
+    }
+    If (JpPurityValid($JwlPurity) = 0) Then
+    {
+        m = "Purity " + $JwlPurity + " is not a valid purity."
+        JpItemValidationText = m
+        Exit
+    }
+    If (JpWeightValid($JwlGrossWt) = 0) Then
+    {
+        m = "Gross Weight is missing or out of range."
+        JpItemValidationText = m
+        Exit
+    }
+    If ($JwlGoldRate <= 0) Then
+    {
+        m = "Enter the item gold rate or pick it up from the daily rate master."
+        JpItemValidationText = m
+        Exit
+    }
+    If ($JwlFinalValue <= 0) Then
+    {
+        m = "Final Jewellery Value is zero - check rate, weights and making charge."
+        JpItemValidationText = m
+        Exit
+    }
+    If ($JwlMSP > 0) Then
+    {
+        If ($JwlFinalValue < $JwlMSP) Then
+        {
+            m = "Warning: computed value is BELOW the Minimum Selling Price."
+            JpItemValidationText = m
+            Exit
+        }
+    }
+    If ($JwlMRP > 0) Then
+    {
+        If ($JwlFinalValue > $JwlMRP) Then
+        {
+            m = "Warning: computed value is ABOVE MRP."
+            JpItemValidationText = m
+            Exit
+        }
+    }
+    JpItemValidationText = "Item is valid."; =============================================================================
+;  SECTION E - GUIDED CREATE / ALTER SCREENS
+;  Tally's own Create Item screen is untouched; this is an ADDITIONAL screen
+;  for the cashier who packs a new design, because it asks jewellery questions
+;  in jewellery order and auto-computes as they type.
+; =============================================================================
+
+[Variable: JpScrItemName   : String]
+[Variable: JpScrBarcode    : String]
+[Variable: JpScrCategory   : String]
+[Variable: JpScrDesign     : String]
+[Variable: JpScrHuid       : String]
+[Variable: JpScrCert       : String]
+[Variable: JpScrMetal      : String]
+[Variable: JpScrPurity     : String]
+[Variable: JpScrRate       : Number]
+[Variable: JpScrGross      : Quantity]
+[Variable: JpScrStone      : Quantity]
+[Variable: JpScrCarat      : Quantity]
+[Variable: JpScrNet        : Quantity]
+[Variable: JpScrMakeType   : String]
+[Variable: JpScrMakeAmt    : Number]
+[Variable: JpScrWastage    : Number]
+[Variable: JpScrStoneRate  : Number]
+[Variable: JpScrDiaRate    : Number]
+[Variable: JpScrMetalVal   : Number]
+[Variable: JpScrFinalVal   : Number]
+[Variable: JpScrMsp        : Number]
+[Variable: JpScrMrp        : Number]
+[Variable: JpScrCounter    : String]
+[Variable: JpScrSupplier   : String]
+[Variable: JpScrMsg        : String]
+[Variable: JpScrSeq        : Number]
+
+[Screen: JpItemCreateScreen]
+    Caption: "JadePro  ::  Create Jewellery Item"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           CREATE JEWELLERY ITEM  -  " + JpAppName()
+    Style: JpTitle
+    Line Height: 1
+    Text: "Rates today :  24K " + JpFmtAmt(JpCache24K) + "    22K " + JpFmtAmt(JpCache22K) + "    18K " + JpFmtAmt(JpCache18K) + "    14K " + JpFmtAmt(JpCache14K) + "    Silver " + JpFmtAmt(JpCacheSilver)
+    Style: JpSub
+    Text: " "
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1, 1
+    Field: <Field-Id: JpScrItemName, Label: "Item Name *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrBarcode, Label: "Barcode *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrCategory, Label: "Category *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpCatPick
+    Field: <Field-Id: JpScrDesign, Label: "Design Number *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrHuid, Label: "HUID">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrCert, Label: "Certificate No">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrCounter, Label: "Counter / Location">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrSupplier, Label: "Supplier / Karigar">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " METAL  AND  PURETY"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1
+    Field: <Field-Id: JpScrMetal, Label: "Metal Type *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpMetalPick
+    Field: <Field-Id: JpScrPurity, Label: "Purity *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPurityPick
+    Field: <Field-Id: JpScrRate, Label: "Rate / gm *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrGross, Label: "Gross Weight *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrStone, Label: "Stone Weight">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrCarat, Label: "Diamond Carat">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrNet, Label: "Net Metal Weight">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+
+    Line: Spacing
+    Lines: 1
+    Text: " MAKING CHARGES  AND  STONES"
+    Style: JpSectionBox
+    Lines: 1, 1, 1, 1
+    Field: <Field-Id: JpScrMakeType, Label: "Making Charge Type *">
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpMakeTypePick
+    Field: <Field-Id: JpScrMakeAmt, Label: "Making Charge *">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrWastage, Label: "Wastage %">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrStoneRate, Label: "Stone Rate / gm">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrDiaRate, Label: "Diamond Rate / carat">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrMsp, Label: "Minimum Selling Price">
+        Width: 250
+        Style: UseFormCtrl
+    Field: <Field-Id: JpScrMrp, Label: "MRP">
+        Width: 250
+        Style: UseFormCtrl
+
+    Line: Spacing
+    Lines: 1
+    Text: " COMPUTED VALUE"
+    Style: JpSectionBox
+    Lines: 1, 1
+    Field: <Field-Id: JpScrMetalVal, Label: "Metal Value">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+    Field: <Field-Id: JpScrFinalVal, Label: "FINAL JEWELLERY VALUE">
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+
+    Line: Spacing
+    Lines: 1, 1
+    Field: <Field-Id: JpScrMsg, Label: " ">
+        Width: 100
+        Style: JpWarn
+    Text: "Net Weight = Gross Weight - Stone Weight      Value = Metal + Wastage + Making + Stone + Diamond"
+    Style: JpMuted
+
+    Line: Spacing
+    Lines: 1
+    Button: <Recalculate Value, Key: F7, Action: JpCreateCalc>
+    Button: <Save Item, Key: F2, Action: JpCreateItem>
+    Button: <Quit, Key: Esc, Action: System: Quit>
+
+; Category pick list - free text so a shop can invent its own taxonomy.
+[Collection: Source: JpCatPick]
+    Data: JpCatPickRow
+
+[Collection: Data: JpCatPickRow]
+    Fetch: JpCatPickFetch
+    Set: JpCatPickSet
+    Repeat: Over: JpCatPickRow
+
+[Collection: Data: JpCatPickFetch]
+    Include: JpCatPickRow
+
+[Collection: Data: JpCatPickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpDefaultCategoryList()
+
+[Function: JpDefaultCategoryList]
+    Returns: String : Any
+    JpDefaultCategoryList = "Ring##Necklace##Bangles##Bracelet##Chain##Pendant##Earrings##Nose Pin##Maang Tikka##Bezar##Kada##Payal##Anklet##Hair Accessories##Silver Coin##Idol"
+
+; -----------------------------------------------------------------------------
+;  ALTER SCREEN - pick an item, then hand over to Tally's own Alter Item.
+; -----------------------------------------------------------------------------
+[Variable: JpAlterTarget : String]
+
+[Screen: JpItemAlterScreen]
+    Caption: "JadePro  ::  Alter Jewellery Item"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           ALTER JEWELLERY ITEM"
+    Style: JpTitle
+    Line Height: 1
+    Text: " "
+    Style: JpMuted
+    Lines: 1, 1
+    Field: <Field-Id: JpAlterTarget, Label: "Item Name">
+        Width: 300
+        Style: UseFormCtrl
+    Line: Spacing
+    Lines: 1
+    Text: "Opens Tally's standard Alter Item screen, which now carries the JadePro jewellery block."
+    Style: JpMuted
+    Line: Spacing
+    Lines: 1
+    Button: <Open Alter Item, Key: F2, Action: JpOpenAlterItem>
+    Button: <Quit, Key: Esc, Action: System: Quit>
+
+; =============================================================================
+;  ACTIONS
+; =============================================================================
+
+; Live recalculation on the create screen. The screen-level Set: reactions keep
+; the four derived values in step with the inputs as they are typed.
+[Function: JpCreateCalc]
+    Returns: Integer : Any
+    JpCreateCalc = 1
+
+[Function: JpCreateItem]
+    Returns: Integer : Any
+    Var: n : String, mv : Number, sv : Number, dv : Number, wv : Number, mk : Number, nv : Number, fin : Number
+    n = JpBlankIfNull($$JpScrItemName)
+    JpScrMsg = ""
+    If (n = "") Then
+    {
+        JpScrMsg = "Item Name is mandatory."
+        JpCreateItem = 0
+        Exit
+    }
+    If (JpBlankIfNull($$JpScrBarcode) = "") Then
+    {
+        JpScrMsg = "Barcode is mandatory - it is the scanner key at the counter."
+        JpCreateItem = 0
+        Exit
+    }
+    If (JpBlankIfNull($$JpScrCategory) = "") Then
+    {
+        JpScrMsg = "Jewellery Category is mandatory."
+        JpCreateItem = 0
+        Exit
+    }
+    If (JpBlankIfNull($$JpScrMetal) = "") Then
+    {
+        JpScrMsg = "Metal Type is mandatory."
+        JpCreateItem = 0
+        Exit
+    }
+    If (JpPurityValid($$JpScrPurity) = 0) Then
+    {
+        JpScrMsg = "Purity '" + JpBlankIfNull($$JpScrPurity) + "' is not valid."
+        JpCreateItem = 0
+        Exit
+    }
+    If (JpWeightValid($$JpScrGross) = 0) Then
+    {
+        JpScrMsg = "Gross Weight is mandatory and must be greater than zero."
+        JpCreateItem = 0
+        Exit
+    }
+    If ($$JpScrRate <= 0) Then
+    {
+        JpScrMsg = "Rate per gram is mandatory."
+        JpCreateItem = 0
+        Exit
+    }
+
+    ; --- recompute here too so a saved item is always consistent ---
+    JpScrNet = JpNetWeight($$JpScrGross, $$JpScrStone)
+    mv = JpMetalValue(JpScrNet, $$JpScrRate)
+    wv = JpWastageValue(mv, $$JpScrWastage)
+    mk = JpMakingCharge($$JpScrMakeType, JpScrNet, mv, $$JpScrMakeAmt, $$JpScrRate)
+    sv = JpStoneValue($$JpScrStone, $$JpScrStoneRate)
+    dv = JpDiamondValue($$JpScrCarat, $$JpScrDiaRate)
+    fin = JpRound(mv + wv + mk + sv + dv)
+
+    If (JpHasRight(JpRtPurchase()) = 0) Then
+    {
+        If (JpIsOwner = 0) Then
+        {
+            JpScrMsg = "You are not allowed to create items with cost information."
+            JpCreateItem = 0
+            Exit
+        }
+    }
+
+    Create: Item: n
+
+    Modify Group: JpItemSaveGroup
+        Add: Field-id: JwlIsJewellery
+            Set: Value: 1
+        Add: Field-id: JwlBarcode
+            Set: Value: JpBlankIfNull($$JpScrBarcode)
+        Add: Field-id: JwlCategory
+            Set: Value: JpBlankIfNull($$JpScrCategory)
+        Add: Field-id: JwlDesignNo
+            Set: Value: JpBlankIfNull($$JpScrDesign)
+        Add: Field-id: JwlHuid
+            Set: Value: JpBlankIfNull($$JpScrHuid)
+        Add: Field-id: JwlCertNo
+            Set: Value: JpBlankIfNull($$JpScrCert)
+        Add: Field-id: JwlLocation
+            Set: Value: JpBlankIfNull($$JpScrCounter)
+        Add: Field-id: JwlSupplier
+            Set: Value: JpBlankIfNull($$JpScrSupplier)
+        Add: Field-id: JwlMetalType
+            Set: Value: JpBlankIfNull($$JpScrMetal)
+        Add: Field-id: JwlPurity
+            Set: Value: JpBlankIfNull($$JpScrPurity)
+        Add: Field-id: JwlGoldRate
+            Set: Value: $$JpScrRate
+        Add: Field-id: JwlGrossWt
+            Set: Value: $$JpScrGross
+        Add: Field-id: JwlStoneWt
+            Set: Value: $$JpScrStone
+        Add: Field-id: JwlDiamondCarat
+            Set: Value: $$JpScrCarat
+        Add: Field-id: JwlNetMetalWt
+            Set: Value: JpScrNet
+        Add: Field-id: JwlPieces
+            Set: Value: 1
+        Add: Field-id: JwlMakingType
+            Set: Value: JpBlankIfNull($$JpScrMakeType)
+        Add: Field-id: JwlMakingCharge
+            Set: Value: $$JpScrMakeAmt
+        Add: Field-id: JwlWastagePc
+            Set: Value: $$JpScrWastage
+        Add: Field-id: JwlStoneRate
+            Set: Value: $$JpScrStoneRate
+        Add: Field-id: JwlDiamondRate
+            Set: Value: $$JpScrDiaRate
+        Add: Field-id: JwlMetalValue
+            Set: Value: mv
+        Add: Field-id: JwlWastageValue
+            Set: Value: wv
+        Add: Field-id: JwlStoneValue
+            Set: Value: sv
+        Add: Field-id: JwlDiamondValue
+            Set: Value: dv
+        Add: Field-id: JwlFinalValue
+            Set: Value: fin
+        Add: Field-id: JwlMSP
+            Set: Value: $$JpScrMsp
+        Add: Field-id: JwlMRP
+            Set: Value: $$JpScrMrp
+
+    Accept: JpCreateDone
+    JpCreateItem = 1
+
+[Function: JpCreateDone]
+    Returns: Integer : Any
+    Var: n : String
+    n = JpBlankIfNull($$JpScrItemName)
+    JpScrMsg = "Saved: " + n + "   value " + JpFmtAmt($$JpScrFinalVal) + "."
+    JpCreateDone = 1
+
+[Function: JpOpenAlterItem]
+    Returns: Integer : Any
+    Var: n : String
+    n = JpBlankIfNull($$JpAlterTarget)
+    If (n = "") Then
+    {
+        JpOpenAlterItem = 0
+        Exit
+    }
+    Alter: n
+    JpOpenAlterItem = 1

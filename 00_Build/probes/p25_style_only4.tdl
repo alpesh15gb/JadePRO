@@ -1,0 +1,27 @@
+; p25 - Style has exactly four attributes: Font, Height, Bold, Italic.
+; Confirms `Bold : Yes` is the right target for the old `Font: BOLD`,
+; and that Colour / Border / Background Colour must move to the Field.
+[Report: ZzP25Report]
+    Form: ZzP25Form
+
+[Form: ZzP25Form]
+    Parts: ZzP25Part
+
+[Part: ZzP25Part]
+    Lines: ZzP25Line
+
+[Line: ZzP25Line]
+    Field: ZzP25Field
+
+[Style: ZzP25Style]
+    Bold : Yes
+
+[Field: ZzP25Field]
+    Set As : "bold text"
+    Style : ZzP25Style
+    Color : White
+    Background : Dark Grey
+    Border : ZzP25Border
+
+[Border: ZzP25Border]
+    Bottom : Thick, Double Lined

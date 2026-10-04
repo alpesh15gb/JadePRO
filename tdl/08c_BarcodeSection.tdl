@@ -1,0 +1,46 @@
+; =============================================================================
+;  08c_BarcodeSection.tdl   -   OPTIONAL, NOT IN THE DEFAULT BUNDLE
+; -----------------------------------------------------------------------------
+;  This file holds PATH B of 08a_BarcodeTally.tdl: the native TDL `Barcode:`
+;  section that renders true Code 128 bars with no font installed.
+;
+;  WHY IT IS A SEPARATE FILE
+;    The `Barcode:` section syntax could not be verified against official
+;    documentation, and it is the one construct in JadePro most likely to be
+;    rejected by a given Tally build. TDL parses an ENTIRE function before it
+;    runs any of it, so an invalid `Barcode:` section does not merely disable
+;    barcodes - it stops the whole JadePro.tdl from loading at all.
+;
+;    Earlier versions of 08a carried these sections inline and claimed that
+;    setting JpUseTdlBarcode to 0 made them "inert". That was wrong: the
+;    constant only chooses a rendering path at run time, it has no effect on
+;    parsing. Keeping the section here means the default load is safe and the
+;    capability is still one file away.
+;
+;  HOW TO ENABLE IT
+;    1. Load 08_Core.tdl first, then 08_Barcode.tdl, then 08a, then this file.
+;       (Or add it to the ORDER array in 00_Build/build.sh and rebuild.)
+;    2. Set  Constant: JpUseTdlBarcode : 1  in 08a_BarcodeTally.tdl.
+;    3. Reload. If Tally reports an error against this file, remove it again
+;       and set JpUseTdlBarcode back to 0 - PATH A (the Code 128 font) keeps
+;       printing scannable bars with no other change.
+;
+;  PATH A vs PATH B
+;    A (default)  draws the barcode with a Code 128 FONT. Needs that font
+;                 installed and selected in the print style.
+;    B (this file) uses the TDL Barcode: object. No font needed, but depends
+;                 on your Tally build accepting the section.
+; =============================================================================
+
+[Barcode: JpJewelCode128]
+    Title: <1000, "Jewellery Barcode">
+    Bar-Code: <JpJewelCode128Obj>
+    Height: 30
+    Rows: 1
+    Columns: 1
+    Width: 2
+
+[Barcode: JpJewelCode128Obj]
+    Title: <1000, "Code 128">
+    Bar-Code: Code128
+    Height: 30

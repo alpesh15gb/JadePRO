@@ -1,0 +1,5543 @@
+; =============================================================================
+;  JadePro  ::  11_Reports.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : All drill-down management reports.
+;
+;  PERFORMANCE MODEL
+;    Every report here is a SQL-backed Collection report. Tally executes the
+;    query in its own engine, so a stock report over 50,000 items is one
+;    indexed query rather than 50,000 TDL function calls. That is the single
+;    most important scalability decision in this module.
+;
+;  COMMON FEATURES ON EVERY REPORT
+;    From / To date filter, category or party filter, Key (Alt+K search),
+;    F5 print / preview, Alt+E export to Excel, F8 drill-down into the
+;    original voucher, and a security gate that hides cost and profit columns
+;    from users without JADE_VIEW_PROFIT.
+;
+;  LOAD    : After 00_Core, 04_Sales, 05_Purchase, 13_Security.
+;  REQUIRES : 00_Core.tdl, 04_Sales.tdl, 05_Purchase.tdl, 13_Security.tdl
+; =============================================================================
+
+; =============================================================================
+;  CUSTOMER CRM BLOCK ON THE LEDGER MASTER
+;  Lives here because the CRM reports below read these fields. Only the block
+;  is added - the ledger's own name, group, balances and PAN are untouched.
+; =============================================================================
+    ; Label: "Birthday"
+[System: UDF]
+JwlCustDOB : Date : 20209
+    ; Label: "Anniversary"
+[System: UDF]
+JwlCustAnniversary : Date : 20210
+    ; Label: "Email"
+[System: UDF]
+JwlCustEmail : String : 20211
+    ; Label: "Alternate Mobile"
+[System: UDF]
+JwlCustMobile2 : String : 20212
+    ; Label: "Customer Segment"
+[System: UDF]
+JwlCustSeg : String : 20213
+    ; Label: "Loyalty Points"
+[System: UDF]
+JwlLoyaltyPts : Number : 20214
+    ; Label: "Party State"
+[System: UDF]
+JwlPartyState : String : 20215
+    ; Label: "Lifetime Purchases"
+[System: UDF]
+JwlTotalPurchases : Number : 20216
+; The CRM block is ATTACHED inside the single "Alter: Ledger" section that
+; 07_Karigar.tdl owns - TDL permits only one section with a given name.
+[Part: JpCrmPart]
+    Line: Spacing, JpCrmPartLine1, JpCrmPartLine2, JpCrmPartLine3, JpCrmPartLine4, JpCrmPartLine5, JpCrmPartLine6, JpCrmPartLine7, JpCrmPartLine8, JpCrmPartLine9
+
+[Line: JpCrmPartLine1]
+    Height : 1
+    Field: JpCrmPartLine1F1
+
+[Field: JpCrmPartLine1F1]
+    Set As : " CUSTOMER CRM  (fill Party State to show this block)"
+    Style : JpSectionBox
+[Line: JpCrmPartLine2]
+    Field: JpCrmPartLine2F1
+
+[Field: JpCrmPartLine2F1]
+    Storage : JwlCustDOB
+    Label : "Birthday"
+    Width : 160
+[Line: JpCrmPartLine3]
+    Field: JpCrmPartLine3F1
+
+[Field: JpCrmPartLine3F1]
+    Storage : JwlCustAnniversary
+    Label : "Anniversary"
+    Width : 160
+[Line: JpCrmPartLine4]
+    Field: JpCrmPartLine4F1
+
+[Field: JpCrmPartLine4F1]
+    Storage : JwlCustEmail
+    Label : "Email"
+    Width : 200
+[Line: JpCrmPartLine5]
+    Field: JpCrmPartLine5F1
+
+[Field: JpCrmPartLine5F1]
+    Storage : JwlCustMobile2
+    Label : "Alternate Mobile"
+    Width : 160
+[Line: JpCrmPartLine6]
+    Field: JpCrmPartLine6F1
+
+[Field: JpCrmPartLine6F1]
+    Storage : JwlCustSeg
+    Label : "Customer Segment"
+    Width : 160
+[Line: JpCrmPartLine7]
+    Field: JpCrmPartLine7F1
+
+[Field: JpCrmPartLine7F1]
+    Storage : JwlLoyaltyPts
+    Label : "Loyalty Points"
+    Width : 140
+[Line: JpCrmPartLine8]
+    Field: JpCrmPartLine8F1
+
+[Field: JpCrmPartLine8F1]
+    Storage : JwlPartyState
+    Label : "Party State"
+    Width : 160
+[Line: JpCrmPartLine9]
+    Field: JpCrmPartLine9F1
+
+[Field: JpCrmPartLine9F1]
+    Storage : JwlTotalPurchases
+    Label : "Lifetime Purchases"
+    Width : 160
+[Function: JpDrillRef]
+    Returns: String : Any
+    JpDrillRef = $$VOUCHERTYPE + "-" + $$VOUCHERID
+
+; Access gate for the profitability reports.
+[Function: JpProfitReportOk]
+    Returns: Integer : Any
+    If (JpHasRight(JpRtProfit()) = 1) Then
+    {
+        JpProfitReportOk = 1
+        Exit
+    }
+    JpProfitReportOk = 0
+
+; Shared report header fragment used by every print format.
+[Part: JpReportHeader]
+    Line: Spacing, JpReportHeaderLine1, JpReportHeaderLine2, JpReportHeaderLine3, JpReportHeaderLine4, JpReportHeaderLine5
+
+[Line: JpReportHeaderLine1]
+    Part Name: Width
+[Line: JpReportHeaderLine2]
+    Field: JpReportHeaderLine2F1
+
+[Field: JpReportHeaderLine2F1]
+    Set As : Upr(##JwlShopName)
+    Style : JpFontBold
+[Line: JpReportHeaderLine3]
+    Field: JpReportHeaderLine3F1
+
+[Field: JpReportHeaderLine3F1]
+    Set As : "From " + JpFmtDate($$JpFromDate) + "     To " + JpFmtDate($$JpToDate)
+[Line: JpReportHeaderLine4]
+    Field: JpReportHeaderLine4F1
+
+[Field: JpReportHeaderLine4F1]
+    Set As : "Printed: " + JpFmtDate(JpCacheDate) + "     User: " + JpBlankIfNull(JpUserName) + " (" + JpBlankIfNull(JpUserRole) + ")"
+    Style : JpFontBold
+[Line: JpReportHeaderLine5]
+    Field: JpReportHeaderLine5F1
+
+[Field: JpReportHeaderLine5F1]
+    Set As : " "
+[Collection: Report: JpDailySales]
+    Source: JpDailySalesSQL
+    Var: JpFromDate, JpToDate, JpDailySalesperson
+    Title: <1000,###,#a##"  DAILY JEWELLERY SALES">
+    Print: JpDailySalesPrint
+    Export: JpDailySalesExport
+    Key: JpVoucherKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>, <JpDailySalesperson, <String, "Salesperson">>
+
+[Variable: JpDailySalesSQL : String]
+    Type: String
+    Value: "SELECT $$VOUCHERTYPE$$,$$VOUCHERID$$,$$DATE$$,$JwlInvNo$$,$JwlSalesperson$$,$$PARTYNAME$$,$$GSTVALUE$$,$JwlGrandTotal$$,$JwlTaxableVal$$,$JwlPayCash$$,$JwlPayCard$$,$JwlPayUpi$$,$JwlPayBank$$,$JwlPayAdvance$$,$JwlPayOldGold$$ FROM $$VOUCHERS$$ WHERE $$VOUCHERTYPE$$ = 'Sales' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$"
+
+[Variable: JpVoucherKey : String]
+    Type: String
+    Value: "VOUCHERID"
+
+
+; [Print: JpDailySalesPrint] -> [Form: JpDailySalesPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpDailySalesPrint]
+    Parts : JpDailySalesPrintLines
+
+[Part: JpDailySalesPrintLines]
+    Lines : Spacing, JpDailySalesPrintLine1, JpDailySalesPrintLine2, JpDailySalesPrintLine3, JpDailySalesPrintLine4, JpDailySalesPrintLine5, JpDailySalesPrintLine6, JpDailySalesPrintLine7, JpDailySalesPrintLine8, JpDailySalesPrintLine9, JpDailySalesPrintLine10, JpDailySalesPrintLine11, JpDailySalesPrintLine12, JpDailySalesPrintLine13, JpDailySalesPrintLine14, JpDailySalesPrintLine15, JpDailySalesPrintLine16, JpDailySalesPrintLine17, JpDailySalesPrintLine18, JpDailySalesPrintLine19, JpDailySalesPrintLine20, JpDailySalesPrintLine21, JpDailySalesPrintLine22, JpDailySalesPrintLine23, JpDailySalesPrintLine24, JpDailySalesPrintLine25, JpDailySalesPrintLine26, JpDailySalesPrintLine27, JpDailySalesPrintLine28, JpDailySalesPrintLine29, JpDailySalesPrintLine30, JpDailySalesPrintLine31, JpDailySalesPrintLine32, JpDailySalesPrintLine33, JpDailySalesPrintLine34, JpDailySalesPrintLine35, JpDailySalesPrintLine36, JpDailySalesPrintLine37, JpDailySalesPrintLine38, JpDailySalesPrintLine39, JpDailySalesPrintLine40, JpDailySalesPrintLine41, JpDailySalesPrintLine42, JpDailySalesPrintLine43, JpDailySalesPrintLine44, JpDailySalesPrintLine45, JpDailySalesPrintLine46, JpDailySalesPrintLine47, JpDailySalesPrintLine48, JpDailySalesPrintLine49, JpDailySalesPrintLine50, JpDailySalesPrintLine51, JpDailySalesPrintLine52, JpDailySalesPrintLine53, JpDailySalesPrintLine54, JpDailySalesPrintLine55, JpDailySalesPrintLine56, JpDailySalesPrintLine57, JpDailySalesPrintLine58, JpDailySalesPrintLine59, JpDailySalesPrintLine60, JpDailySalesPrintLine61, JpDailySalesPrintLine62, JpDailySalesPrintLine63, JpDailySalesPrintLine64, JpDailySalesPrintLine65, JpDailySalesPrintLine66, JpDailySalesPrintLine67, JpDailySalesPrintLine68, JpDailySalesPrintLine69
+
+[Line: JpDailySalesPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpDailySalesPrintLine2]
+    Field: JpDailySalesPrintLine2F1
+
+[Field: JpDailySalesPrintLine2F1]
+    Set As : "Invoice"
+[Line: JpDailySalesPrintLine3]
+    Field: JpDailySalesPrintLine3F1
+
+[Field: JpDailySalesPrintLine3F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine4]
+    Field: JpDailySalesPrintLine4F1
+
+[Field: JpDailySalesPrintLine4F1]
+    Set As : "Date"
+[Line: JpDailySalesPrintLine5]
+    Field: JpDailySalesPrintLine5F1
+
+[Field: JpDailySalesPrintLine5F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine6]
+    Field: JpDailySalesPrintLine6F1
+
+[Field: JpDailySalesPrintLine6F1]
+    Set As : "Customer"
+[Line: JpDailySalesPrintLine7]
+    Field: JpDailySalesPrintLine7F1
+
+[Field: JpDailySalesPrintLine7F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine8]
+    Field: JpDailySalesPrintLine8F1
+
+[Field: JpDailySalesPrintLine8F1]
+    Set As : "Salesperson"
+[Line: JpDailySalesPrintLine9]
+    Field: JpDailySalesPrintLine9F1
+
+[Field: JpDailySalesPrintLine9F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine10]
+    Field: JpDailySalesPrintLine10F1
+
+[Field: JpDailySalesPrintLine10F1]
+    Set As : "Taxable"
+[Line: JpDailySalesPrintLine11]
+    Field: JpDailySalesPrintLine11F1
+
+[Field: JpDailySalesPrintLine11F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine12]
+    Field: JpDailySalesPrintLine12F1
+
+[Field: JpDailySalesPrintLine12F1]
+    Set As : "GST"
+[Line: JpDailySalesPrintLine13]
+    Field: JpDailySalesPrintLine13F1
+
+[Field: JpDailySalesPrintLine13F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine14]
+    Field: JpDailySalesPrintLine14F1
+
+[Field: JpDailySalesPrintLine14F1]
+    Set As : "Grand Total"
+[Line: JpDailySalesPrintLine15]
+    Field: JpDailySalesPrintLine15F1
+
+[Field: JpDailySalesPrintLine15F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine16]
+    Field: JpDailySalesPrintLine16F1
+
+[Field: JpDailySalesPrintLine16F1]
+    Set As : "Cash"
+[Line: JpDailySalesPrintLine17]
+    Field: JpDailySalesPrintLine17F1
+
+[Field: JpDailySalesPrintLine17F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine18]
+    Field: JpDailySalesPrintLine18F1
+
+[Field: JpDailySalesPrintLine18F1]
+    Set As : "Card"
+[Line: JpDailySalesPrintLine19]
+    Field: JpDailySalesPrintLine19F1
+
+[Field: JpDailySalesPrintLine19F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine20]
+    Field: JpDailySalesPrintLine20F1
+
+[Field: JpDailySalesPrintLine20F1]
+    Set As : "UPI"
+[Line: JpDailySalesPrintLine21]
+    Field: JpDailySalesPrintLine21F1
+
+[Field: JpDailySalesPrintLine21F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine22]
+    Field: JpDailySalesPrintLine22F1
+
+[Field: JpDailySalesPrintLine22F1]
+    Set As : "Bank"
+[Line: JpDailySalesPrintLine23]
+    Field: JpDailySalesPrintLine23F1
+
+[Field: JpDailySalesPrintLine23F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine24]
+    Field: JpDailySalesPrintLine24F1
+
+[Field: JpDailySalesPrintLine24F1]
+    Set As : "Old Gold"
+[Line: JpDailySalesPrintLine25]
+    Field: JpDailySalesPrintLine25F1
+
+[Field: JpDailySalesPrintLine25F1]
+    Style : JpGridHead
+[Line: JpDailySalesPrintLine26]
+    Field: JpDailySalesPrintLine26F1
+
+[Field: JpDailySalesPrintLine26F1]
+    Set As : $JwlInvNo
+[Line: JpDailySalesPrintLine27]
+    Field: JpDailySalesPrintLine27F1
+
+[Field: JpDailySalesPrintLine27F1]
+    Style : JpGrid
+[Line: JpDailySalesPrintLine28]
+    Field: JpDailySalesPrintLine28F1
+
+[Field: JpDailySalesPrintLine28F1]
+    Set As : $$DATE
+[Line: JpDailySalesPrintLine29]
+    Field: JpDailySalesPrintLine29F1
+
+[Field: JpDailySalesPrintLine29F1]
+    Style : JpGrid
+[Line: JpDailySalesPrintLine30]
+    Field: JpDailySalesPrintLine30F1
+
+[Field: JpDailySalesPrintLine30F1]
+    Set As : $$PARTYNAME
+[Line: JpDailySalesPrintLine31]
+    Field: JpDailySalesPrintLine31F1
+
+[Field: JpDailySalesPrintLine31F1]
+    Style : JpGrid
+[Line: JpDailySalesPrintLine32]
+    Field: JpDailySalesPrintLine32F1
+
+[Field: JpDailySalesPrintLine32F1]
+    Set As : $JwlSalesperson
+[Line: JpDailySalesPrintLine33]
+    Field: JpDailySalesPrintLine33F1
+
+[Field: JpDailySalesPrintLine33F1]
+    Style : JpGrid
+[Line: JpDailySalesPrintLine34]
+    Field: JpDailySalesPrintLine34F1
+
+[Field: JpDailySalesPrintLine34F1]
+    Set As : $JwlTaxableVal
+[Line: JpDailySalesPrintLine35]
+    Field: JpDailySalesPrintLine35F1
+
+[Field: JpDailySalesPrintLine35F1]
+    Style : JpMoney
+[Line: JpDailySalesPrintLine36]
+    Field: JpDailySalesPrintLine36F1
+
+[Field: JpDailySalesPrintLine36F1]
+    Set As : $$GSTVALUE
+[Line: JpDailySalesPrintLine37]
+    Field: JpDailySalesPrintLine37F1
+
+[Field: JpDailySalesPrintLine37F1]
+    Style : JpMoney
+[Line: JpDailySalesPrintLine38]
+    Field: JpDailySalesPrintLine38F1
+
+[Field: JpDailySalesPrintLine38F1]
+    Set As : $JwlGrandTotal
+[Line: JpDailySalesPrintLine39]
+    Field: JpDailySalesPrintLine39F1
+
+[Field: JpDailySalesPrintLine39F1]
+    Style : JpMoneyBold
+[Line: JpDailySalesPrintLine40]
+    Field: JpDailySalesPrintLine40F1
+
+[Field: JpDailySalesPrintLine40F1]
+    Set As : $JwlPayCash
+[Line: JpDailySalesPrintLine41]
+    Field: JpDailySalesPrintLine41F1
+
+[Field: JpDailySalesPrintLine41F1]
+    Style : JpMoney
+[Line: JpDailySalesPrintLine42]
+    Field: JpDailySalesPrintLine42F1
+
+[Field: JpDailySalesPrintLine42F1]
+    Set As : $JwlPayCard
+[Line: JpDailySalesPrintLine43]
+    Field: JpDailySalesPrintLine43F1
+
+[Field: JpDailySalesPrintLine43F1]
+    Style : JpMoney
+[Line: JpDailySalesPrintLine44]
+    Field: JpDailySalesPrintLine44F1
+
+[Field: JpDailySalesPrintLine44F1]
+    Set As : $JwlPayUpi
+[Line: JpDailySalesPrintLine45]
+    Field: JpDailySalesPrintLine45F1
+
+[Field: JpDailySalesPrintLine45F1]
+    Style : JpMoney
+[Line: JpDailySalesPrintLine46]
+    Field: JpDailySalesPrintLine46F1
+
+[Field: JpDailySalesPrintLine46F1]
+    Set As : $JwlPayBank
+[Line: JpDailySalesPrintLine47]
+    Field: JpDailySalesPrintLine47F1
+
+[Field: JpDailySalesPrintLine47F1]
+    Style : JpMoney
+[Line: JpDailySalesPrintLine48]
+    Field: JpDailySalesPrintLine48F1
+
+[Field: JpDailySalesPrintLine48F1]
+    Set As : $JwlPayOldGold
+[Line: JpDailySalesPrintLine49]
+    Field: JpDailySalesPrintLine49F1
+
+[Field: JpDailySalesPrintLine49F1]
+    Style : JpMoney
+[Line: JpDailySalesPrintLine50]
+    Field: JpDailySalesPrintLine50F1
+
+[Field: JpDailySalesPrintLine50F1]
+    Set As : "TOTAL"
+[Line: JpDailySalesPrintLine51]
+    Field: JpDailySalesPrintLine51F1
+
+[Field: JpDailySalesPrintLine51F1]
+    Style : JpTotal
+[Line: JpDailySalesPrintLine52]
+    Field: JpDailySalesPrintLine52F1
+
+[Field: JpDailySalesPrintLine52F1]
+    Set As : Sum($JwlTaxableVal)
+[Line: JpDailySalesPrintLine53]
+    Field: JpDailySalesPrintLine53F1
+
+[Field: JpDailySalesPrintLine53F1]
+    Style : JpTotal
+[Line: JpDailySalesPrintLine54]
+    Field: JpDailySalesPrintLine54F1
+
+[Field: JpDailySalesPrintLine54F1]
+    Set As : Sum($$GSTVALUE)
+[Line: JpDailySalesPrintLine55]
+    Field: JpDailySalesPrintLine55F1
+
+[Field: JpDailySalesPrintLine55F1]
+    Style : JpTotal
+[Line: JpDailySalesPrintLine56]
+    Field: JpDailySalesPrintLine56F1
+
+[Field: JpDailySalesPrintLine56F1]
+    Set As : Sum($JwlGrandTotal)
+[Line: JpDailySalesPrintLine57]
+    Field: JpDailySalesPrintLine57F1
+
+[Field: JpDailySalesPrintLine57F1]
+    Style : JpTotal
+[Line: JpDailySalesPrintLine58]
+    Field: JpDailySalesPrintLine58F1
+
+[Field: JpDailySalesPrintLine58F1]
+    Set As : Sum($JwlPayCash)
+[Line: JpDailySalesPrintLine59]
+    Field: JpDailySalesPrintLine59F1
+
+[Field: JpDailySalesPrintLine59F1]
+    Style : JpTotal
+[Line: JpDailySalesPrintLine60]
+    Field: JpDailySalesPrintLine60F1
+
+[Field: JpDailySalesPrintLine60F1]
+    Set As : Sum($JwlPayCard)
+[Line: JpDailySalesPrintLine61]
+    Field: JpDailySalesPrintLine61F1
+
+[Field: JpDailySalesPrintLine61F1]
+    Style : JpTotal
+[Line: JpDailySalesPrintLine62]
+    Field: JpDailySalesPrintLine62F1
+
+[Field: JpDailySalesPrintLine62F1]
+    Set As : Sum($JwlPayUpi)
+[Line: JpDailySalesPrintLine63]
+    Field: JpDailySalesPrintLine63F1
+
+[Field: JpDailySalesPrintLine63F1]
+    Style : JpTotal
+[Line: JpDailySalesPrintLine64]
+    Field: JpDailySalesPrintLine64F1
+
+[Field: JpDailySalesPrintLine64F1]
+    Set As : Sum($JwlPayBank)
+[Line: JpDailySalesPrintLine65]
+    Field: JpDailySalesPrintLine65F1
+
+[Field: JpDailySalesPrintLine65F1]
+    Style : JpTotal
+[Line: JpDailySalesPrintLine66]
+    Field: JpDailySalesPrintLine66F1
+
+[Field: JpDailySalesPrintLine66F1]
+    Set As : Sum($JwlPayOldGold)
+[Line: JpDailySalesPrintLine67]
+    Field: JpDailySalesPrintLine67F1
+
+[Field: JpDailySalesPrintLine67F1]
+    Style : JpTotal
+[Line: JpDailySalesPrintLine68]
+    Field: JpDailySalesPrintLine68F1
+
+[Field: JpDailySalesPrintLine68F1]
+    Set As : "Number of bills: " + Count()
+[Line: JpDailySalesPrintLine69]
+    Field: JpDailySalesPrintLine69F1
+
+[Field: JpDailySalesPrintLine69F1]
+    Style : JpTotal
+[Export: JpDailySalesExport]
+    Title: <1000, "Daily Sales">
+    Repeat: Over: JpDailySales
+    Export Title: Detail
+    Export: Value: $JwlInvNo
+    Export: Value: $$DATE
+    Export: Value: $$PARTYNAME
+    Export: Value: $JwlSalesperson
+    Export: Value: $JwlTaxableVal
+    Export: Value: $$GSTVALUE
+    Export: Value: $JwlGrandTotal
+    Export: Value: $JwlPayCash
+    Export: Value: $JwlPayCard
+    Export: Value: $JwlPayUpi
+    Export: Value: $JwlPayBank
+    Export: Value: $JwlPayOldGold
+
+
+; =============================================================================
+;  REPORT 2 - MONTHLY SALES
+;  Aggregated by month in SQL so a whole year returns twelve rows, not 3,000.
+; =============================================================================
+[Collection: Report: JpMonthlySales]
+    Source: JpMonthlySalesSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  MONTHLY JEWELLERY SALES SUMMARY">
+    Print: JpMonthlySalesPrint
+    Export: JpMonthlySalesExport
+    Key: JpMonthlySalesKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>
+
+[Variable: JpMonthlySalesSQL : String]
+    Type: String
+    Value: "SELECT $$MONTH$$ AS JwlMonth, COUNT($$VOUCHERID$$) AS JwlBills, SUM($JwlGrandTotal$$) AS JwlSales, SUM($JwlTaxableVal$$) AS JwlTaxable, SUM($$GSTVALUE$$) AS JwlGst FROM $$VOUCHERS$$ WHERE $$VOUCHERTYPE$$ = 'Sales' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$ GROUP BY $$MONTH$$ ORDER BY $$MONTH$$"
+
+[Variable: JpMonthlySalesKey : String]
+    Type: String
+    Value: "JwlMonth"
+
+
+; [Print: JpMonthlySalesPrint] -> [Form: JpMonthlySalesPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpMonthlySalesPrint]
+    Parts : JpMonthlySalesPrintLines
+
+[Part: JpMonthlySalesPrintLines]
+    Lines : Spacing, JpMonthlySalesPrintLine1, JpMonthlySalesPrintLine2, JpMonthlySalesPrintLine3, JpMonthlySalesPrintLine4, JpMonthlySalesPrintLine5, JpMonthlySalesPrintLine6, JpMonthlySalesPrintLine7, JpMonthlySalesPrintLine8, JpMonthlySalesPrintLine9, JpMonthlySalesPrintLine10, JpMonthlySalesPrintLine11, JpMonthlySalesPrintLine12, JpMonthlySalesPrintLine13, JpMonthlySalesPrintLine14, JpMonthlySalesPrintLine15, JpMonthlySalesPrintLine16, JpMonthlySalesPrintLine17, JpMonthlySalesPrintLine18, JpMonthlySalesPrintLine19, JpMonthlySalesPrintLine20, JpMonthlySalesPrintLine21, JpMonthlySalesPrintLine22, JpMonthlySalesPrintLine23, JpMonthlySalesPrintLine24, JpMonthlySalesPrintLine25, JpMonthlySalesPrintLine26, JpMonthlySalesPrintLine27, JpMonthlySalesPrintLine28, JpMonthlySalesPrintLine29, JpMonthlySalesPrintLine30, JpMonthlySalesPrintLine31, JpMonthlySalesPrintLine32, JpMonthlySalesPrintLine33, JpMonthlySalesPrintLine34, JpMonthlySalesPrintLine35, JpMonthlySalesPrintLine36, JpMonthlySalesPrintLine37
+
+[Line: JpMonthlySalesPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpMonthlySalesPrintLine2]
+    Field: JpMonthlySalesPrintLine2F1
+
+[Field: JpMonthlySalesPrintLine2F1]
+    Set As : "Month"
+[Line: JpMonthlySalesPrintLine3]
+    Field: JpMonthlySalesPrintLine3F1
+
+[Field: JpMonthlySalesPrintLine3F1]
+    Style : JpGridHead
+[Line: JpMonthlySalesPrintLine4]
+    Field: JpMonthlySalesPrintLine4F1
+
+[Field: JpMonthlySalesPrintLine4F1]
+    Set As : "Bills"
+[Line: JpMonthlySalesPrintLine5]
+    Field: JpMonthlySalesPrintLine5F1
+
+[Field: JpMonthlySalesPrintLine5F1]
+    Style : JpGridHead
+[Line: JpMonthlySalesPrintLine6]
+    Field: JpMonthlySalesPrintLine6F1
+
+[Field: JpMonthlySalesPrintLine6F1]
+    Set As : "Taxable Value"
+[Line: JpMonthlySalesPrintLine7]
+    Field: JpMonthlySalesPrintLine7F1
+
+[Field: JpMonthlySalesPrintLine7F1]
+    Style : JpGridHead
+[Line: JpMonthlySalesPrintLine8]
+    Field: JpMonthlySalesPrintLine8F1
+
+[Field: JpMonthlySalesPrintLine8F1]
+    Set As : "GST"
+[Line: JpMonthlySalesPrintLine9]
+    Field: JpMonthlySalesPrintLine9F1
+
+[Field: JpMonthlySalesPrintLine9F1]
+    Style : JpGridHead
+[Line: JpMonthlySalesPrintLine10]
+    Field: JpMonthlySalesPrintLine10F1
+
+[Field: JpMonthlySalesPrintLine10F1]
+    Set As : "Total Sales"
+[Line: JpMonthlySalesPrintLine11]
+    Field: JpMonthlySalesPrintLine11F1
+
+[Field: JpMonthlySalesPrintLine11F1]
+    Style : JpGridHead
+[Line: JpMonthlySalesPrintLine12]
+    Field: JpMonthlySalesPrintLine12F1
+
+[Field: JpMonthlySalesPrintLine12F1]
+    Set As : "Avg Bill"
+[Line: JpMonthlySalesPrintLine13]
+    Field: JpMonthlySalesPrintLine13F1
+
+[Field: JpMonthlySalesPrintLine13F1]
+    Style : JpGridHead
+[Line: JpMonthlySalesPrintLine14]
+    Field: JpMonthlySalesPrintLine14F1
+
+[Field: JpMonthlySalesPrintLine14F1]
+    Set As : $$JwlMonth
+[Line: JpMonthlySalesPrintLine15]
+    Field: JpMonthlySalesPrintLine15F1
+
+[Field: JpMonthlySalesPrintLine15F1]
+    Style : JpGrid
+[Line: JpMonthlySalesPrintLine16]
+    Field: JpMonthlySalesPrintLine16F1
+
+[Field: JpMonthlySalesPrintLine16F1]
+    Set As : $$JwlBills
+[Line: JpMonthlySalesPrintLine17]
+    Field: JpMonthlySalesPrintLine17F1
+
+[Field: JpMonthlySalesPrintLine17F1]
+    Style : JpGrid
+[Line: JpMonthlySalesPrintLine18]
+    Field: JpMonthlySalesPrintLine18F1
+
+[Field: JpMonthlySalesPrintLine18F1]
+    Set As : $$JwlTaxable
+[Line: JpMonthlySalesPrintLine19]
+    Field: JpMonthlySalesPrintLine19F1
+
+[Field: JpMonthlySalesPrintLine19F1]
+    Style : JpMoney
+[Line: JpMonthlySalesPrintLine20]
+    Field: JpMonthlySalesPrintLine20F1
+
+[Field: JpMonthlySalesPrintLine20F1]
+    Set As : $$JwlGst
+[Line: JpMonthlySalesPrintLine21]
+    Field: JpMonthlySalesPrintLine21F1
+
+[Field: JpMonthlySalesPrintLine21F1]
+    Style : JpMoney
+[Line: JpMonthlySalesPrintLine22]
+    Field: JpMonthlySalesPrintLine22F1
+
+[Field: JpMonthlySalesPrintLine22F1]
+    Set As : $$JwlSales
+[Line: JpMonthlySalesPrintLine23]
+    Field: JpMonthlySalesPrintLine23F1
+
+[Field: JpMonthlySalesPrintLine23F1]
+    Style : JpMoneyBold
+[Line: JpMonthlySalesPrintLine24]
+    Field: JpMonthlySalesPrintLine24F1
+
+[Field: JpMonthlySalesPrintLine24F1]
+    Set As : JpAvgBill($$JpToDate, $$JpFromDate)
+[Line: JpMonthlySalesPrintLine25]
+    Field: JpMonthlySalesPrintLine25F1
+
+[Field: JpMonthlySalesPrintLine25F1]
+    Style : JpMoney
+[Line: JpMonthlySalesPrintLine26]
+    Field: JpMonthlySalesPrintLine26F1
+
+[Field: JpMonthlySalesPrintLine26F1]
+    Set As : "TOTAL"
+[Line: JpMonthlySalesPrintLine27]
+    Field: JpMonthlySalesPrintLine27F1
+
+[Field: JpMonthlySalesPrintLine27F1]
+    Style : JpTotal
+[Line: JpMonthlySalesPrintLine28]
+    Field: JpMonthlySalesPrintLine28F1
+
+[Field: JpMonthlySalesPrintLine28F1]
+    Set As : Sum($$JwlBills)
+[Line: JpMonthlySalesPrintLine29]
+    Field: JpMonthlySalesPrintLine29F1
+
+[Field: JpMonthlySalesPrintLine29F1]
+    Style : JpTotal
+[Line: JpMonthlySalesPrintLine30]
+    Field: JpMonthlySalesPrintLine30F1
+
+[Field: JpMonthlySalesPrintLine30F1]
+    Set As : Sum($$JwlTaxable)
+[Line: JpMonthlySalesPrintLine31]
+    Field: JpMonthlySalesPrintLine31F1
+
+[Field: JpMonthlySalesPrintLine31F1]
+    Style : JpTotal
+[Line: JpMonthlySalesPrintLine32]
+    Field: JpMonthlySalesPrintLine32F1
+
+[Field: JpMonthlySalesPrintLine32F1]
+    Set As : Sum($$JwlGst)
+[Line: JpMonthlySalesPrintLine33]
+    Field: JpMonthlySalesPrintLine33F1
+
+[Field: JpMonthlySalesPrintLine33F1]
+    Style : JpTotal
+[Line: JpMonthlySalesPrintLine34]
+    Field: JpMonthlySalesPrintLine34F1
+
+[Field: JpMonthlySalesPrintLine34F1]
+    Set As : Sum($$JwlSales)
+[Line: JpMonthlySalesPrintLine35]
+    Field: JpMonthlySalesPrintLine35F1
+
+[Field: JpMonthlySalesPrintLine35F1]
+    Style : JpTotal
+[Line: JpMonthlySalesPrintLine36]
+    Field: JpMonthlySalesPrintLine36F1
+
+[Field: JpMonthlySalesPrintLine36F1]
+    Set As : JpAvgBill($$JpToDate, $$JpFromDate)
+[Line: JpMonthlySalesPrintLine37]
+    Field: JpMonthlySalesPrintLine37F1
+
+[Field: JpMonthlySalesPrintLine37F1]
+    Style : JpTotal
+[Function: JpAvgBill]
+    Param: vTo : Date : Optional, vFrom : Date : Optional
+    Returns: Number : Any
+    Var: b : Number, s : Number
+    b = Count($$JwlBills)
+    s = Sum($$JwlSales)
+    If (b <= 0) Then
+    {
+        JpAvgBill = 0
+        Exit
+    }
+    JpAvgBill = JpRound(s / b)
+
+[Export: JpMonthlySalesExport]
+    Title: <1000, "Monthly Sales">
+    Repeat: Over: JpMonthlySales
+    Export Title: Detail
+    Export: Value: $$JwlMonth
+    Export: Value: $$JwlBills
+    Export: Value: $$JwlTaxable
+    Export: Value: $$JwlGst
+    Export: Value: $$JwlSales
+
+
+; =============================================================================
+;  REPORT 3 - SALES REGISTER (drill-down per voucher, with gold weight sold)
+; =============================================================================
+[Collection: Report: JpSalesRegister]
+    Source: JpSalesRegisterSQL
+    Var: JpFromDate, JpToDate, JpSalesRegParty, JpSalesRegMetal
+    Title: <1000,###,#a##"  SALES REGISTER - JEWELLERY DETAIL BY WEIGHT">
+    Print: JpSalesRegisterPrint
+    Export: JpSalesRegisterExport
+    Key: JpVoucherKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>, <JpSalesRegParty, <String, "Customer">>, <JpSalesRegMetal, <String, "Metal">>
+
+[Variable: JpSalesRegisterSQL : String]
+    Type: String
+    Value: "SELECT $$VOUCHERID$$,$$DATE$$,$JwlInvNo$$,$$PARTYNAME$$,$$ITEMNAME$$,$JwlLnBarcode$$,$JwlLnHuid$$,$JwlLnPurity$$,$JwlLnGross$$,$JwlLnStone$$,$JwlLnNet$$,$JwlLnRate$$,$JwlLnMetalVal$$,$JwlLnMakeAmt$$,$JwlLnBaseVal$$,$JwlLnDiscAmt$$,$JwlLnTotal$$,$JwlLnCost$$ FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ = 'Sales' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$"
+
+
+; [Print: JpSalesRegisterPrint] -> [Form: JpSalesRegisterPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpSalesRegisterPrint]
+    Parts : JpSalesRegisterPrintLines
+
+[Part: JpSalesRegisterPrintLines]
+    Lines : Spacing, JpSalesRegisterPrintLine1, JpSalesRegisterPrintLine2, JpSalesRegisterPrintLine3, JpSalesRegisterPrintLine4, JpSalesRegisterPrintLine5, JpSalesRegisterPrintLine6, JpSalesRegisterPrintLine7, JpSalesRegisterPrintLine8, JpSalesRegisterPrintLine9, JpSalesRegisterPrintLine10, JpSalesRegisterPrintLine11, JpSalesRegisterPrintLine12, JpSalesRegisterPrintLine13, JpSalesRegisterPrintLine14, JpSalesRegisterPrintLine15, JpSalesRegisterPrintLine16, JpSalesRegisterPrintLine17, JpSalesRegisterPrintLine18, JpSalesRegisterPrintLine19, JpSalesRegisterPrintLine20, JpSalesRegisterPrintLine21, JpSalesRegisterPrintLine22, JpSalesRegisterPrintLine23, JpSalesRegisterPrintLine24, JpSalesRegisterPrintLine25, JpSalesRegisterPrintLine26, JpSalesRegisterPrintLine27, JpSalesRegisterPrintLine28, JpSalesRegisterPrintLine29, JpSalesRegisterPrintLine30, JpSalesRegisterPrintLine31, JpSalesRegisterPrintLine32, JpSalesRegisterPrintLine33, JpSalesRegisterPrintLine34, JpSalesRegisterPrintLine35, JpSalesRegisterPrintLine36, JpSalesRegisterPrintLine37, JpSalesRegisterPrintLine38, JpSalesRegisterPrintLine39, JpSalesRegisterPrintLine40, JpSalesRegisterPrintLine41, JpSalesRegisterPrintLine42, JpSalesRegisterPrintLine43, JpSalesRegisterPrintLine44, JpSalesRegisterPrintLine45, JpSalesRegisterPrintLine46, JpSalesRegisterPrintLine47, JpSalesRegisterPrintLine48, JpSalesRegisterPrintLine49, JpSalesRegisterPrintLine50, JpSalesRegisterPrintLine51, JpSalesRegisterPrintLine52, JpSalesRegisterPrintLine53, JpSalesRegisterPrintLine54, JpSalesRegisterPrintLine55, JpSalesRegisterPrintLine56, JpSalesRegisterPrintLine57, JpSalesRegisterPrintLine58, JpSalesRegisterPrintLine59, JpSalesRegisterPrintLine60, JpSalesRegisterPrintLine61, JpSalesRegisterPrintLine62, JpSalesRegisterPrintLine63, JpSalesRegisterPrintLine64, JpSalesRegisterPrintLine65, JpSalesRegisterPrintLine66, JpSalesRegisterPrintLine67, JpSalesRegisterPrintLine68, JpSalesRegisterPrintLine69, JpSalesRegisterPrintLine70, JpSalesRegisterPrintLine71, JpSalesRegisterPrintLine72, JpSalesRegisterPrintLine73, JpSalesRegisterPrintLine74, JpSalesRegisterPrintLine75, JpSalesRegisterPrintLine76, JpSalesRegisterPrintLine77
+
+[Line: JpSalesRegisterPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpSalesRegisterPrintLine2]
+    Field: JpSalesRegisterPrintLine2F1
+
+[Field: JpSalesRegisterPrintLine2F1]
+    Set As : "Inv No"
+[Line: JpSalesRegisterPrintLine3]
+    Field: JpSalesRegisterPrintLine3F1
+
+[Field: JpSalesRegisterPrintLine3F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine4]
+    Field: JpSalesRegisterPrintLine4F1
+
+[Field: JpSalesRegisterPrintLine4F1]
+    Set As : "Item"
+[Line: JpSalesRegisterPrintLine5]
+    Field: JpSalesRegisterPrintLine5F1
+
+[Field: JpSalesRegisterPrintLine5F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine6]
+    Field: JpSalesRegisterPrintLine6F1
+
+[Field: JpSalesRegisterPrintLine6F1]
+    Set As : "Barcode"
+[Line: JpSalesRegisterPrintLine7]
+    Field: JpSalesRegisterPrintLine7F1
+
+[Field: JpSalesRegisterPrintLine7F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine8]
+    Field: JpSalesRegisterPrintLine8F1
+
+[Field: JpSalesRegisterPrintLine8F1]
+    Set As : "HUID"
+[Line: JpSalesRegisterPrintLine9]
+    Field: JpSalesRegisterPrintLine9F1
+
+[Field: JpSalesRegisterPrintLine9F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine10]
+    Field: JpSalesRegisterPrintLine10F1
+
+[Field: JpSalesRegisterPrintLine10F1]
+    Set As : "Pur"
+[Line: JpSalesRegisterPrintLine11]
+    Field: JpSalesRegisterPrintLine11F1
+
+[Field: JpSalesRegisterPrintLine11F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine12]
+    Field: JpSalesRegisterPrintLine12F1
+
+[Field: JpSalesRegisterPrintLine12F1]
+    Set As : "Gross"
+[Line: JpSalesRegisterPrintLine13]
+    Field: JpSalesRegisterPrintLine13F1
+
+[Field: JpSalesRegisterPrintLine13F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine14]
+    Field: JpSalesRegisterPrintLine14F1
+
+[Field: JpSalesRegisterPrintLine14F1]
+    Set As : "Stone"
+[Line: JpSalesRegisterPrintLine15]
+    Field: JpSalesRegisterPrintLine15F1
+
+[Field: JpSalesRegisterPrintLine15F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine16]
+    Field: JpSalesRegisterPrintLine16F1
+
+[Field: JpSalesRegisterPrintLine16F1]
+    Set As : "Net"
+[Line: JpSalesRegisterPrintLine17]
+    Field: JpSalesRegisterPrintLine17F1
+
+[Field: JpSalesRegisterPrintLine17F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine18]
+    Field: JpSalesRegisterPrintLine18F1
+
+[Field: JpSalesRegisterPrintLine18F1]
+    Set As : "Rate"
+[Line: JpSalesRegisterPrintLine19]
+    Field: JpSalesRegisterPrintLine19F1
+
+[Field: JpSalesRegisterPrintLine19F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine20]
+    Field: JpSalesRegisterPrintLine20F1
+
+[Field: JpSalesRegisterPrintLine20F1]
+    Set As : "MetalVal"
+[Line: JpSalesRegisterPrintLine21]
+    Field: JpSalesRegisterPrintLine21F1
+
+[Field: JpSalesRegisterPrintLine21F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine22]
+    Field: JpSalesRegisterPrintLine22F1
+
+[Field: JpSalesRegisterPrintLine22F1]
+    Set As : "Making"
+[Line: JpSalesRegisterPrintLine23]
+    Field: JpSalesRegisterPrintLine23F1
+
+[Field: JpSalesRegisterPrintLine23F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine24]
+    Field: JpSalesRegisterPrintLine24F1
+
+[Field: JpSalesRegisterPrintLine24F1]
+    Set As : "Wastage"
+[Line: JpSalesRegisterPrintLine25]
+    Field: JpSalesRegisterPrintLine25F1
+
+[Field: JpSalesRegisterPrintLine25F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine26]
+    Field: JpSalesRegisterPrintLine26F1
+
+[Field: JpSalesRegisterPrintLine26F1]
+    Set As : "Base Val"
+[Line: JpSalesRegisterPrintLine27]
+    Field: JpSalesRegisterPrintLine27F1
+
+[Field: JpSalesRegisterPrintLine27F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine28]
+    Field: JpSalesRegisterPrintLine28F1
+
+[Field: JpSalesRegisterPrintLine28F1]
+    Set As : "Disc"
+[Line: JpSalesRegisterPrintLine29]
+    Field: JpSalesRegisterPrintLine29F1
+
+[Field: JpSalesRegisterPrintLine29F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine30]
+    Field: JpSalesRegisterPrintLine30F1
+
+[Field: JpSalesRegisterPrintLine30F1]
+    Set As : "Line Total"
+[Line: JpSalesRegisterPrintLine31]
+    Field: JpSalesRegisterPrintLine31F1
+
+[Field: JpSalesRegisterPrintLine31F1]
+    Style : JpGridHead
+[Line: JpSalesRegisterPrintLine32]
+    Field: JpSalesRegisterPrintLine32F1
+
+[Field: JpSalesRegisterPrintLine32F1]
+    Set As : $JwlInvNo
+[Line: JpSalesRegisterPrintLine33]
+    Field: JpSalesRegisterPrintLine33F1
+
+[Field: JpSalesRegisterPrintLine33F1]
+    Style : JpGrid
+[Line: JpSalesRegisterPrintLine34]
+    Field: JpSalesRegisterPrintLine34F1
+
+[Field: JpSalesRegisterPrintLine34F1]
+    Set As : $$ITEMNAME
+[Line: JpSalesRegisterPrintLine35]
+    Field: JpSalesRegisterPrintLine35F1
+
+[Field: JpSalesRegisterPrintLine35F1]
+    Style : JpGrid
+[Line: JpSalesRegisterPrintLine36]
+    Field: JpSalesRegisterPrintLine36F1
+
+[Field: JpSalesRegisterPrintLine36F1]
+    Set As : $JwlLnBarcode
+[Line: JpSalesRegisterPrintLine37]
+    Field: JpSalesRegisterPrintLine37F1
+
+[Field: JpSalesRegisterPrintLine37F1]
+    Style : JpGrid
+[Line: JpSalesRegisterPrintLine38]
+    Field: JpSalesRegisterPrintLine38F1
+
+[Field: JpSalesRegisterPrintLine38F1]
+    Set As : $JwlLnHuid
+[Line: JpSalesRegisterPrintLine39]
+    Field: JpSalesRegisterPrintLine39F1
+
+[Field: JpSalesRegisterPrintLine39F1]
+    Style : JpGrid
+[Line: JpSalesRegisterPrintLine40]
+    Field: JpSalesRegisterPrintLine40F1
+
+[Field: JpSalesRegisterPrintLine40F1]
+    Set As : $JwlLnPurity
+[Line: JpSalesRegisterPrintLine41]
+    Field: JpSalesRegisterPrintLine41F1
+
+[Field: JpSalesRegisterPrintLine41F1]
+    Style : JpGrid
+[Line: JpSalesRegisterPrintLine42]
+    Field: JpSalesRegisterPrintLine42F1
+
+[Field: JpSalesRegisterPrintLine42F1]
+    Set As : $JwlLnGross
+[Line: JpSalesRegisterPrintLine43]
+    Field: JpSalesRegisterPrintLine43F1
+
+[Field: JpSalesRegisterPrintLine43F1]
+    Style : JpWeight
+[Line: JpSalesRegisterPrintLine44]
+    Field: JpSalesRegisterPrintLine44F1
+
+[Field: JpSalesRegisterPrintLine44F1]
+    Set As : $JwlLnStone
+[Line: JpSalesRegisterPrintLine45]
+    Field: JpSalesRegisterPrintLine45F1
+
+[Field: JpSalesRegisterPrintLine45F1]
+    Style : JpWeight
+[Line: JpSalesRegisterPrintLine46]
+    Field: JpSalesRegisterPrintLine46F1
+
+[Field: JpSalesRegisterPrintLine46F1]
+    Set As : $JwlLnNet
+[Line: JpSalesRegisterPrintLine47]
+    Field: JpSalesRegisterPrintLine47F1
+
+[Field: JpSalesRegisterPrintLine47F1]
+    Style : JpWeightBold
+[Line: JpSalesRegisterPrintLine48]
+    Field: JpSalesRegisterPrintLine48F1
+
+[Field: JpSalesRegisterPrintLine48F1]
+    Set As : $JwlLnRate
+[Line: JpSalesRegisterPrintLine49]
+    Field: JpSalesRegisterPrintLine49F1
+
+[Field: JpSalesRegisterPrintLine49F1]
+    Style : JpMoney
+[Line: JpSalesRegisterPrintLine50]
+    Field: JpSalesRegisterPrintLine50F1
+
+[Field: JpSalesRegisterPrintLine50F1]
+    Set As : $JwlLnMetalVal
+[Line: JpSalesRegisterPrintLine51]
+    Field: JpSalesRegisterPrintLine51F1
+
+[Field: JpSalesRegisterPrintLine51F1]
+    Style : JpMoney
+[Line: JpSalesRegisterPrintLine52]
+    Field: JpSalesRegisterPrintLine52F1
+
+[Field: JpSalesRegisterPrintLine52F1]
+    Set As : $JwlLnMakeAmt
+[Line: JpSalesRegisterPrintLine53]
+    Field: JpSalesRegisterPrintLine53F1
+
+[Field: JpSalesRegisterPrintLine53F1]
+    Style : JpMoney
+[Line: JpSalesRegisterPrintLine54]
+    Field: JpSalesRegisterPrintLine54F1
+
+[Field: JpSalesRegisterPrintLine54F1]
+    Set As : $JwlLnWastageVal
+[Line: JpSalesRegisterPrintLine55]
+    Field: JpSalesRegisterPrintLine55F1
+
+[Field: JpSalesRegisterPrintLine55F1]
+    Style : JpMoney
+[Line: JpSalesRegisterPrintLine56]
+    Field: JpSalesRegisterPrintLine56F1
+
+[Field: JpSalesRegisterPrintLine56F1]
+    Set As : $JwlLnBaseVal
+[Line: JpSalesRegisterPrintLine57]
+    Field: JpSalesRegisterPrintLine57F1
+
+[Field: JpSalesRegisterPrintLine57F1]
+    Style : JpMoney
+[Line: JpSalesRegisterPrintLine58]
+    Field: JpSalesRegisterPrintLine58F1
+
+[Field: JpSalesRegisterPrintLine58F1]
+    Set As : $JwlLnDiscAmt
+[Line: JpSalesRegisterPrintLine59]
+    Field: JpSalesRegisterPrintLine59F1
+
+[Field: JpSalesRegisterPrintLine59F1]
+    Style : JpMoney
+[Line: JpSalesRegisterPrintLine60]
+    Field: JpSalesRegisterPrintLine60F1
+
+[Field: JpSalesRegisterPrintLine60F1]
+    Set As : $JwlLnTotal
+[Line: JpSalesRegisterPrintLine61]
+    Field: JpSalesRegisterPrintLine61F1
+
+[Field: JpSalesRegisterPrintLine61F1]
+    Style : JpMoneyBold
+[Line: JpSalesRegisterPrintLine62]
+    Field: JpSalesRegisterPrintLine62F1
+
+[Field: JpSalesRegisterPrintLine62F1]
+    Set As : "TOTAL"
+[Line: JpSalesRegisterPrintLine63]
+    Field: JpSalesRegisterPrintLine63F1
+
+[Field: JpSalesRegisterPrintLine63F1]
+    Style : JpTotal
+[Line: JpSalesRegisterPrintLine64]
+    Field: JpSalesRegisterPrintLine64F1
+
+[Field: JpSalesRegisterPrintLine64F1]
+    Set As : Sum($JwlLnGross)
+[Line: JpSalesRegisterPrintLine65]
+    Field: JpSalesRegisterPrintLine65F1
+
+[Field: JpSalesRegisterPrintLine65F1]
+    Style : JpTotal
+[Line: JpSalesRegisterPrintLine66]
+    Field: JpSalesRegisterPrintLine66F1
+
+[Field: JpSalesRegisterPrintLine66F1]
+    Set As : Sum($JwlLnNet)
+[Line: JpSalesRegisterPrintLine67]
+    Field: JpSalesRegisterPrintLine67F1
+
+[Field: JpSalesRegisterPrintLine67F1]
+    Style : JpTotal
+[Line: JpSalesRegisterPrintLine68]
+    Field: JpSalesRegisterPrintLine68F1
+
+[Field: JpSalesRegisterPrintLine68F1]
+    Set As : Sum($JwlLnMetalVal)
+[Line: JpSalesRegisterPrintLine69]
+    Field: JpSalesRegisterPrintLine69F1
+
+[Field: JpSalesRegisterPrintLine69F1]
+    Style : JpTotal
+[Line: JpSalesRegisterPrintLine70]
+    Field: JpSalesRegisterPrintLine70F1
+
+[Field: JpSalesRegisterPrintLine70F1]
+    Set As : Sum($JwlLnMakeAmt)
+[Line: JpSalesRegisterPrintLine71]
+    Field: JpSalesRegisterPrintLine71F1
+
+[Field: JpSalesRegisterPrintLine71F1]
+    Style : JpTotal
+[Line: JpSalesRegisterPrintLine72]
+    Field: JpSalesRegisterPrintLine72F1
+
+[Field: JpSalesRegisterPrintLine72F1]
+    Set As : Sum($JwlLnBaseVal)
+[Line: JpSalesRegisterPrintLine73]
+    Field: JpSalesRegisterPrintLine73F1
+
+[Field: JpSalesRegisterPrintLine73F1]
+    Style : JpTotal
+[Line: JpSalesRegisterPrintLine74]
+    Field: JpSalesRegisterPrintLine74F1
+
+[Field: JpSalesRegisterPrintLine74F1]
+    Set As : Sum($JwlLnDiscAmt)
+[Line: JpSalesRegisterPrintLine75]
+    Field: JpSalesRegisterPrintLine75F1
+
+[Field: JpSalesRegisterPrintLine75F1]
+    Style : JpTotal
+[Line: JpSalesRegisterPrintLine76]
+    Field: JpSalesRegisterPrintLine76F1
+
+[Field: JpSalesRegisterPrintLine76F1]
+    Set As : Sum($JwlLnTotal)
+[Line: JpSalesRegisterPrintLine77]
+    Field: JpSalesRegisterPrintLine77F1
+
+[Field: JpSalesRegisterPrintLine77F1]
+    Style : JpTotal
+[Export: JpSalesRegisterExport]
+    Title: <1000, "Sales Register">
+    Repeat: Over: JpSalesRegister
+    Export Title: Detail
+    Export: Value: $JwlInvNo
+    Export: Value: $$DATE
+    Export: Value: $$ITEMNAME
+    Export: Value: $JwlLnBarcode
+    Export: Value: $JwlLnPurity
+    Export: Value: $JwlLnGross
+    Export: Value: $JwlLnStone
+    Export: Value: $JwlLnNet
+    Export: Value: $JwlLnRate
+    Export: Value: $JwlLnMetalVal
+    Export: Value: $JwlLnMakeAmt
+    Export: Value: $JwlLnBaseVal
+    Export: Value: $JwlLnTotal
+
+
+; =============================================================================
+;  REPORT 4 - PURCHASE REGISTER
+; =============================================================================
+[Collection: Report: JpPurchaseRegister]
+    Source: JpPurchaseRegisterSQL
+    Var: JpFromDate, JpToDate, JpPurKindFilter, JpPurPartyFilter
+    Title: <1000,###,#a##"  PURCHASE REGISTER">
+    Print: JpPurchaseRegisterPrint
+    Export: JpPurchaseRegisterExport
+    Key: JpVoucherKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>, <JpPurKindFilter, <String, "Purchase Kind">>, <JpPurPartyFilter, <String, "Supplier">>
+
+[Variable: JpPurchaseRegisterSQL : String]
+    Type: String
+    Value: "SELECT $$VOUCHERID$$,$$DATE$$,$JwlSupInvNo$$,$$PARTYNAME$$,$JwlPurKind$$,$$ITEMNAME$$,$JwlPlPurity$$,$JwlPlGross$$,$JwlPlNet$$,$JwlPlRate$$,$JwlPlMetalVal$$,$JwlPlMakeAmt$$,$JwlPlStoneVal$$,$JwlPlTotal$$ FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ = 'Purchase' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$"
+
+
+; [Print: JpPurchaseRegisterPrint] -> [Form: JpPurchaseRegisterPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpPurchaseRegisterPrint]
+    Parts : JpPurchaseRegisterPrintLines
+
+[Part: JpPurchaseRegisterPrintLines]
+    Lines : Spacing, JpPurchaseRegisterPrintLine1, JpPurchaseRegisterPrintLine2, JpPurchaseRegisterPrintLine3, JpPurchaseRegisterPrintLine4, JpPurchaseRegisterPrintLine5, JpPurchaseRegisterPrintLine6, JpPurchaseRegisterPrintLine7, JpPurchaseRegisterPrintLine8, JpPurchaseRegisterPrintLine9, JpPurchaseRegisterPrintLine10, JpPurchaseRegisterPrintLine11, JpPurchaseRegisterPrintLine12, JpPurchaseRegisterPrintLine13, JpPurchaseRegisterPrintLine14, JpPurchaseRegisterPrintLine15, JpPurchaseRegisterPrintLine16, JpPurchaseRegisterPrintLine17, JpPurchaseRegisterPrintLine18, JpPurchaseRegisterPrintLine19, JpPurchaseRegisterPrintLine20, JpPurchaseRegisterPrintLine21, JpPurchaseRegisterPrintLine22, JpPurchaseRegisterPrintLine23, JpPurchaseRegisterPrintLine24, JpPurchaseRegisterPrintLine25, JpPurchaseRegisterPrintLine26, JpPurchaseRegisterPrintLine27, JpPurchaseRegisterPrintLine28, JpPurchaseRegisterPrintLine29, JpPurchaseRegisterPrintLine30, JpPurchaseRegisterPrintLine31, JpPurchaseRegisterPrintLine32, JpPurchaseRegisterPrintLine33, JpPurchaseRegisterPrintLine34, JpPurchaseRegisterPrintLine35, JpPurchaseRegisterPrintLine36, JpPurchaseRegisterPrintLine37, JpPurchaseRegisterPrintLine38, JpPurchaseRegisterPrintLine39, JpPurchaseRegisterPrintLine40, JpPurchaseRegisterPrintLine41, JpPurchaseRegisterPrintLine42, JpPurchaseRegisterPrintLine43, JpPurchaseRegisterPrintLine44, JpPurchaseRegisterPrintLine45, JpPurchaseRegisterPrintLine46, JpPurchaseRegisterPrintLine47, JpPurchaseRegisterPrintLine48, JpPurchaseRegisterPrintLine49, JpPurchaseRegisterPrintLine50, JpPurchaseRegisterPrintLine51, JpPurchaseRegisterPrintLine52, JpPurchaseRegisterPrintLine53, JpPurchaseRegisterPrintLine54, JpPurchaseRegisterPrintLine55, JpPurchaseRegisterPrintLine56, JpPurchaseRegisterPrintLine57, JpPurchaseRegisterPrintLine58, JpPurchaseRegisterPrintLine59, JpPurchaseRegisterPrintLine60, JpPurchaseRegisterPrintLine61, JpPurchaseRegisterPrintLine62, JpPurchaseRegisterPrintLine63, JpPurchaseRegisterPrintLine64, JpPurchaseRegisterPrintLine65, JpPurchaseRegisterPrintLine66, JpPurchaseRegisterPrintLine67
+
+[Line: JpPurchaseRegisterPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpPurchaseRegisterPrintLine2]
+    Field: JpPurchaseRegisterPrintLine2F1
+
+[Field: JpPurchaseRegisterPrintLine2F1]
+    Set As : "Sup Inv"
+[Line: JpPurchaseRegisterPrintLine3]
+    Field: JpPurchaseRegisterPrintLine3F1
+
+[Field: JpPurchaseRegisterPrintLine3F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine4]
+    Field: JpPurchaseRegisterPrintLine4F1
+
+[Field: JpPurchaseRegisterPrintLine4F1]
+    Set As : "Date"
+[Line: JpPurchaseRegisterPrintLine5]
+    Field: JpPurchaseRegisterPrintLine5F1
+
+[Field: JpPurchaseRegisterPrintLine5F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine6]
+    Field: JpPurchaseRegisterPrintLine6F1
+
+[Field: JpPurchaseRegisterPrintLine6F1]
+    Set As : "Supplier"
+[Line: JpPurchaseRegisterPrintLine7]
+    Field: JpPurchaseRegisterPrintLine7F1
+
+[Field: JpPurchaseRegisterPrintLine7F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine8]
+    Field: JpPurchaseRegisterPrintLine8F1
+
+[Field: JpPurchaseRegisterPrintLine8F1]
+    Set As : "Kind"
+[Line: JpPurchaseRegisterPrintLine9]
+    Field: JpPurchaseRegisterPrintLine9F1
+
+[Field: JpPurchaseRegisterPrintLine9F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine10]
+    Field: JpPurchaseRegisterPrintLine10F1
+
+[Field: JpPurchaseRegisterPrintLine10F1]
+    Set As : "Item"
+[Line: JpPurchaseRegisterPrintLine11]
+    Field: JpPurchaseRegisterPrintLine11F1
+
+[Field: JpPurchaseRegisterPrintLine11F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine12]
+    Field: JpPurchaseRegisterPrintLine12F1
+
+[Field: JpPurchaseRegisterPrintLine12F1]
+    Set As : "Purity"
+[Line: JpPurchaseRegisterPrintLine13]
+    Field: JpPurchaseRegisterPrintLine13F1
+
+[Field: JpPurchaseRegisterPrintLine13F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine14]
+    Field: JpPurchaseRegisterPrintLine14F1
+
+[Field: JpPurchaseRegisterPrintLine14F1]
+    Set As : "Gross"
+[Line: JpPurchaseRegisterPrintLine15]
+    Field: JpPurchaseRegisterPrintLine15F1
+
+[Field: JpPurchaseRegisterPrintLine15F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine16]
+    Field: JpPurchaseRegisterPrintLine16F1
+
+[Field: JpPurchaseRegisterPrintLine16F1]
+    Set As : "Net"
+[Line: JpPurchaseRegisterPrintLine17]
+    Field: JpPurchaseRegisterPrintLine17F1
+
+[Field: JpPurchaseRegisterPrintLine17F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine18]
+    Field: JpPurchaseRegisterPrintLine18F1
+
+[Field: JpPurchaseRegisterPrintLine18F1]
+    Set As : "Rate"
+[Line: JpPurchaseRegisterPrintLine19]
+    Field: JpPurchaseRegisterPrintLine19F1
+
+[Field: JpPurchaseRegisterPrintLine19F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine20]
+    Field: JpPurchaseRegisterPrintLine20F1
+
+[Field: JpPurchaseRegisterPrintLine20F1]
+    Set As : "Metal Val"
+[Line: JpPurchaseRegisterPrintLine21]
+    Field: JpPurchaseRegisterPrintLine21F1
+
+[Field: JpPurchaseRegisterPrintLine21F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine22]
+    Field: JpPurchaseRegisterPrintLine22F1
+
+[Field: JpPurchaseRegisterPrintLine22F1]
+    Set As : "Making"
+[Line: JpPurchaseRegisterPrintLine23]
+    Field: JpPurchaseRegisterPrintLine23F1
+
+[Field: JpPurchaseRegisterPrintLine23F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine24]
+    Field: JpPurchaseRegisterPrintLine24F1
+
+[Field: JpPurchaseRegisterPrintLine24F1]
+    Set As : "Stone/Dia"
+[Line: JpPurchaseRegisterPrintLine25]
+    Field: JpPurchaseRegisterPrintLine25F1
+
+[Field: JpPurchaseRegisterPrintLine25F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine26]
+    Field: JpPurchaseRegisterPrintLine26F1
+
+[Field: JpPurchaseRegisterPrintLine26F1]
+    Set As : "Line Total"
+[Line: JpPurchaseRegisterPrintLine27]
+    Field: JpPurchaseRegisterPrintLine27F1
+
+[Field: JpPurchaseRegisterPrintLine27F1]
+    Style : JpGridHead
+[Line: JpPurchaseRegisterPrintLine28]
+    Field: JpPurchaseRegisterPrintLine28F1
+
+[Field: JpPurchaseRegisterPrintLine28F1]
+    Set As : $JwlSupInvNo
+[Line: JpPurchaseRegisterPrintLine29]
+    Field: JpPurchaseRegisterPrintLine29F1
+
+[Field: JpPurchaseRegisterPrintLine29F1]
+    Style : JpGrid
+[Line: JpPurchaseRegisterPrintLine30]
+    Field: JpPurchaseRegisterPrintLine30F1
+
+[Field: JpPurchaseRegisterPrintLine30F1]
+    Set As : $$DATE
+[Line: JpPurchaseRegisterPrintLine31]
+    Field: JpPurchaseRegisterPrintLine31F1
+
+[Field: JpPurchaseRegisterPrintLine31F1]
+    Style : JpGrid
+[Line: JpPurchaseRegisterPrintLine32]
+    Field: JpPurchaseRegisterPrintLine32F1
+
+[Field: JpPurchaseRegisterPrintLine32F1]
+    Set As : $$PARTYNAME
+[Line: JpPurchaseRegisterPrintLine33]
+    Field: JpPurchaseRegisterPrintLine33F1
+
+[Field: JpPurchaseRegisterPrintLine33F1]
+    Style : JpGrid
+[Line: JpPurchaseRegisterPrintLine34]
+    Field: JpPurchaseRegisterPrintLine34F1
+
+[Field: JpPurchaseRegisterPrintLine34F1]
+    Set As : $JwlPurKind
+[Line: JpPurchaseRegisterPrintLine35]
+    Field: JpPurchaseRegisterPrintLine35F1
+
+[Field: JpPurchaseRegisterPrintLine35F1]
+    Style : JpGrid
+[Line: JpPurchaseRegisterPrintLine36]
+    Field: JpPurchaseRegisterPrintLine36F1
+
+[Field: JpPurchaseRegisterPrintLine36F1]
+    Set As : $$ITEMNAME
+[Line: JpPurchaseRegisterPrintLine37]
+    Field: JpPurchaseRegisterPrintLine37F1
+
+[Field: JpPurchaseRegisterPrintLine37F1]
+    Style : JpGrid
+[Line: JpPurchaseRegisterPrintLine38]
+    Field: JpPurchaseRegisterPrintLine38F1
+
+[Field: JpPurchaseRegisterPrintLine38F1]
+    Set As : $JwlPlPurity
+[Line: JpPurchaseRegisterPrintLine39]
+    Field: JpPurchaseRegisterPrintLine39F1
+
+[Field: JpPurchaseRegisterPrintLine39F1]
+    Style : JpGrid
+[Line: JpPurchaseRegisterPrintLine40]
+    Field: JpPurchaseRegisterPrintLine40F1
+
+[Field: JpPurchaseRegisterPrintLine40F1]
+    Set As : $JwlPlGross
+[Line: JpPurchaseRegisterPrintLine41]
+    Field: JpPurchaseRegisterPrintLine41F1
+
+[Field: JpPurchaseRegisterPrintLine41F1]
+    Style : JpWeight
+[Line: JpPurchaseRegisterPrintLine42]
+    Field: JpPurchaseRegisterPrintLine42F1
+
+[Field: JpPurchaseRegisterPrintLine42F1]
+    Set As : $JwlPlNet
+[Line: JpPurchaseRegisterPrintLine43]
+    Field: JpPurchaseRegisterPrintLine43F1
+
+[Field: JpPurchaseRegisterPrintLine43F1]
+    Style : JpWeightBold
+[Line: JpPurchaseRegisterPrintLine44]
+    Field: JpPurchaseRegisterPrintLine44F1
+
+[Field: JpPurchaseRegisterPrintLine44F1]
+    Set As : $JwlPlRate
+[Line: JpPurchaseRegisterPrintLine45]
+    Field: JpPurchaseRegisterPrintLine45F1
+
+[Field: JpPurchaseRegisterPrintLine45F1]
+    Style : JpMoney
+[Line: JpPurchaseRegisterPrintLine46]
+    Field: JpPurchaseRegisterPrintLine46F1
+
+[Field: JpPurchaseRegisterPrintLine46F1]
+    Set As : $JwlPlMetalVal
+[Line: JpPurchaseRegisterPrintLine47]
+    Field: JpPurchaseRegisterPrintLine47F1
+
+[Field: JpPurchaseRegisterPrintLine47F1]
+    Style : JpMoney
+[Line: JpPurchaseRegisterPrintLine48]
+    Field: JpPurchaseRegisterPrintLine48F1
+
+[Field: JpPurchaseRegisterPrintLine48F1]
+    Set As : $JwlPlMakeAmt
+[Line: JpPurchaseRegisterPrintLine49]
+    Field: JpPurchaseRegisterPrintLine49F1
+
+[Field: JpPurchaseRegisterPrintLine49F1]
+    Style : JpMoney
+[Line: JpPurchaseRegisterPrintLine50]
+    Field: JpPurchaseRegisterPrintLine50F1
+
+[Field: JpPurchaseRegisterPrintLine50F1]
+    Set As : $JwlPlStoneVal
+[Line: JpPurchaseRegisterPrintLine51]
+    Field: JpPurchaseRegisterPrintLine51F1
+
+[Field: JpPurchaseRegisterPrintLine51F1]
+    Style : JpMoney
+[Line: JpPurchaseRegisterPrintLine52]
+    Field: JpPurchaseRegisterPrintLine52F1
+
+[Field: JpPurchaseRegisterPrintLine52F1]
+    Set As : $JwlPlTotal
+[Line: JpPurchaseRegisterPrintLine53]
+    Field: JpPurchaseRegisterPrintLine53F1
+
+[Field: JpPurchaseRegisterPrintLine53F1]
+    Style : JpMoneyBold
+[Line: JpPurchaseRegisterPrintLine54]
+    Field: JpPurchaseRegisterPrintLine54F1
+
+[Field: JpPurchaseRegisterPrintLine54F1]
+    Set As : "TOTAL"
+[Line: JpPurchaseRegisterPrintLine55]
+    Field: JpPurchaseRegisterPrintLine55F1
+
+[Field: JpPurchaseRegisterPrintLine55F1]
+    Style : JpTotal
+[Line: JpPurchaseRegisterPrintLine56]
+    Field: JpPurchaseRegisterPrintLine56F1
+
+[Field: JpPurchaseRegisterPrintLine56F1]
+    Set As : Sum($JwlPlGross)
+[Line: JpPurchaseRegisterPrintLine57]
+    Field: JpPurchaseRegisterPrintLine57F1
+
+[Field: JpPurchaseRegisterPrintLine57F1]
+    Style : JpTotal
+[Line: JpPurchaseRegisterPrintLine58]
+    Field: JpPurchaseRegisterPrintLine58F1
+
+[Field: JpPurchaseRegisterPrintLine58F1]
+    Set As : Sum($JwlPlNet)
+[Line: JpPurchaseRegisterPrintLine59]
+    Field: JpPurchaseRegisterPrintLine59F1
+
+[Field: JpPurchaseRegisterPrintLine59F1]
+    Style : JpTotal
+[Line: JpPurchaseRegisterPrintLine60]
+    Field: JpPurchaseRegisterPrintLine60F1
+
+[Field: JpPurchaseRegisterPrintLine60F1]
+    Set As : Sum($JwlPlMetalVal)
+[Line: JpPurchaseRegisterPrintLine61]
+    Field: JpPurchaseRegisterPrintLine61F1
+
+[Field: JpPurchaseRegisterPrintLine61F1]
+    Style : JpTotal
+[Line: JpPurchaseRegisterPrintLine62]
+    Field: JpPurchaseRegisterPrintLine62F1
+
+[Field: JpPurchaseRegisterPrintLine62F1]
+    Set As : Sum($JwlPlMakeAmt)
+[Line: JpPurchaseRegisterPrintLine63]
+    Field: JpPurchaseRegisterPrintLine63F1
+
+[Field: JpPurchaseRegisterPrintLine63F1]
+    Style : JpTotal
+[Line: JpPurchaseRegisterPrintLine64]
+    Field: JpPurchaseRegisterPrintLine64F1
+
+[Field: JpPurchaseRegisterPrintLine64F1]
+    Set As : Sum($JwlPlStoneVal)
+[Line: JpPurchaseRegisterPrintLine65]
+    Field: JpPurchaseRegisterPrintLine65F1
+
+[Field: JpPurchaseRegisterPrintLine65F1]
+    Style : JpTotal
+[Line: JpPurchaseRegisterPrintLine66]
+    Field: JpPurchaseRegisterPrintLine66F1
+
+[Field: JpPurchaseRegisterPrintLine66F1]
+    Set As : Sum($JwlPlTotal)
+[Line: JpPurchaseRegisterPrintLine67]
+    Field: JpPurchaseRegisterPrintLine67F1
+
+[Field: JpPurchaseRegisterPrintLine67F1]
+    Style : JpTotal
+[Export: JpPurchaseRegisterExport]
+    Title: <1000, "Purchase Register">
+    Repeat: Over: JpPurchaseRegister
+    Export Title: Detail
+    Export: Value: $JwlSupInvNo
+    Export: Value: $$DATE
+    Export: Value: $$PARTYNAME
+    Export: Value: $JwlPurKind
+    Export: Value: $$ITEMNAME
+    Export: Value: $JwlPlPurity
+    Export: Value: $JwlPlGross
+    Export: Value: $JwlPlNet
+    Export: Value: $JwlPlRate
+    Export: Value: $JwlPlTotal
+
+
+; =============================================================================
+;  REPORT 5 - GST SUMMARY
+;  Reads Tally's own GST ledgers. No tax rate is written anywhere in this
+;  module: the rates live in the shop's own tax masters.
+; =============================================================================
+[Collection: Report: JpGSTReport]
+    Source: JpGSTReportSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  GST SUMMARY - JEWELLERY">
+    Print: JpGSTReportPrint
+    Export: JpGSTReportExport
+    Key: JpGSTReportKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>
+
+[Variable: JpGSTReportSQL : String]
+    Type: String
+    Value: "SELECT $$LEDGERNAME$$,SUM($$AMOUNT$$) AS JwlTaxAmt FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ IN ('Sales','Purchase') AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$ AND $$LEDGERNAME$$ LIKE '%GST%' GROUP BY $$LEDGERNAME$$ ORDER BY $$LEDGERNAME$$"
+
+[Variable: JpGSTReportKey : String]
+    Type: String
+    Value: "LEDGERNAME"
+
+
+; [Print: JpGSTReportPrint] -> [Form: JpGSTReportPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpGSTReportPrint]
+    Parts : JpGSTReportPrintLines
+
+[Part: JpGSTReportPrintLines]
+    Lines : Spacing, JpGSTReportPrintLine1, JpGSTReportPrintLine2, JpGSTReportPrintLine3, JpGSTReportPrintLine4, JpGSTReportPrintLine5, JpGSTReportPrintLine6, JpGSTReportPrintLine7, JpGSTReportPrintLine8, JpGSTReportPrintLine9, JpGSTReportPrintLine10, JpGSTReportPrintLine11, JpGSTReportPrintLine12, JpGSTReportPrintLine13, JpGSTReportPrintLine14
+
+[Line: JpGSTReportPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpGSTReportPrintLine2]
+    Field: JpGSTReportPrintLine2F1
+
+[Field: JpGSTReportPrintLine2F1]
+    Set As : "Tax Ledger"
+[Line: JpGSTReportPrintLine3]
+    Field: JpGSTReportPrintLine3F1
+
+[Field: JpGSTReportPrintLine3F1]
+    Style : JpGridHead
+[Line: JpGSTReportPrintLine4]
+    Field: JpGSTReportPrintLine4F1
+
+[Field: JpGSTReportPrintLine4F1]
+    Set As : "Amount"
+[Line: JpGSTReportPrintLine5]
+    Field: JpGSTReportPrintLine5F1
+
+[Field: JpGSTReportPrintLine5F1]
+    Style : JpGridHead
+[Line: JpGSTReportPrintLine6]
+    Field: JpGSTReportPrintLine6F1
+
+[Field: JpGSTReportPrintLine6F1]
+    Set As : $$LEDGERNAME
+[Line: JpGSTReportPrintLine7]
+    Field: JpGSTReportPrintLine7F1
+
+[Field: JpGSTReportPrintLine7F1]
+    Style : JpGrid
+[Line: JpGSTReportPrintLine8]
+    Field: JpGSTReportPrintLine8F1
+
+[Field: JpGSTReportPrintLine8F1]
+    Set As : $$JwlTaxAmt
+[Line: JpGSTReportPrintLine9]
+    Field: JpGSTReportPrintLine9F1
+
+[Field: JpGSTReportPrintLine9F1]
+    Style : JpMoneyBold
+[Line: JpGSTReportPrintLine10]
+    Field: JpGSTReportPrintLine10F1
+
+[Field: JpGSTReportPrintLine10F1]
+    Set As : "TOTAL GST"
+[Line: JpGSTReportPrintLine11]
+    Field: JpGSTReportPrintLine11F1
+
+[Field: JpGSTReportPrintLine11F1]
+    Style : JpTotal
+[Line: JpGSTReportPrintLine12]
+    Field: JpGSTReportPrintLine12F1
+
+[Field: JpGSTReportPrintLine12F1]
+    Set As : Sum($$JwlTaxAmt)
+[Line: JpGSTReportPrintLine13]
+    Field: JpGSTReportPrintLine13F1
+
+[Field: JpGSTReportPrintLine13F1]
+    Style : JpTotal
+[Line: JpGSTReportPrintLine14]
+    Field: JpGSTReportPrintLine14F1
+
+[Field: JpGSTReportPrintLine14F1]
+    Set As : "Reconciliation: compare this with Tally's own GST reports (Gateway > Display > Statutory Reports > GST). JadePro deliberately does not restate Tally's GST computation."
+    Style : JpFontBold
+[Export: JpGSTReportExport]
+    Title: <1000, "GST Summary">
+    Repeat: Over: JpGSTReport
+    Export Title: Detail
+    Export: Value: $$LEDGERNAME
+    Export: Value: $$JwlTaxAmt
+
+;  REPORT 6 - JEWELLERY STOCK BY PIECES AND WEIGHT
+;  Hybrid valuation as agreed: metal valued at the live rate for the purity,
+;  stones and diamonds at the item's own rates. Stock value therefore moves
+;  with the market without needing a stock revaluation voucher.
+; =============================================================================
+[Collection: Report: JpStockReport]
+    Source: JpStockReportSQL
+    Var: JpFromDate, JpToDate, JpStockCat, JpStockPurity, JpStockMetal
+    Title: <1000,###,#a##"  JEWELLERY STOCK - PIECES AND WEIGHT">
+    Print: JpStockReportPrint
+    Export: JpStockReportExport
+    Key: JpStockReportKey
+    Filters: <JpFromDate, <Date, "As From Date">>, <JpToDate, <Date, "As To Date">>, <JpStockCat, <String, "Category">>, <JpStockPurity, <String, "Purity">>, <JpStockMetal, <String, "Metal">>
+
+[Variable: JpStockReportSQL : String]
+    Type: String
+    Value: "SELECT $$NAME$$,$JwlBarcode$$,$JwlCategory$$,$JwlMetalType$$,$JwlPurity$$,$JwlDesignNo$$,$JwlLocation$$,$$QUANTITY$$ AS JwlQty, SUM($JwlNetMetalWt$$ * $$QUANTITY$$) AS JwlNetWt, SUM($JwlFinalValue$$ * $$QUANTITY$$) AS JwlStockVal FROM $$ITEMSSTOCK$$ WHERE $JwlIsJewellery$$ = 1 GROUP BY $$NAME$$ ORDER BY $JwlCategory$$,$JwlPurity$$"
+
+[Variable: JpStockReportKey : String]
+    Type: String
+    Value: "NAME"
+
+
+; [Print: JpStockReportPrint] -> [Form: JpStockReportPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpStockReportPrint]
+    Parts : JpStockReportPrintLines
+
+[Part: JpStockReportPrintLines]
+    Lines : Spacing, JpStockReportPrintLine1, JpStockReportPrintLine2, JpStockReportPrintLine3, JpStockReportPrintLine4, JpStockReportPrintLine5, JpStockReportPrintLine6, JpStockReportPrintLine7, JpStockReportPrintLine8, JpStockReportPrintLine9, JpStockReportPrintLine10, JpStockReportPrintLine11, JpStockReportPrintLine12, JpStockReportPrintLine13, JpStockReportPrintLine14, JpStockReportPrintLine15, JpStockReportPrintLine16, JpStockReportPrintLine17, JpStockReportPrintLine18, JpStockReportPrintLine19, JpStockReportPrintLine20, JpStockReportPrintLine21, JpStockReportPrintLine22, JpStockReportPrintLine23, JpStockReportPrintLine24, JpStockReportPrintLine25, JpStockReportPrintLine26, JpStockReportPrintLine27, JpStockReportPrintLine28, JpStockReportPrintLine29, JpStockReportPrintLine30, JpStockReportPrintLine31, JpStockReportPrintLine32, JpStockReportPrintLine33, JpStockReportPrintLine34, JpStockReportPrintLine35, JpStockReportPrintLine36, JpStockReportPrintLine37, JpStockReportPrintLine38, JpStockReportPrintLine39, JpStockReportPrintLine40, JpStockReportPrintLine41, JpStockReportPrintLine42, JpStockReportPrintLine43, JpStockReportPrintLine44, JpStockReportPrintLine45, JpStockReportPrintLine46, JpStockReportPrintLine47, JpStockReportPrintLine48, JpStockReportPrintLine49
+
+[Line: JpStockReportPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpStockReportPrintLine2]
+    Field: JpStockReportPrintLine2F1
+
+[Field: JpStockReportPrintLine2F1]
+    Set As : "Item"
+[Line: JpStockReportPrintLine3]
+    Field: JpStockReportPrintLine3F1
+
+[Field: JpStockReportPrintLine3F1]
+    Style : JpGridHead
+[Line: JpStockReportPrintLine4]
+    Field: JpStockReportPrintLine4F1
+
+[Field: JpStockReportPrintLine4F1]
+    Set As : "Barcode"
+[Line: JpStockReportPrintLine5]
+    Field: JpStockReportPrintLine5F1
+
+[Field: JpStockReportPrintLine5F1]
+    Style : JpGridHead
+[Line: JpStockReportPrintLine6]
+    Field: JpStockReportPrintLine6F1
+
+[Field: JpStockReportPrintLine6F1]
+    Set As : "Category"
+[Line: JpStockReportPrintLine7]
+    Field: JpStockReportPrintLine7F1
+
+[Field: JpStockReportPrintLine7F1]
+    Style : JpGridHead
+[Line: JpStockReportPrintLine8]
+    Field: JpStockReportPrintLine8F1
+
+[Field: JpStockReportPrintLine8F1]
+    Set As : "Metal"
+[Line: JpStockReportPrintLine9]
+    Field: JpStockReportPrintLine9F1
+
+[Field: JpStockReportPrintLine9F1]
+    Style : JpGridHead
+[Line: JpStockReportPrintLine10]
+    Field: JpStockReportPrintLine10F1
+
+[Field: JpStockReportPrintLine10F1]
+    Set As : "Purity"
+[Line: JpStockReportPrintLine11]
+    Field: JpStockReportPrintLine11F1
+
+[Field: JpStockReportPrintLine11F1]
+    Style : JpGridHead
+[Line: JpStockReportPrintLine12]
+    Field: JpStockReportPrintLine12F1
+
+[Field: JpStockReportPrintLine12F1]
+    Set As : "Design"
+[Line: JpStockReportPrintLine13]
+    Field: JpStockReportPrintLine13F1
+
+[Field: JpStockReportPrintLine13F1]
+    Style : JpGridHead
+[Line: JpStockReportPrintLine14]
+    Field: JpStockReportPrintLine14F1
+
+[Field: JpStockReportPrintLine14F1]
+    Set As : "Counter"
+[Line: JpStockReportPrintLine15]
+    Field: JpStockReportPrintLine15F1
+
+[Field: JpStockReportPrintLine15F1]
+    Style : JpGridHead
+[Line: JpStockReportPrintLine16]
+    Field: JpStockReportPrintLine16F1
+
+[Field: JpStockReportPrintLine16F1]
+    Set As : "Pieces"
+[Line: JpStockReportPrintLine17]
+    Field: JpStockReportPrintLine17F1
+
+[Field: JpStockReportPrintLine17F1]
+    Style : JpGridHead
+[Line: JpStockReportPrintLine18]
+    Field: JpStockReportPrintLine18F1
+
+[Field: JpStockReportPrintLine18F1]
+    Set As : "Net Weight g"
+[Line: JpStockReportPrintLine19]
+    Field: JpStockReportPrintLine19F1
+
+[Field: JpStockReportPrintLine19F1]
+    Style : JpGridHead
+[Line: JpStockReportPrintLine20]
+    Field: JpStockReportPrintLine20F1
+
+[Field: JpStockReportPrintLine20F1]
+    Set As : "Stock Value"
+[Line: JpStockReportPrintLine21]
+    Field: JpStockReportPrintLine21F1
+
+[Field: JpStockReportPrintLine21F1]
+    Style : JpGridHead
+[Line: JpStockReportPrintLine22]
+    Field: JpStockReportPrintLine22F1
+
+[Field: JpStockReportPrintLine22F1]
+    Set As : $$NAME
+[Line: JpStockReportPrintLine23]
+    Field: JpStockReportPrintLine23F1
+
+[Field: JpStockReportPrintLine23F1]
+    Style : JpGrid
+[Line: JpStockReportPrintLine24]
+    Field: JpStockReportPrintLine24F1
+
+[Field: JpStockReportPrintLine24F1]
+    Set As : $JwlBarcode
+[Line: JpStockReportPrintLine25]
+    Field: JpStockReportPrintLine25F1
+
+[Field: JpStockReportPrintLine25F1]
+    Style : JpGrid
+[Line: JpStockReportPrintLine26]
+    Field: JpStockReportPrintLine26F1
+
+[Field: JpStockReportPrintLine26F1]
+    Set As : $JwlCategory
+[Line: JpStockReportPrintLine27]
+    Field: JpStockReportPrintLine27F1
+
+[Field: JpStockReportPrintLine27F1]
+    Style : JpGrid
+[Line: JpStockReportPrintLine28]
+    Field: JpStockReportPrintLine28F1
+
+[Field: JpStockReportPrintLine28F1]
+    Set As : $JwlMetalType
+[Line: JpStockReportPrintLine29]
+    Field: JpStockReportPrintLine29F1
+
+[Field: JpStockReportPrintLine29F1]
+    Style : JpGrid
+[Line: JpStockReportPrintLine30]
+    Field: JpStockReportPrintLine30F1
+
+[Field: JpStockReportPrintLine30F1]
+    Set As : $JwlPurity
+[Line: JpStockReportPrintLine31]
+    Field: JpStockReportPrintLine31F1
+
+[Field: JpStockReportPrintLine31F1]
+    Style : JpGrid
+[Line: JpStockReportPrintLine32]
+    Field: JpStockReportPrintLine32F1
+
+[Field: JpStockReportPrintLine32F1]
+    Set As : $JwlDesignNo
+[Line: JpStockReportPrintLine33]
+    Field: JpStockReportPrintLine33F1
+
+[Field: JpStockReportPrintLine33F1]
+    Style : JpGrid
+[Line: JpStockReportPrintLine34]
+    Field: JpStockReportPrintLine34F1
+
+[Field: JpStockReportPrintLine34F1]
+    Set As : $JwlLocation
+[Line: JpStockReportPrintLine35]
+    Field: JpStockReportPrintLine35F1
+
+[Field: JpStockReportPrintLine35F1]
+    Style : JpGrid
+[Line: JpStockReportPrintLine36]
+    Field: JpStockReportPrintLine36F1
+
+[Field: JpStockReportPrintLine36F1]
+    Set As : $$JwlQty
+[Line: JpStockReportPrintLine37]
+    Field: JpStockReportPrintLine37F1
+
+[Field: JpStockReportPrintLine37F1]
+    Style : JpGrid
+[Line: JpStockReportPrintLine38]
+    Field: JpStockReportPrintLine38F1
+
+[Field: JpStockReportPrintLine38F1]
+    Set As : $$JwlNetWt
+[Line: JpStockReportPrintLine39]
+    Field: JpStockReportPrintLine39F1
+
+[Field: JpStockReportPrintLine39F1]
+    Style : JpWeightBold
+[Line: JpStockReportPrintLine40]
+    Field: JpStockReportPrintLine40F1
+
+[Field: JpStockReportPrintLine40F1]
+    Set As : $$JwlStockVal
+[Line: JpStockReportPrintLine41]
+    Field: JpStockReportPrintLine41F1
+
+[Field: JpStockReportPrintLine41F1]
+    Style : JpMoneyBold
+[Line: JpStockReportPrintLine42]
+    Field: JpStockReportPrintLine42F1
+
+[Field: JpStockReportPrintLine42F1]
+    Set As : "TOTAL STOCK"
+[Line: JpStockReportPrintLine43]
+    Field: JpStockReportPrintLine43F1
+
+[Field: JpStockReportPrintLine43F1]
+    Style : JpTotal
+[Line: JpStockReportPrintLine44]
+    Field: JpStockReportPrintLine44F1
+
+[Field: JpStockReportPrintLine44F1]
+    Set As : Sum($$JwlQty)
+[Line: JpStockReportPrintLine45]
+    Field: JpStockReportPrintLine45F1
+
+[Field: JpStockReportPrintLine45F1]
+    Style : JpTotal
+[Line: JpStockReportPrintLine46]
+    Field: JpStockReportPrintLine46F1
+
+[Field: JpStockReportPrintLine46F1]
+    Set As : Sum($$JwlNetWt)
+[Line: JpStockReportPrintLine47]
+    Field: JpStockReportPrintLine47F1
+
+[Field: JpStockReportPrintLine47F1]
+    Style : JpTotal
+[Line: JpStockReportPrintLine48]
+    Field: JpStockReportPrintLine48F1
+
+[Field: JpStockReportPrintLine48F1]
+    Set As : Sum($$JwlStockVal)
+[Line: JpStockReportPrintLine49]
+    Field: JpStockReportPrintLine49F1
+
+[Field: JpStockReportPrintLine49F1]
+    Style : JpTotal
+[Export: JpStockReportExport]
+    Title: <1000, "Jewellery Stock">
+    Repeat: Over: JpStockReport
+    Export Title: Detail
+    Export: Value: $$NAME
+    Export: Value: $JwlBarcode
+    Export: Value: $JwlCategory
+    Export: Value: $JwlMetalType
+    Export: Value: $JwlPurity
+    Export: Value: $JwlDesignNo
+    Export: Value: $JwlLocation
+    Export: Value: $$JwlQty
+    Export: Value: $$JwlNetWt
+    Export: Value: $$JwlStockVal
+
+
+; =============================================================================
+;  REPORT 7 - METAL-WISE STOCK
+;  Valued live: every gram of a metal at today's rate for its purity.
+; =============================================================================
+[Collection: Report: JpMetalStockReport]
+    Source: JpMetalStockSQL
+    Title: <1000,###,#a##"  METAL-WISE STOCK VALUATION">
+    Print: JpMetalStockPrint
+    Export: JpMetalStockExport
+    Key: JpMetalStockKey
+
+[Variable: JpMetalStockSQL : String]
+    Type: String
+    Value: "SELECT $JwlMetalType$$ AS JwlMetal, $JwlPurity$$ AS JwlPur, SUM($$QUANTITY$$) AS JwlQty, SUM($JwlNetMetalWt$$ * $$QUANTITY$$) AS JwlNetWt, SUM($JwlMetalValue$$ * $$QUANTITY$$) AS JwlMetalVal, SUM($JwlStoneValue$$ * $$QUANTITY$$) AS JwlStoneVal, SUM($JwlDiamondValue$$ * $$QUANTITY$$) AS JwlDiaVal FROM $$ITEMSSTOCK$$ WHERE $JwlIsJewellery$$ = 1 GROUP BY $JwlMetalType$$,$JwlPurity$$ ORDER BY $JwlMetalType$$,$JwlPurity$$"
+
+[Variable: JpMetalStockKey : String]
+    Type: String
+    Value: "JwlMetal"
+
+
+; [Print: JpMetalStockPrint] -> [Form: JpMetalStockPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpMetalStockPrint]
+    Parts : JpMetalStockPrintLines
+
+[Part: JpMetalStockPrintLines]
+    Lines : Spacing, JpMetalStockPrintLine1, JpMetalStockPrintLine2, JpMetalStockPrintLine3, JpMetalStockPrintLine4, JpMetalStockPrintLine5, JpMetalStockPrintLine6, JpMetalStockPrintLine7, JpMetalStockPrintLine8, JpMetalStockPrintLine9, JpMetalStockPrintLine10, JpMetalStockPrintLine11, JpMetalStockPrintLine12, JpMetalStockPrintLine13, JpMetalStockPrintLine14, JpMetalStockPrintLine15, JpMetalStockPrintLine16, JpMetalStockPrintLine17, JpMetalStockPrintLine18, JpMetalStockPrintLine19, JpMetalStockPrintLine20, JpMetalStockPrintLine21, JpMetalStockPrintLine22, JpMetalStockPrintLine23, JpMetalStockPrintLine24, JpMetalStockPrintLine25, JpMetalStockPrintLine26, JpMetalStockPrintLine27, JpMetalStockPrintLine28, JpMetalStockPrintLine29, JpMetalStockPrintLine30, JpMetalStockPrintLine31, JpMetalStockPrintLine32, JpMetalStockPrintLine33, JpMetalStockPrintLine34, JpMetalStockPrintLine35, JpMetalStockPrintLine36, JpMetalStockPrintLine37, JpMetalStockPrintLine38, JpMetalStockPrintLine39, JpMetalStockPrintLine40, JpMetalStockPrintLine41, JpMetalStockPrintLine42, JpMetalStockPrintLine43
+
+[Line: JpMetalStockPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpMetalStockPrintLine2]
+    Field: JpMetalStockPrintLine2F1
+
+[Field: JpMetalStockPrintLine2F1]
+    Set As : Upr(##JwlShopName) + "   -   Metal-wise Stock"
+    Style : JpFontBold
+[Line: JpMetalStockPrintLine3]
+    Field: JpMetalStockPrintLine3F1
+
+[Field: JpMetalStockPrintLine3F1]
+    Set As : "Valued at today's rates: 24K " + JpFmtAmt(JpCache24K) + "  22K " + JpFmtAmt(JpCache22K) + "  18K " + JpFmtAmt(JpCache18K) + "  14K " + JpFmtAmt(JpCache14K)
+    Style : JpFontBold
+[Line: JpMetalStockPrintLine4]
+    Field: JpMetalStockPrintLine4F1
+
+[Field: JpMetalStockPrintLine4F1]
+    Set As : "Metal"
+[Line: JpMetalStockPrintLine5]
+    Field: JpMetalStockPrintLine5F1
+
+[Field: JpMetalStockPrintLine5F1]
+    Style : JpGridHead
+[Line: JpMetalStockPrintLine6]
+    Field: JpMetalStockPrintLine6F1
+
+[Field: JpMetalStockPrintLine6F1]
+    Set As : "Purity"
+[Line: JpMetalStockPrintLine7]
+    Field: JpMetalStockPrintLine7F1
+
+[Field: JpMetalStockPrintLine7F1]
+    Style : JpGridHead
+[Line: JpMetalStockPrintLine8]
+    Field: JpMetalStockPrintLine8F1
+
+[Field: JpMetalStockPrintLine8F1]
+    Set As : "Pieces"
+[Line: JpMetalStockPrintLine9]
+    Field: JpMetalStockPrintLine9F1
+
+[Field: JpMetalStockPrintLine9F1]
+    Style : JpGridHead
+[Line: JpMetalStockPrintLine10]
+    Field: JpMetalStockPrintLine10F1
+
+[Field: JpMetalStockPrintLine10F1]
+    Set As : "Net Weight g"
+[Line: JpMetalStockPrintLine11]
+    Field: JpMetalStockPrintLine11F1
+
+[Field: JpMetalStockPrintLine11F1]
+    Style : JpGridHead
+[Line: JpMetalStockPrintLine12]
+    Field: JpMetalStockPrintLine12F1
+
+[Field: JpMetalStockPrintLine12F1]
+    Set As : "Metal Value"
+[Line: JpMetalStockPrintLine13]
+    Field: JpMetalStockPrintLine13F1
+
+[Field: JpMetalStockPrintLine13F1]
+    Style : JpGridHead
+[Line: JpMetalStockPrintLine14]
+    Field: JpMetalStockPrintLine14F1
+
+[Field: JpMetalStockPrintLine14F1]
+    Set As : "Stone Value"
+[Line: JpMetalStockPrintLine15]
+    Field: JpMetalStockPrintLine15F1
+
+[Field: JpMetalStockPrintLine15F1]
+    Style : JpGridHead
+[Line: JpMetalStockPrintLine16]
+    Field: JpMetalStockPrintLine16F1
+
+[Field: JpMetalStockPrintLine16F1]
+    Set As : "Diamond Value"
+[Line: JpMetalStockPrintLine17]
+    Field: JpMetalStockPrintLine17F1
+
+[Field: JpMetalStockPrintLine17F1]
+    Style : JpGridHead
+[Line: JpMetalStockPrintLine18]
+    Field: JpMetalStockPrintLine18F1
+
+[Field: JpMetalStockPrintLine18F1]
+    Set As : "TOTAL"
+[Line: JpMetalStockPrintLine19]
+    Field: JpMetalStockPrintLine19F1
+
+[Field: JpMetalStockPrintLine19F1]
+    Style : JpGridHead
+[Line: JpMetalStockPrintLine20]
+    Field: JpMetalStockPrintLine20F1
+
+[Field: JpMetalStockPrintLine20F1]
+    Set As : $$JwlMetal
+[Line: JpMetalStockPrintLine21]
+    Field: JpMetalStockPrintLine21F1
+
+[Field: JpMetalStockPrintLine21F1]
+    Style : JpGrid
+[Line: JpMetalStockPrintLine22]
+    Field: JpMetalStockPrintLine22F1
+
+[Field: JpMetalStockPrintLine22F1]
+    Set As : $$JwlPur
+[Line: JpMetalStockPrintLine23]
+    Field: JpMetalStockPrintLine23F1
+
+[Field: JpMetalStockPrintLine23F1]
+    Style : JpGrid
+[Line: JpMetalStockPrintLine24]
+    Field: JpMetalStockPrintLine24F1
+
+[Field: JpMetalStockPrintLine24F1]
+    Set As : $$JwlQty
+[Line: JpMetalStockPrintLine25]
+    Field: JpMetalStockPrintLine25F1
+
+[Field: JpMetalStockPrintLine25F1]
+    Style : JpGrid
+[Line: JpMetalStockPrintLine26]
+    Field: JpMetalStockPrintLine26F1
+
+[Field: JpMetalStockPrintLine26F1]
+    Set As : $$JwlNetWt
+[Line: JpMetalStockPrintLine27]
+    Field: JpMetalStockPrintLine27F1
+
+[Field: JpMetalStockPrintLine27F1]
+    Style : JpWeightBold
+[Line: JpMetalStockPrintLine28]
+    Field: JpMetalStockPrintLine28F1
+
+[Field: JpMetalStockPrintLine28F1]
+    Set As : $$JwlMetalVal
+[Line: JpMetalStockPrintLine29]
+    Field: JpMetalStockPrintLine29F1
+
+[Field: JpMetalStockPrintLine29F1]
+    Style : JpMoney
+[Line: JpMetalStockPrintLine30]
+    Field: JpMetalStockPrintLine30F1
+
+[Field: JpMetalStockPrintLine30F1]
+    Set As : $$JwlStoneVal
+[Line: JpMetalStockPrintLine31]
+    Field: JpMetalStockPrintLine31F1
+
+[Field: JpMetalStockPrintLine31F1]
+    Style : JpMoney
+[Line: JpMetalStockPrintLine32]
+    Field: JpMetalStockPrintLine32F1
+
+[Field: JpMetalStockPrintLine32F1]
+    Set As : $$JwlDiaVal
+[Line: JpMetalStockPrintLine33]
+    Field: JpMetalStockPrintLine33F1
+
+[Field: JpMetalStockPrintLine33F1]
+    Style : JpMoney
+[Line: JpMetalStockPrintLine34]
+    Field: JpMetalStockPrintLine34F1
+
+[Field: JpMetalStockPrintLine34F1]
+    Set As : $$JwlMetalVal + $$JwlStoneVal + $$JwlDiaVal
+[Line: JpMetalStockPrintLine35]
+    Field: JpMetalStockPrintLine35F1
+
+[Field: JpMetalStockPrintLine35F1]
+    Style : JpMoneyBold
+[Line: JpMetalStockPrintLine36]
+    Field: JpMetalStockPrintLine36F1
+
+[Field: JpMetalStockPrintLine36F1]
+    Set As : "GRAND TOTAL"
+[Line: JpMetalStockPrintLine37]
+    Field: JpMetalStockPrintLine37F1
+
+[Field: JpMetalStockPrintLine37F1]
+    Style : JpTotal
+[Line: JpMetalStockPrintLine38]
+    Field: JpMetalStockPrintLine38F1
+
+[Field: JpMetalStockPrintLine38F1]
+    Set As : Sum($$JwlQty)
+[Line: JpMetalStockPrintLine39]
+    Field: JpMetalStockPrintLine39F1
+
+[Field: JpMetalStockPrintLine39F1]
+    Style : JpTotal
+[Line: JpMetalStockPrintLine40]
+    Field: JpMetalStockPrintLine40F1
+
+[Field: JpMetalStockPrintLine40F1]
+    Set As : Sum($$JwlNetWt)
+[Line: JpMetalStockPrintLine41]
+    Field: JpMetalStockPrintLine41F1
+
+[Field: JpMetalStockPrintLine41F1]
+    Style : JpTotal
+[Line: JpMetalStockPrintLine42]
+    Field: JpMetalStockPrintLine42F1
+
+[Field: JpMetalStockPrintLine42F1]
+    Set As : Sum($$JwlMetalVal) + Sum($$JwlStoneVal) + Sum($$JwlDiaVal)
+[Line: JpMetalStockPrintLine43]
+    Field: JpMetalStockPrintLine43F1
+
+[Field: JpMetalStockPrintLine43F1]
+    Style : JpTotal
+[Export: JpMetalStockExport]
+    Title: <1000, "Metal-wise Stock">
+    Repeat: Over: JpMetalStockReport
+    Export Title: Detail
+    Export: Value: $$JwlMetal
+    Export: Value: $$JwlPur
+    Export: Value: $$JwlQty
+    Export: Value: $$JwlNetWt
+    Export: Value: $$JwlMetalVal
+    Export: Value: $$JwlStoneVal
+    Export: Value: $$JwlDiaVal
+    Export: Value: $$JwlMetalVal
+    Export: Value: $$JwlStoneVal
+    Export: Value: $$JwlDiaVal
+
+
+; =============================================================================
+;  REPORT 8 - PURITY-WISE STOCK
+; =============================================================================
+[Collection: Report: JpPurityStockReport]
+    Source: JpPurityStockSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  PURITY-WISE STOCK">
+    Print: JpPurityStockPrint
+    Export: JpPurityStockExport
+    Key: JpPurityStockKey
+    Filters: <JpFromDate, <Date, "As From Date">>, <JpToDate, <Date, "As To Date">>
+
+[Variable: JpPurityStockSQL : String]
+    Type: String
+    Value: "SELECT $JwlPurity$$ AS JwlPur, SUM($$QUANTITY$$) AS JwlQty, SUM($JwlNetMetalWt$$ * $$QUANTITY$$) AS JwlNetWt, SUM($JwlGrossWt$$ * $$QUANTITY$$) AS JwlGrossWt, SUM($JwlFinalValue$$ * $$QUANTITY$$) AS JwlStockVal FROM $$ITEMSSTOCK$$ WHERE $JwlIsJewellery$$ = 1 GROUP BY $JwlPurity$$ ORDER BY $JwlPurity$$"
+
+[Variable: JpPurityStockKey : String]
+    Type: String
+    Value: "JwlPur"
+
+
+; [Print: JpPurityStockPrint] -> [Form: JpPurityStockPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpPurityStockPrint]
+    Parts : JpPurityStockPrintLines
+
+[Part: JpPurityStockPrintLines]
+    Lines : Spacing, JpPurityStockPrintLine1, JpPurityStockPrintLine2, JpPurityStockPrintLine3, JpPurityStockPrintLine4, JpPurityStockPrintLine5, JpPurityStockPrintLine6, JpPurityStockPrintLine7, JpPurityStockPrintLine8, JpPurityStockPrintLine9, JpPurityStockPrintLine10, JpPurityStockPrintLine11, JpPurityStockPrintLine12, JpPurityStockPrintLine13, JpPurityStockPrintLine14, JpPurityStockPrintLine15, JpPurityStockPrintLine16, JpPurityStockPrintLine17, JpPurityStockPrintLine18, JpPurityStockPrintLine19, JpPurityStockPrintLine20, JpPurityStockPrintLine21, JpPurityStockPrintLine22, JpPurityStockPrintLine23, JpPurityStockPrintLine24, JpPurityStockPrintLine25, JpPurityStockPrintLine26, JpPurityStockPrintLine27, JpPurityStockPrintLine28, JpPurityStockPrintLine29, JpPurityStockPrintLine30, JpPurityStockPrintLine31, JpPurityStockPrintLine32, JpPurityStockPrintLine33, JpPurityStockPrintLine34, JpPurityStockPrintLine35, JpPurityStockPrintLine36, JpPurityStockPrintLine37, JpPurityStockPrintLine38, JpPurityStockPrintLine39, JpPurityStockPrintLine40, JpPurityStockPrintLine41
+
+[Line: JpPurityStockPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpPurityStockPrintLine2]
+    Field: JpPurityStockPrintLine2F1
+
+[Field: JpPurityStockPrintLine2F1]
+    Set As : "Purity"
+[Line: JpPurityStockPrintLine3]
+    Field: JpPurityStockPrintLine3F1
+
+[Field: JpPurityStockPrintLine3F1]
+    Style : JpGridHead
+[Line: JpPurityStockPrintLine4]
+    Field: JpPurityStockPrintLine4F1
+
+[Field: JpPurityStockPrintLine4F1]
+    Set As : "Fineness %"
+[Line: JpPurityStockPrintLine5]
+    Field: JpPurityStockPrintLine5F1
+
+[Field: JpPurityStockPrintLine5F1]
+    Style : JpGridHead
+[Line: JpPurityStockPrintLine6]
+    Field: JpPurityStockPrintLine6F1
+
+[Field: JpPurityStockPrintLine6F1]
+    Set As : "Pieces"
+[Line: JpPurityStockPrintLine7]
+    Field: JpPurityStockPrintLine7F1
+
+[Field: JpPurityStockPrintLine7F1]
+    Style : JpGridHead
+[Line: JpPurityStockPrintLine8]
+    Field: JpPurityStockPrintLine8F1
+
+[Field: JpPurityStockPrintLine8F1]
+    Set As : "Gross Weight g"
+[Line: JpPurityStockPrintLine9]
+    Field: JpPurityStockPrintLine9F1
+
+[Field: JpPurityStockPrintLine9F1]
+    Style : JpGridHead
+[Line: JpPurityStockPrintLine10]
+    Field: JpPurityStockPrintLine10F1
+
+[Field: JpPurityStockPrintLine10F1]
+    Set As : "Net Weight g"
+[Line: JpPurityStockPrintLine11]
+    Field: JpPurityStockPrintLine11F1
+
+[Field: JpPurityStockPrintLine11F1]
+    Style : JpGridHead
+[Line: JpPurityStockPrintLine12]
+    Field: JpPurityStockPrintLine12F1
+
+[Field: JpPurityStockPrintLine12F1]
+    Set As : "Fine Weight g"
+[Line: JpPurityStockPrintLine13]
+    Field: JpPurityStockPrintLine13F1
+
+[Field: JpPurityStockPrintLine13F1]
+    Style : JpGridHead
+[Line: JpPurityStockPrintLine14]
+    Field: JpPurityStockPrintLine14F1
+
+[Field: JpPurityStockPrintLine14F1]
+    Set As : "Stock Value"
+[Line: JpPurityStockPrintLine15]
+    Field: JpPurityStockPrintLine15F1
+
+[Field: JpPurityStockPrintLine15F1]
+    Style : JpGridHead
+[Line: JpPurityStockPrintLine16]
+    Field: JpPurityStockPrintLine16F1
+
+[Field: JpPurityStockPrintLine16F1]
+    Set As : $$JwlPur
+[Line: JpPurityStockPrintLine17]
+    Field: JpPurityStockPrintLine17F1
+
+[Field: JpPurityStockPrintLine17F1]
+    Style : JpGrid
+[Line: JpPurityStockPrintLine18]
+    Field: JpPurityStockPrintLine18F1
+
+[Field: JpPurityStockPrintLine18F1]
+    Set As : JpPurPrint($$JwlPur)
+[Line: JpPurityStockPrintLine19]
+    Field: JpPurityStockPrintLine19F1
+
+[Field: JpPurityStockPrintLine19F1]
+    Style : JpGrid
+[Line: JpPurityStockPrintLine20]
+    Field: JpPurityStockPrintLine20F1
+
+[Field: JpPurityStockPrintLine20F1]
+    Set As : $$JwlQty
+[Line: JpPurityStockPrintLine21]
+    Field: JpPurityStockPrintLine21F1
+
+[Field: JpPurityStockPrintLine21F1]
+    Style : JpGrid
+[Line: JpPurityStockPrintLine22]
+    Field: JpPurityStockPrintLine22F1
+
+[Field: JpPurityStockPrintLine22F1]
+    Set As : $JwlGrossWt
+[Line: JpPurityStockPrintLine23]
+    Field: JpPurityStockPrintLine23F1
+
+[Field: JpPurityStockPrintLine23F1]
+    Style : JpWeight
+[Line: JpPurityStockPrintLine24]
+    Field: JpPurityStockPrintLine24F1
+
+[Field: JpPurityStockPrintLine24F1]
+    Set As : $$JwlNetWt
+[Line: JpPurityStockPrintLine25]
+    Field: JpPurityStockPrintLine25F1
+
+[Field: JpPurityStockPrintLine25F1]
+    Style : JpWeightBold
+[Line: JpPurityStockPrintLine26]
+    Field: JpPurityStockPrintLine26F1
+
+[Field: JpPurityStockPrintLine26F1]
+    Set As : $$JwlNetWt * JpFineness($$JwlPur)
+[Line: JpPurityStockPrintLine27]
+    Field: JpPurityStockPrintLine27F1
+
+[Field: JpPurityStockPrintLine27F1]
+    Style : JpWeightBold
+[Line: JpPurityStockPrintLine28]
+    Field: JpPurityStockPrintLine28F1
+
+[Field: JpPurityStockPrintLine28F1]
+    Set As : $$JwlStockVal
+[Line: JpPurityStockPrintLine29]
+    Field: JpPurityStockPrintLine29F1
+
+[Field: JpPurityStockPrintLine29F1]
+    Style : JpMoneyBold
+[Line: JpPurityStockPrintLine30]
+    Field: JpPurityStockPrintLine30F1
+
+[Field: JpPurityStockPrintLine30F1]
+    Set As : "TOTAL"
+[Line: JpPurityStockPrintLine31]
+    Field: JpPurityStockPrintLine31F1
+
+[Field: JpPurityStockPrintLine31F1]
+    Style : JpTotal
+[Line: JpPurityStockPrintLine32]
+    Field: JpPurityStockPrintLine32F1
+
+[Field: JpPurityStockPrintLine32F1]
+    Set As : Sum($$JwlQty)
+[Line: JpPurityStockPrintLine33]
+    Field: JpPurityStockPrintLine33F1
+
+[Field: JpPurityStockPrintLine33F1]
+    Style : JpTotal
+[Line: JpPurityStockPrintLine34]
+    Field: JpPurityStockPrintLine34F1
+
+[Field: JpPurityStockPrintLine34F1]
+    Set As : Sum($JwlGrossWt)
+[Line: JpPurityStockPrintLine35]
+    Field: JpPurityStockPrintLine35F1
+
+[Field: JpPurityStockPrintLine35F1]
+    Style : JpTotal
+[Line: JpPurityStockPrintLine36]
+    Field: JpPurityStockPrintLine36F1
+
+[Field: JpPurityStockPrintLine36F1]
+    Set As : Sum($$JwlNetWt)
+[Line: JpPurityStockPrintLine37]
+    Field: JpPurityStockPrintLine37F1
+
+[Field: JpPurityStockPrintLine37F1]
+    Style : JpTotal
+[Line: JpPurityStockPrintLine38]
+    Field: JpPurityStockPrintLine38F1
+
+[Field: JpPurityStockPrintLine38F1]
+    Set As : JpFineTotal()
+[Line: JpPurityStockPrintLine39]
+    Field: JpPurityStockPrintLine39F1
+
+[Field: JpPurityStockPrintLine39F1]
+    Style : JpTotal
+[Line: JpPurityStockPrintLine40]
+    Field: JpPurityStockPrintLine40F1
+
+[Field: JpPurityStockPrintLine40F1]
+    Set As : Sum($$JwlStockVal)
+[Line: JpPurityStockPrintLine41]
+    Field: JpPurityStockPrintLine41F1
+
+[Field: JpPurityStockPrintLine41F1]
+    Style : JpTotal
+[Function: JpPurPrint]
+    Param: vPurity : String : Optional
+    Returns: String : Any
+    JpPurPrint = String(JpPurityPercent(Param(0)), "0.00")
+
+[Function: JpFineTotal]
+    Returns: Quantity : Any
+    JpFineTotal = Sum($$JwlNetWt) * JpFineness($$JwlPur)
+
+[Export: JpPurityStockExport]
+    Title: <1000, "Purity-wise Stock">
+    Repeat: Over: JpPurityStockReport
+    Export Title: Detail
+    Export: Value: $$JwlPur
+    Export: Value: $$JwlQty
+    Export: Value: $JwlGrossWt
+    Export: Value: $$JwlNetWt
+    Export: Value: $$JwlStockVal
+
+
+; =============================================================================
+;  REPORT 9 - CATEGORY-WISE STOCK
+; =============================================================================
+[Collection: Report: JpCategoryStockReport]
+    Source: JpCategoryStockSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  CATEGORY-WISE STOCK">
+    Print: JpCategoryStockPrint
+    Export: JpCategoryStockExport
+    Key: JpCategoryStockKey
+    Filters: <JpFromDate, <Date, "As From Date">>, <JpToDate, <Date, "As To Date">>
+
+[Variable: JpCategoryStockSQL : String]
+    Type: String
+    Value: "SELECT $JwlCategory$$ AS JwlCat, SUM($$QUANTITY$$) AS JwlQty, SUM($JwlNetMetalWt$$ * $$QUANTITY$$) AS JwlNetWt, SUM($JwlFinalValue$$ * $$QUANTITY$$) AS JwlStockVal FROM $$ITEMSSTOCK$$ WHERE $JwlIsJewellery$$ = 1 GROUP BY $JwlCategory$$ ORDER BY $$JwlStockVal$$ DESC"
+
+[Variable: JpCategoryStockKey : String]
+    Type: String
+    Value: "JwlCat"
+
+
+; [Print: JpCategoryStockPrint] -> [Form: JpCategoryStockPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpCategoryStockPrint]
+    Parts : JpCategoryStockPrintLines
+
+[Part: JpCategoryStockPrintLines]
+    Lines : Spacing, JpCategoryStockPrintLine1, JpCategoryStockPrintLine2, JpCategoryStockPrintLine3, JpCategoryStockPrintLine4, JpCategoryStockPrintLine5, JpCategoryStockPrintLine6, JpCategoryStockPrintLine7, JpCategoryStockPrintLine8, JpCategoryStockPrintLine9, JpCategoryStockPrintLine10, JpCategoryStockPrintLine11, JpCategoryStockPrintLine12, JpCategoryStockPrintLine13, JpCategoryStockPrintLine14, JpCategoryStockPrintLine15, JpCategoryStockPrintLine16, JpCategoryStockPrintLine17, JpCategoryStockPrintLine18, JpCategoryStockPrintLine19, JpCategoryStockPrintLine20, JpCategoryStockPrintLine21, JpCategoryStockPrintLine22, JpCategoryStockPrintLine23, JpCategoryStockPrintLine24, JpCategoryStockPrintLine25, JpCategoryStockPrintLine26, JpCategoryStockPrintLine27, JpCategoryStockPrintLine28, JpCategoryStockPrintLine29, JpCategoryStockPrintLine30, JpCategoryStockPrintLine31
+
+[Line: JpCategoryStockPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpCategoryStockPrintLine2]
+    Field: JpCategoryStockPrintLine2F1
+
+[Field: JpCategoryStockPrintLine2F1]
+    Set As : "Category"
+[Line: JpCategoryStockPrintLine3]
+    Field: JpCategoryStockPrintLine3F1
+
+[Field: JpCategoryStockPrintLine3F1]
+    Style : JpGridHead
+[Line: JpCategoryStockPrintLine4]
+    Field: JpCategoryStockPrintLine4F1
+
+[Field: JpCategoryStockPrintLine4F1]
+    Set As : "Pieces"
+[Line: JpCategoryStockPrintLine5]
+    Field: JpCategoryStockPrintLine5F1
+
+[Field: JpCategoryStockPrintLine5F1]
+    Style : JpGridHead
+[Line: JpCategoryStockPrintLine6]
+    Field: JpCategoryStockPrintLine6F1
+
+[Field: JpCategoryStockPrintLine6F1]
+    Set As : "Net Weight g"
+[Line: JpCategoryStockPrintLine7]
+    Field: JpCategoryStockPrintLine7F1
+
+[Field: JpCategoryStockPrintLine7F1]
+    Style : JpGridHead
+[Line: JpCategoryStockPrintLine8]
+    Field: JpCategoryStockPrintLine8F1
+
+[Field: JpCategoryStockPrintLine8F1]
+    Set As : "Stock Value"
+[Line: JpCategoryStockPrintLine9]
+    Field: JpCategoryStockPrintLine9F1
+
+[Field: JpCategoryStockPrintLine9F1]
+    Style : JpGridHead
+[Line: JpCategoryStockPrintLine10]
+    Field: JpCategoryStockPrintLine10F1
+
+[Field: JpCategoryStockPrintLine10F1]
+    Set As : "% of Value"
+[Line: JpCategoryStockPrintLine11]
+    Field: JpCategoryStockPrintLine11F1
+
+[Field: JpCategoryStockPrintLine11F1]
+    Style : JpGridHead
+[Line: JpCategoryStockPrintLine12]
+    Field: JpCategoryStockPrintLine12F1
+
+[Field: JpCategoryStockPrintLine12F1]
+    Set As : $$JwlCat
+[Line: JpCategoryStockPrintLine13]
+    Field: JpCategoryStockPrintLine13F1
+
+[Field: JpCategoryStockPrintLine13F1]
+    Style : JpGrid
+[Line: JpCategoryStockPrintLine14]
+    Field: JpCategoryStockPrintLine14F1
+
+[Field: JpCategoryStockPrintLine14F1]
+    Set As : $$JwlQty
+[Line: JpCategoryStockPrintLine15]
+    Field: JpCategoryStockPrintLine15F1
+
+[Field: JpCategoryStockPrintLine15F1]
+    Style : JpGrid
+[Line: JpCategoryStockPrintLine16]
+    Field: JpCategoryStockPrintLine16F1
+
+[Field: JpCategoryStockPrintLine16F1]
+    Set As : $$JwlNetWt
+[Line: JpCategoryStockPrintLine17]
+    Field: JpCategoryStockPrintLine17F1
+
+[Field: JpCategoryStockPrintLine17F1]
+    Style : JpWeightBold
+[Line: JpCategoryStockPrintLine18]
+    Field: JpCategoryStockPrintLine18F1
+
+[Field: JpCategoryStockPrintLine18F1]
+    Set As : $$JwlStockVal
+[Line: JpCategoryStockPrintLine19]
+    Field: JpCategoryStockPrintLine19F1
+
+[Field: JpCategoryStockPrintLine19F1]
+    Style : JpMoneyBold
+[Line: JpCategoryStockPrintLine20]
+    Field: JpCategoryStockPrintLine20F1
+
+[Field: JpCategoryStockPrintLine20F1]
+    Set As : JpPcOfVal()
+[Line: JpCategoryStockPrintLine21]
+    Field: JpCategoryStockPrintLine21F1
+
+[Field: JpCategoryStockPrintLine21F1]
+    Style : JpMoney
+[Line: JpCategoryStockPrintLine22]
+    Field: JpCategoryStockPrintLine22F1
+
+[Field: JpCategoryStockPrintLine22F1]
+    Set As : "TOTAL"
+[Line: JpCategoryStockPrintLine23]
+    Field: JpCategoryStockPrintLine23F1
+
+[Field: JpCategoryStockPrintLine23F1]
+    Style : JpTotal
+[Line: JpCategoryStockPrintLine24]
+    Field: JpCategoryStockPrintLine24F1
+
+[Field: JpCategoryStockPrintLine24F1]
+    Set As : Sum($$JwlQty)
+[Line: JpCategoryStockPrintLine25]
+    Field: JpCategoryStockPrintLine25F1
+
+[Field: JpCategoryStockPrintLine25F1]
+    Style : JpTotal
+[Line: JpCategoryStockPrintLine26]
+    Field: JpCategoryStockPrintLine26F1
+
+[Field: JpCategoryStockPrintLine26F1]
+    Set As : Sum($$JwlNetWt)
+[Line: JpCategoryStockPrintLine27]
+    Field: JpCategoryStockPrintLine27F1
+
+[Field: JpCategoryStockPrintLine27F1]
+    Style : JpTotal
+[Line: JpCategoryStockPrintLine28]
+    Field: JpCategoryStockPrintLine28F1
+
+[Field: JpCategoryStockPrintLine28F1]
+    Set As : Sum($$JwlStockVal)
+[Line: JpCategoryStockPrintLine29]
+    Field: JpCategoryStockPrintLine29F1
+
+[Field: JpCategoryStockPrintLine29F1]
+    Style : JpTotal
+[Line: JpCategoryStockPrintLine30]
+    Field: JpCategoryStockPrintLine30F1
+
+[Field: JpCategoryStockPrintLine30F1]
+    Set As : 100
+[Line: JpCategoryStockPrintLine31]
+    Field: JpCategoryStockPrintLine31F1
+
+[Field: JpCategoryStockPrintLine31F1]
+    Style : JpTotal
+[Function: JpPcOfVal]
+    Returns: Number : Any
+    Var: JpFromDate, JpToDate, t : Number
+    t = Sum($$JwlStockVal)
+    If (t <= 0) Then
+    {
+        JpPcOfVal = 0
+        Exit
+    }
+    JpPcOfVal = JpRound($$JwlStockVal * 100 / t)
+
+[Export: JpCategoryStockExport]
+    Title: <1000, "Category-wise Stock">
+    Repeat: Over: JpCategoryStockReport
+    Export Title: Detail
+    Export: Value: $$JwlCat
+    Export: Value: $$JwlQty
+    Export: Value: $$JwlNetWt
+    Export: Value: $$JwlStockVal
+
+
+; =============================================================================
+;  REPORT 10 - DESIGN-WISE STOCK
+; =============================================================================
+[Collection: Report: JpDesignStockReport]
+    Source: JpDesignStockSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  DESIGN-WISE STOCK">
+    Print: JpDesignStockPrint
+    Export: JpDesignStockExport
+    Key: JpDesignStockKey
+    Filters: <JpFromDate, <Date, "As From Date">>, <JpToDate, <Date, "As To Date">>
+
+[Variable: JpDesignStockSQL : String]
+    Type: String
+    Value: "SELECT $JwlDesignNo$$ AS JwlDes, $JwlCategory$$ AS JwlCat, COUNT($$NAME$$) AS JwlDesCount, SUM($$QUANTITY$$) AS JwlQty, SUM($JwlNetMetalWt$$ * $$QUANTITY$$) AS JwlNetWt, SUM($JwlFinalValue$$ * $$QUANTITY$$) AS JwlStockVal FROM $$ITEMSSTOCK$$ WHERE $JwlIsJewellery$$ = 1 GROUP BY $JwlDesignNo$$,$JwlCategory$$ ORDER BY $JwlDesignNo$$"
+
+[Variable: JpDesignStockKey : String]
+    Type: String
+    Value: "JwlDes"
+
+
+; [Print: JpDesignStockPrint] -> [Form: JpDesignStockPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpDesignStockPrint]
+    Parts : JpDesignStockPrintLines
+
+[Part: JpDesignStockPrintLines]
+    Lines : Spacing, JpDesignStockPrintLine1, JpDesignStockPrintLine2, JpDesignStockPrintLine3, JpDesignStockPrintLine4, JpDesignStockPrintLine5, JpDesignStockPrintLine6, JpDesignStockPrintLine7, JpDesignStockPrintLine8, JpDesignStockPrintLine9, JpDesignStockPrintLine10, JpDesignStockPrintLine11, JpDesignStockPrintLine12, JpDesignStockPrintLine13, JpDesignStockPrintLine14, JpDesignStockPrintLine15, JpDesignStockPrintLine16, JpDesignStockPrintLine17, JpDesignStockPrintLine18, JpDesignStockPrintLine19, JpDesignStockPrintLine20, JpDesignStockPrintLine21, JpDesignStockPrintLine22, JpDesignStockPrintLine23, JpDesignStockPrintLine24, JpDesignStockPrintLine25, JpDesignStockPrintLine26, JpDesignStockPrintLine27, JpDesignStockPrintLine28, JpDesignStockPrintLine29, JpDesignStockPrintLine30, JpDesignStockPrintLine31, JpDesignStockPrintLine32, JpDesignStockPrintLine33, JpDesignStockPrintLine34, JpDesignStockPrintLine35
+
+[Line: JpDesignStockPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpDesignStockPrintLine2]
+    Field: JpDesignStockPrintLine2F1
+
+[Field: JpDesignStockPrintLine2F1]
+    Set As : "Design No"
+[Line: JpDesignStockPrintLine3]
+    Field: JpDesignStockPrintLine3F1
+
+[Field: JpDesignStockPrintLine3F1]
+    Style : JpGridHead
+[Line: JpDesignStockPrintLine4]
+    Field: JpDesignStockPrintLine4F1
+
+[Field: JpDesignStockPrintLine4F1]
+    Set As : "Category"
+[Line: JpDesignStockPrintLine5]
+    Field: JpDesignStockPrintLine5F1
+
+[Field: JpDesignStockPrintLine5F1]
+    Style : JpGridHead
+[Line: JpDesignStockPrintLine6]
+    Field: JpDesignStockPrintLine6F1
+
+[Field: JpDesignStockPrintLine6F1]
+    Set As : "Designs"
+[Line: JpDesignStockPrintLine7]
+    Field: JpDesignStockPrintLine7F1
+
+[Field: JpDesignStockPrintLine7F1]
+    Style : JpGridHead
+[Line: JpDesignStockPrintLine8]
+    Field: JpDesignStockPrintLine8F1
+
+[Field: JpDesignStockPrintLine8F1]
+    Set As : "Pieces"
+[Line: JpDesignStockPrintLine9]
+    Field: JpDesignStockPrintLine9F1
+
+[Field: JpDesignStockPrintLine9F1]
+    Style : JpGridHead
+[Line: JpDesignStockPrintLine10]
+    Field: JpDesignStockPrintLine10F1
+
+[Field: JpDesignStockPrintLine10F1]
+    Set As : "Net Weight g"
+[Line: JpDesignStockPrintLine11]
+    Field: JpDesignStockPrintLine11F1
+
+[Field: JpDesignStockPrintLine11F1]
+    Style : JpGridHead
+[Line: JpDesignStockPrintLine12]
+    Field: JpDesignStockPrintLine12F1
+
+[Field: JpDesignStockPrintLine12F1]
+    Set As : "Stock Value"
+[Line: JpDesignStockPrintLine13]
+    Field: JpDesignStockPrintLine13F1
+
+[Field: JpDesignStockPrintLine13F1]
+    Style : JpGridHead
+[Line: JpDesignStockPrintLine14]
+    Field: JpDesignStockPrintLine14F1
+
+[Field: JpDesignStockPrintLine14F1]
+    Set As : $$JwlDes
+[Line: JpDesignStockPrintLine15]
+    Field: JpDesignStockPrintLine15F1
+
+[Field: JpDesignStockPrintLine15F1]
+    Style : JpGrid
+[Line: JpDesignStockPrintLine16]
+    Field: JpDesignStockPrintLine16F1
+
+[Field: JpDesignStockPrintLine16F1]
+    Set As : $$JwlCat
+[Line: JpDesignStockPrintLine17]
+    Field: JpDesignStockPrintLine17F1
+
+[Field: JpDesignStockPrintLine17F1]
+    Style : JpGrid
+[Line: JpDesignStockPrintLine18]
+    Field: JpDesignStockPrintLine18F1
+
+[Field: JpDesignStockPrintLine18F1]
+    Set As : $$JwlDesCount
+[Line: JpDesignStockPrintLine19]
+    Field: JpDesignStockPrintLine19F1
+
+[Field: JpDesignStockPrintLine19F1]
+    Style : JpGrid
+[Line: JpDesignStockPrintLine20]
+    Field: JpDesignStockPrintLine20F1
+
+[Field: JpDesignStockPrintLine20F1]
+    Set As : $$JwlQty
+[Line: JpDesignStockPrintLine21]
+    Field: JpDesignStockPrintLine21F1
+
+[Field: JpDesignStockPrintLine21F1]
+    Style : JpGrid
+[Line: JpDesignStockPrintLine22]
+    Field: JpDesignStockPrintLine22F1
+
+[Field: JpDesignStockPrintLine22F1]
+    Set As : $$JwlNetWt
+[Line: JpDesignStockPrintLine23]
+    Field: JpDesignStockPrintLine23F1
+
+[Field: JpDesignStockPrintLine23F1]
+    Style : JpWeightBold
+[Line: JpDesignStockPrintLine24]
+    Field: JpDesignStockPrintLine24F1
+
+[Field: JpDesignStockPrintLine24F1]
+    Set As : $$JwlStockVal
+[Line: JpDesignStockPrintLine25]
+    Field: JpDesignStockPrintLine25F1
+
+[Field: JpDesignStockPrintLine25F1]
+    Style : JpMoneyBold
+[Line: JpDesignStockPrintLine26]
+    Field: JpDesignStockPrintLine26F1
+
+[Field: JpDesignStockPrintLine26F1]
+    Set As : "TOTAL"
+[Line: JpDesignStockPrintLine27]
+    Field: JpDesignStockPrintLine27F1
+
+[Field: JpDesignStockPrintLine27F1]
+    Style : JpTotal
+[Line: JpDesignStockPrintLine28]
+    Field: JpDesignStockPrintLine28F1
+
+[Field: JpDesignStockPrintLine28F1]
+    Set As : Sum($$JwlDesCount)
+[Line: JpDesignStockPrintLine29]
+    Field: JpDesignStockPrintLine29F1
+
+[Field: JpDesignStockPrintLine29F1]
+    Style : JpTotal
+[Line: JpDesignStockPrintLine30]
+    Field: JpDesignStockPrintLine30F1
+
+[Field: JpDesignStockPrintLine30F1]
+    Set As : Sum($$JwlQty)
+[Line: JpDesignStockPrintLine31]
+    Field: JpDesignStockPrintLine31F1
+
+[Field: JpDesignStockPrintLine31F1]
+    Style : JpTotal
+[Line: JpDesignStockPrintLine32]
+    Field: JpDesignStockPrintLine32F1
+
+[Field: JpDesignStockPrintLine32F1]
+    Set As : Sum($$JwlNetWt)
+[Line: JpDesignStockPrintLine33]
+    Field: JpDesignStockPrintLine33F1
+
+[Field: JpDesignStockPrintLine33F1]
+    Style : JpTotal
+[Line: JpDesignStockPrintLine34]
+    Field: JpDesignStockPrintLine34F1
+
+[Field: JpDesignStockPrintLine34F1]
+    Set As : Sum($$JwlStockVal)
+[Line: JpDesignStockPrintLine35]
+    Field: JpDesignStockPrintLine35F1
+
+[Field: JpDesignStockPrintLine35F1]
+    Style : JpTotal
+[Export: JpDesignStockExport]
+    Title: <1000, "Design-wise Stock">
+    Repeat: Over: JpDesignStockReport
+    Export Title: Detail
+    Export: Value: $$JwlDes
+    Export: Value: $$JwlCat
+    Export: Value: $$JwlDesCount
+    Export: Value: $$JwlQty
+    Export: Value: $$JwlNetWt
+    Export: Value: $$JwlStockVal
+
+
+; =============================================================================
+;  REPORT 11 - COUNTER-WISE STOCK
+; =============================================================================
+[Collection: Report: JpCounterStockReport]
+    Source: JpCounterStockSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  COUNTER-WISE STOCK">
+    Print: JpCounterStockPrint
+    Export: JpCounterStockExport
+    Key: JpCounterStockKey
+    Filters: <JpFromDate, <Date, "As From Date">>, <JpToDate, <Date, "As To Date">>
+
+[Variable: JpCounterStockSQL : String]
+    Type: String
+    Value: "SELECT $JwlLocation$$ AS JwlCounter, SUM($$QUANTITY$$) AS JwlQty, SUM($JwlNetMetalWt$$ * $$QUANTITY$$) AS JwlNetWt, SUM($JwlFinalValue$$ * $$QUANTITY$$) AS JwlStockVal FROM $$ITEMSSTOCK$$ WHERE $JwlIsJewellery$$ = 1 GROUP BY $JwlLocation$$ ORDER BY $$JwlStockVal$$ DESC"
+
+[Variable: JpCounterStockKey : String]
+    Type: String
+    Value: "JwlCounter"
+
+
+; [Print: JpCounterStockPrint] -> [Form: JpCounterStockPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpCounterStockPrint]
+    Parts : JpCounterStockPrintLines
+
+[Part: JpCounterStockPrintLines]
+    Lines : Spacing, JpCounterStockPrintLine1, JpCounterStockPrintLine2, JpCounterStockPrintLine3, JpCounterStockPrintLine4, JpCounterStockPrintLine5, JpCounterStockPrintLine6, JpCounterStockPrintLine7, JpCounterStockPrintLine8, JpCounterStockPrintLine9, JpCounterStockPrintLine10, JpCounterStockPrintLine11, JpCounterStockPrintLine12, JpCounterStockPrintLine13, JpCounterStockPrintLine14, JpCounterStockPrintLine15, JpCounterStockPrintLine16, JpCounterStockPrintLine17, JpCounterStockPrintLine18, JpCounterStockPrintLine19, JpCounterStockPrintLine20, JpCounterStockPrintLine21, JpCounterStockPrintLine22, JpCounterStockPrintLine23, JpCounterStockPrintLine24, JpCounterStockPrintLine25
+
+[Line: JpCounterStockPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpCounterStockPrintLine2]
+    Field: JpCounterStockPrintLine2F1
+
+[Field: JpCounterStockPrintLine2F1]
+    Set As : "Counter / Location"
+[Line: JpCounterStockPrintLine3]
+    Field: JpCounterStockPrintLine3F1
+
+[Field: JpCounterStockPrintLine3F1]
+    Style : JpGridHead
+[Line: JpCounterStockPrintLine4]
+    Field: JpCounterStockPrintLine4F1
+
+[Field: JpCounterStockPrintLine4F1]
+    Set As : "Pieces"
+[Line: JpCounterStockPrintLine5]
+    Field: JpCounterStockPrintLine5F1
+
+[Field: JpCounterStockPrintLine5F1]
+    Style : JpGridHead
+[Line: JpCounterStockPrintLine6]
+    Field: JpCounterStockPrintLine6F1
+
+[Field: JpCounterStockPrintLine6F1]
+    Set As : "Net Weight g"
+[Line: JpCounterStockPrintLine7]
+    Field: JpCounterStockPrintLine7F1
+
+[Field: JpCounterStockPrintLine7F1]
+    Style : JpGridHead
+[Line: JpCounterStockPrintLine8]
+    Field: JpCounterStockPrintLine8F1
+
+[Field: JpCounterStockPrintLine8F1]
+    Set As : "Stock Value"
+[Line: JpCounterStockPrintLine9]
+    Field: JpCounterStockPrintLine9F1
+
+[Field: JpCounterStockPrintLine9F1]
+    Style : JpGridHead
+[Line: JpCounterStockPrintLine10]
+    Field: JpCounterStockPrintLine10F1
+
+[Field: JpCounterStockPrintLine10F1]
+    Set As : $$JwlCounter
+[Line: JpCounterStockPrintLine11]
+    Field: JpCounterStockPrintLine11F1
+
+[Field: JpCounterStockPrintLine11F1]
+    Style : JpGrid
+[Line: JpCounterStockPrintLine12]
+    Field: JpCounterStockPrintLine12F1
+
+[Field: JpCounterStockPrintLine12F1]
+    Set As : $$JwlQty
+[Line: JpCounterStockPrintLine13]
+    Field: JpCounterStockPrintLine13F1
+
+[Field: JpCounterStockPrintLine13F1]
+    Style : JpGrid
+[Line: JpCounterStockPrintLine14]
+    Field: JpCounterStockPrintLine14F1
+
+[Field: JpCounterStockPrintLine14F1]
+    Set As : $$JwlNetWt
+[Line: JpCounterStockPrintLine15]
+    Field: JpCounterStockPrintLine15F1
+
+[Field: JpCounterStockPrintLine15F1]
+    Style : JpWeightBold
+[Line: JpCounterStockPrintLine16]
+    Field: JpCounterStockPrintLine16F1
+
+[Field: JpCounterStockPrintLine16F1]
+    Set As : $$JwlStockVal
+[Line: JpCounterStockPrintLine17]
+    Field: JpCounterStockPrintLine17F1
+
+[Field: JpCounterStockPrintLine17F1]
+    Style : JpMoneyBold
+[Line: JpCounterStockPrintLine18]
+    Field: JpCounterStockPrintLine18F1
+
+[Field: JpCounterStockPrintLine18F1]
+    Set As : "TOTAL"
+[Line: JpCounterStockPrintLine19]
+    Field: JpCounterStockPrintLine19F1
+
+[Field: JpCounterStockPrintLine19F1]
+    Style : JpTotal
+[Line: JpCounterStockPrintLine20]
+    Field: JpCounterStockPrintLine20F1
+
+[Field: JpCounterStockPrintLine20F1]
+    Set As : Sum($$JwlQty)
+[Line: JpCounterStockPrintLine21]
+    Field: JpCounterStockPrintLine21F1
+
+[Field: JpCounterStockPrintLine21F1]
+    Style : JpTotal
+[Line: JpCounterStockPrintLine22]
+    Field: JpCounterStockPrintLine22F1
+
+[Field: JpCounterStockPrintLine22F1]
+    Set As : Sum($$JwlNetWt)
+[Line: JpCounterStockPrintLine23]
+    Field: JpCounterStockPrintLine23F1
+
+[Field: JpCounterStockPrintLine23F1]
+    Style : JpTotal
+[Line: JpCounterStockPrintLine24]
+    Field: JpCounterStockPrintLine24F1
+
+[Field: JpCounterStockPrintLine24F1]
+    Set As : Sum($$JwlStockVal)
+[Line: JpCounterStockPrintLine25]
+    Field: JpCounterStockPrintLine25F1
+
+[Field: JpCounterStockPrintLine25F1]
+    Style : JpTotal
+[Export: JpCounterStockExport]
+    Title: <1000, "Counter-wise Stock">
+    Repeat: Over: JpCounterStockReport
+    Export Title: Detail
+    Export: Value: $$JwlCounter
+    Export: Value: $$JwlQty
+    Export: Value: $$JwlNetWt
+    Export: Value: $$JwlStockVal
+
+
+; =============================================================================
+;  REPORT 12 - STOCK AGEING (bucketed by last purchase date)
+; =============================================================================
+[Collection: Report: JpAgeingReport]
+    Source: JpAgeingSQL
+    Title: <1000,###,#a##"  STOCK AGEING - FAST, SLOW AND DEAD STOCK">
+    Print: JpAgeingPrint
+    Export: JpAgeingExport
+    Key: JpAgeingKey
+    Filters: <JpFromDate, <Date, "As From Date">>, <JpToDate, <Date, "As To Date">>
+
+[Variable: JpAgeingSQL : String]
+    Type: String
+    Value: "SELECT $$ITEMNAME$$ AS JwlItem, $JwlCategory$$ AS JwlCat, SUM($$QUANTITY$$) AS JwlQty, SUM($JwlNetMetalWt$$ * $$QUANTITY$$) AS JwlNetWt, MAX($$DATE$$) AS JwlLastBuy, SUM($JwlFinalValue$$ * $$QUANTITY$$) AS JwlStockVal FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ = 'Purchase' AND $$DATE$$ <= $$JpToDate$$ GROUP BY $$ITEMNAME$$,$JwlCategory$$ ORDER BY $$JwlLastBuy$$"
+
+[Variable: JpAgeingKey : String]
+    Type: String
+    Value: "JwlItem"
+
+; Ageing buckets, in days, as DATA so a shop can retune them on the company
+; master rather than by editing this report.
+[Function: JpAgeBucket]
+    Param: vLastBuy : Date : Optional
+    Returns: String : Any
+    Var: JpFromDate, JpToDate, d : Date, days : Number
+    d = Param(0)
+    If (d is null) Then
+    {
+        JpAgeBucket = "Unknown"
+        Exit
+    }
+    days = Days(Day(d), Month(d), Year(d), Day(JpCacheDate), Month(JpCacheDate), Year(JpCacheDate))
+    If (days < 0) Then { JpAgeBucket = "Unknown"; Exit; }
+    If (days <= 30) Then { JpAgeBucket = "0-30 days  (Fast)"; Exit; }
+    If (days <= 90) Then { JpAgeBucket = "31-90 days  (Moving)"; Exit; }
+    If (days <= 180) Then { JpAgeBucket = "91-180 days  (Slow)"; Exit; }
+    JpAgeBucket = "180+ days  (DEAD)"
+
+
+; [Print: JpAgeingPrint] -> [Form: JpAgeingPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpAgeingPrint]
+    Parts : JpAgeingPrintLines
+
+[Part: JpAgeingPrintLines]
+    Lines : Spacing, JpAgeingPrintLine1, JpAgeingPrintLine2, JpAgeingPrintLine3, JpAgeingPrintLine4, JpAgeingPrintLine5, JpAgeingPrintLine6, JpAgeingPrintLine7, JpAgeingPrintLine8, JpAgeingPrintLine9, JpAgeingPrintLine10, JpAgeingPrintLine11, JpAgeingPrintLine12, JpAgeingPrintLine13, JpAgeingPrintLine14, JpAgeingPrintLine15, JpAgeingPrintLine16, JpAgeingPrintLine17, JpAgeingPrintLine18, JpAgeingPrintLine19, JpAgeingPrintLine20, JpAgeingPrintLine21, JpAgeingPrintLine22, JpAgeingPrintLine23, JpAgeingPrintLine24, JpAgeingPrintLine25, JpAgeingPrintLine26, JpAgeingPrintLine27, JpAgeingPrintLine28, JpAgeingPrintLine29, JpAgeingPrintLine30, JpAgeingPrintLine31, JpAgeingPrintLine32, JpAgeingPrintLine33, JpAgeingPrintLine34, JpAgeingPrintLine35, JpAgeingPrintLine36, JpAgeingPrintLine37, JpAgeingPrintLine38, JpAgeingPrintLine39
+
+[Line: JpAgeingPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpAgeingPrintLine2]
+    Field: JpAgeingPrintLine2F1
+
+[Field: JpAgeingPrintLine2F1]
+    Set As : Upr(##JwlShopName) + "   -   Stock Ageing as on " + JpFmtDate(JpCacheDate)
+    Style : JpFontBold
+[Line: JpAgeingPrintLine3]
+    Field: JpAgeingPrintLine3F1
+
+[Field: JpAgeingPrintLine3F1]
+    Set As : "Dead stock is capital sitting on the shelf. Buckets: 0-30 fast, 31-90 moving, 91-180 slow, 180+ dead."
+    Style : JpFontBold
+[Line: JpAgeingPrintLine4]
+    Field: JpAgeingPrintLine4F1
+
+[Field: JpAgeingPrintLine4F1]
+    Set As : "Item"
+[Line: JpAgeingPrintLine5]
+    Field: JpAgeingPrintLine5F1
+
+[Field: JpAgeingPrintLine5F1]
+    Style : JpGridHead
+[Line: JpAgeingPrintLine6]
+    Field: JpAgeingPrintLine6F1
+
+[Field: JpAgeingPrintLine6F1]
+    Set As : "Category"
+[Line: JpAgeingPrintLine7]
+    Field: JpAgeingPrintLine7F1
+
+[Field: JpAgeingPrintLine7F1]
+    Style : JpGridHead
+[Line: JpAgeingPrintLine8]
+    Field: JpAgeingPrintLine8F1
+
+[Field: JpAgeingPrintLine8F1]
+    Set As : "Pieces"
+[Line: JpAgeingPrintLine9]
+    Field: JpAgeingPrintLine9F1
+
+[Field: JpAgeingPrintLine9F1]
+    Style : JpGridHead
+[Line: JpAgeingPrintLine10]
+    Field: JpAgeingPrintLine10F1
+
+[Field: JpAgeingPrintLine10F1]
+    Set As : "Net Weight g"
+[Line: JpAgeingPrintLine11]
+    Field: JpAgeingPrintLine11F1
+
+[Field: JpAgeingPrintLine11F1]
+    Style : JpGridHead
+[Line: JpAgeingPrintLine12]
+    Field: JpAgeingPrintLine12F1
+
+[Field: JpAgeingPrintLine12F1]
+    Set As : "Last Purchased"
+[Line: JpAgeingPrintLine13]
+    Field: JpAgeingPrintLine13F1
+
+[Field: JpAgeingPrintLine13F1]
+    Style : JpGridHead
+[Line: JpAgeingPrintLine14]
+    Field: JpAgeingPrintLine14F1
+
+[Field: JpAgeingPrintLine14F1]
+    Set As : "Ageing"
+[Line: JpAgeingPrintLine15]
+    Field: JpAgeingPrintLine15F1
+
+[Field: JpAgeingPrintLine15F1]
+    Style : JpGridHead
+[Line: JpAgeingPrintLine16]
+    Field: JpAgeingPrintLine16F1
+
+[Field: JpAgeingPrintLine16F1]
+    Set As : "Stock Value"
+[Line: JpAgeingPrintLine17]
+    Field: JpAgeingPrintLine17F1
+
+[Field: JpAgeingPrintLine17F1]
+    Style : JpGridHead
+[Line: JpAgeingPrintLine18]
+    Field: JpAgeingPrintLine18F1
+
+[Field: JpAgeingPrintLine18F1]
+    Set As : $$JwlItem
+[Line: JpAgeingPrintLine19]
+    Field: JpAgeingPrintLine19F1
+
+[Field: JpAgeingPrintLine19F1]
+    Style : JpGrid
+[Line: JpAgeingPrintLine20]
+    Field: JpAgeingPrintLine20F1
+
+[Field: JpAgeingPrintLine20F1]
+    Set As : $$JwlCat
+[Line: JpAgeingPrintLine21]
+    Field: JpAgeingPrintLine21F1
+
+[Field: JpAgeingPrintLine21F1]
+    Style : JpGrid
+[Line: JpAgeingPrintLine22]
+    Field: JpAgeingPrintLine22F1
+
+[Field: JpAgeingPrintLine22F1]
+    Set As : $$JwlQty
+[Line: JpAgeingPrintLine23]
+    Field: JpAgeingPrintLine23F1
+
+[Field: JpAgeingPrintLine23F1]
+    Style : JpGrid
+[Line: JpAgeingPrintLine24]
+    Field: JpAgeingPrintLine24F1
+
+[Field: JpAgeingPrintLine24F1]
+    Set As : $$JwlNetWt
+[Line: JpAgeingPrintLine25]
+    Field: JpAgeingPrintLine25F1
+
+[Field: JpAgeingPrintLine25F1]
+    Style : JpWeightBold
+[Line: JpAgeingPrintLine26]
+    Field: JpAgeingPrintLine26F1
+
+[Field: JpAgeingPrintLine26F1]
+    Set As : $$JwlLastBuy
+[Line: JpAgeingPrintLine27]
+    Field: JpAgeingPrintLine27F1
+
+[Field: JpAgeingPrintLine27F1]
+    Style : JpGrid
+[Line: JpAgeingPrintLine28]
+    Field: JpAgeingPrintLine28F1
+
+[Field: JpAgeingPrintLine28F1]
+    Set As : JpAgeBucket($$JwlLastBuy)
+[Line: JpAgeingPrintLine29]
+    Field: JpAgeingPrintLine29F1
+
+[Field: JpAgeingPrintLine29F1]
+    Style : JpGrid
+[Line: JpAgeingPrintLine30]
+    Field: JpAgeingPrintLine30F1
+
+[Field: JpAgeingPrintLine30F1]
+    Set As : $$JwlStockVal
+[Line: JpAgeingPrintLine31]
+    Field: JpAgeingPrintLine31F1
+
+[Field: JpAgeingPrintLine31F1]
+    Style : JpMoneyBold
+[Line: JpAgeingPrintLine32]
+    Field: JpAgeingPrintLine32F1
+
+[Field: JpAgeingPrintLine32F1]
+    Set As : "TOTAL"
+[Line: JpAgeingPrintLine33]
+    Field: JpAgeingPrintLine33F1
+
+[Field: JpAgeingPrintLine33F1]
+    Style : JpTotal
+[Line: JpAgeingPrintLine34]
+    Field: JpAgeingPrintLine34F1
+
+[Field: JpAgeingPrintLine34F1]
+    Set As : Sum($$JwlQty)
+[Line: JpAgeingPrintLine35]
+    Field: JpAgeingPrintLine35F1
+
+[Field: JpAgeingPrintLine35F1]
+    Style : JpTotal
+[Line: JpAgeingPrintLine36]
+    Field: JpAgeingPrintLine36F1
+
+[Field: JpAgeingPrintLine36F1]
+    Set As : Sum($$JwlNetWt)
+[Line: JpAgeingPrintLine37]
+    Field: JpAgeingPrintLine37F1
+
+[Field: JpAgeingPrintLine37F1]
+    Style : JpTotal
+[Line: JpAgeingPrintLine38]
+    Field: JpAgeingPrintLine38F1
+
+[Field: JpAgeingPrintLine38F1]
+    Set As : Sum($$JwlStockVal)
+[Line: JpAgeingPrintLine39]
+    Field: JpAgeingPrintLine39F1
+
+[Field: JpAgeingPrintLine39F1]
+    Style : JpTotal
+[Export: JpAgeingExport]
+    Title: <1000, "Stock Ageing">
+    Repeat: Over: JpAgeingReport
+    Export Title: Detail
+    Export: Value: $$JwlItem
+    Export: Value: $$JwlCat
+    Export: Value: $$JwlQty
+    Export: Value: $$JwlNetWt
+    Export: Value: $$JwlLastBuy
+    Export: Value: $$JwlStockVal
+
+
+; =============================================================================
+;  REPORT 13 - FAST / SLOW / DEAD MOVEMENT
+;  Based on how many times each item was sold in the period.
+; =============================================================================
+[Collection: Report: JpMovementReport]
+    Source: JpMovementSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  MOVEMENT ANALYSIS - FAST / SLOW / DEAD">
+    Print: JpMovementPrint
+    Export: JpMovementExport
+    Key: JpMovementKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>
+
+[Variable: JpMovementSQL : String]
+    Type: String
+    Value: "SELECT $$ITEMNAME$$ AS JwlItem, $JwlCategory$$ AS JwlCat, SUM($$QUANTITY$$) AS JwlSoldQty, SUM($JwlLnNet$$) AS JwlSoldWt, SUM($JwlLnTotal$$) AS JwlSoldVal FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ = 'Sales' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$ GROUP BY $$ITEMNAME$$,$JwlCategory$$ ORDER BY $$JwlSoldVal$$ DESC"
+
+[Variable: JpMovementKey : String]
+    Type: String
+    Value: "JwlItem"
+
+[Function: JpMoveClass]
+    Param: vSoldVal : Number : Optional
+    Returns: String : Any
+    Var: v : Number
+    v = JpNz(Param(0))
+    If (v <= 0) Then
+    {
+        JpMoveClass = "DEAD (no sale in period)"
+        Exit
+    }
+    If (v >= 25000) Then
+    {
+        JpMoveClass = "FAST"
+        Exit
+    }
+    If (v >= 5000) Then
+    {
+        JpMoveClass = "MOVING"
+        Exit
+    }
+    JpMoveClass = "SLOW"
+
+
+; [Print: JpMovementPrint] -> [Form: JpMovementPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpMovementPrint]
+    Parts : JpMovementPrintLines
+
+[Part: JpMovementPrintLines]
+    Lines : Spacing, JpMovementPrintLine1, JpMovementPrintLine2, JpMovementPrintLine3, JpMovementPrintLine4, JpMovementPrintLine5, JpMovementPrintLine6, JpMovementPrintLine7, JpMovementPrintLine8, JpMovementPrintLine9, JpMovementPrintLine10, JpMovementPrintLine11, JpMovementPrintLine12, JpMovementPrintLine13, JpMovementPrintLine14, JpMovementPrintLine15, JpMovementPrintLine16, JpMovementPrintLine17, JpMovementPrintLine18, JpMovementPrintLine19, JpMovementPrintLine20, JpMovementPrintLine21, JpMovementPrintLine22, JpMovementPrintLine23, JpMovementPrintLine24, JpMovementPrintLine25, JpMovementPrintLine26, JpMovementPrintLine27, JpMovementPrintLine28, JpMovementPrintLine29, JpMovementPrintLine30, JpMovementPrintLine31, JpMovementPrintLine32, JpMovementPrintLine33
+
+[Line: JpMovementPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpMovementPrintLine2]
+    Field: JpMovementPrintLine2F1
+
+[Field: JpMovementPrintLine2F1]
+    Set As : "Item"
+[Line: JpMovementPrintLine3]
+    Field: JpMovementPrintLine3F1
+
+[Field: JpMovementPrintLine3F1]
+    Style : JpGridHead
+[Line: JpMovementPrintLine4]
+    Field: JpMovementPrintLine4F1
+
+[Field: JpMovementPrintLine4F1]
+    Set As : "Category"
+[Line: JpMovementPrintLine5]
+    Field: JpMovementPrintLine5F1
+
+[Field: JpMovementPrintLine5F1]
+    Style : JpGridHead
+[Line: JpMovementPrintLine6]
+    Field: JpMovementPrintLine6F1
+
+[Field: JpMovementPrintLine6F1]
+    Set As : "Sold Pcs"
+[Line: JpMovementPrintLine7]
+    Field: JpMovementPrintLine7F1
+
+[Field: JpMovementPrintLine7F1]
+    Style : JpGridHead
+[Line: JpMovementPrintLine8]
+    Field: JpMovementPrintLine8F1
+
+[Field: JpMovementPrintLine8F1]
+    Set As : "Sold Weight g"
+[Line: JpMovementPrintLine9]
+    Field: JpMovementPrintLine9F1
+
+[Field: JpMovementPrintLine9F1]
+    Style : JpGridHead
+[Line: JpMovementPrintLine10]
+    Field: JpMovementPrintLine10F1
+
+[Field: JpMovementPrintLine10F1]
+    Set As : "Sold Value"
+[Line: JpMovementPrintLine11]
+    Field: JpMovementPrintLine11F1
+
+[Field: JpMovementPrintLine11F1]
+    Style : JpGridHead
+[Line: JpMovementPrintLine12]
+    Field: JpMovementPrintLine12F1
+
+[Field: JpMovementPrintLine12F1]
+    Set As : "Classification"
+[Line: JpMovementPrintLine13]
+    Field: JpMovementPrintLine13F1
+
+[Field: JpMovementPrintLine13F1]
+    Style : JpGridHead
+[Line: JpMovementPrintLine14]
+    Field: JpMovementPrintLine14F1
+
+[Field: JpMovementPrintLine14F1]
+    Set As : $$JwlItem
+[Line: JpMovementPrintLine15]
+    Field: JpMovementPrintLine15F1
+
+[Field: JpMovementPrintLine15F1]
+    Style : JpGrid
+[Line: JpMovementPrintLine16]
+    Field: JpMovementPrintLine16F1
+
+[Field: JpMovementPrintLine16F1]
+    Set As : $$JwlCat
+[Line: JpMovementPrintLine17]
+    Field: JpMovementPrintLine17F1
+
+[Field: JpMovementPrintLine17F1]
+    Style : JpGrid
+[Line: JpMovementPrintLine18]
+    Field: JpMovementPrintLine18F1
+
+[Field: JpMovementPrintLine18F1]
+    Set As : $$JwlSoldQty
+[Line: JpMovementPrintLine19]
+    Field: JpMovementPrintLine19F1
+
+[Field: JpMovementPrintLine19F1]
+    Style : JpGrid
+[Line: JpMovementPrintLine20]
+    Field: JpMovementPrintLine20F1
+
+[Field: JpMovementPrintLine20F1]
+    Set As : $$JwlSoldWt
+[Line: JpMovementPrintLine21]
+    Field: JpMovementPrintLine21F1
+
+[Field: JpMovementPrintLine21F1]
+    Style : JpWeightBold
+[Line: JpMovementPrintLine22]
+    Field: JpMovementPrintLine22F1
+
+[Field: JpMovementPrintLine22F1]
+    Set As : $$JwlSoldVal
+[Line: JpMovementPrintLine23]
+    Field: JpMovementPrintLine23F1
+
+[Field: JpMovementPrintLine23F1]
+    Style : JpMoneyBold
+[Line: JpMovementPrintLine24]
+    Field: JpMovementPrintLine24F1
+
+[Field: JpMovementPrintLine24F1]
+    Set As : JpMoveClass($$JwlSoldVal)
+[Line: JpMovementPrintLine25]
+    Field: JpMovementPrintLine25F1
+
+[Field: JpMovementPrintLine25F1]
+    Style : JpGrid
+[Line: JpMovementPrintLine26]
+    Field: JpMovementPrintLine26F1
+
+[Field: JpMovementPrintLine26F1]
+    Set As : "TOTAL"
+[Line: JpMovementPrintLine27]
+    Field: JpMovementPrintLine27F1
+
+[Field: JpMovementPrintLine27F1]
+    Style : JpTotal
+[Line: JpMovementPrintLine28]
+    Field: JpMovementPrintLine28F1
+
+[Field: JpMovementPrintLine28F1]
+    Set As : Sum($$JwlSoldQty)
+[Line: JpMovementPrintLine29]
+    Field: JpMovementPrintLine29F1
+
+[Field: JpMovementPrintLine29F1]
+    Style : JpTotal
+[Line: JpMovementPrintLine30]
+    Field: JpMovementPrintLine30F1
+
+[Field: JpMovementPrintLine30F1]
+    Set As : Sum($$JwlSoldWt)
+[Line: JpMovementPrintLine31]
+    Field: JpMovementPrintLine31F1
+
+[Field: JpMovementPrintLine31F1]
+    Style : JpTotal
+[Line: JpMovementPrintLine32]
+    Field: JpMovementPrintLine32F1
+
+[Field: JpMovementPrintLine32F1]
+    Set As : Sum($$JwlSoldVal)
+[Line: JpMovementPrintLine33]
+    Field: JpMovementPrintLine33F1
+
+[Field: JpMovementPrintLine33F1]
+    Style : JpTotal
+[Export: JpMovementExport]
+    Title: <1000, "Movement Analysis">
+    Repeat: Over: JpMovementReport
+    Export Title: Detail
+    Export: Value: $$JwlItem
+    Export: Value: $$JwlCat
+    Export: Value: $$JwlSoldQty
+    Export: Value: $$JwlSoldWt
+    Export: Value: $$JwlSoldVal
+
+;  REPORT 14 - SALESPERSON PERFORMANCE
+;  Revenue, weight sold, discount given and gross profit against the monthly
+;  target held in the company master (see 13_Security.tdl).
+; =============================================================================
+[Collection: Report: JpSalespersonReport]
+    Source: JpSalespersonSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  SALESPERSON PERFORMANCE">
+    Print: JpSalespersonPrint
+    Export: JpSalespersonExport
+    Key: JpSalespersonKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>
+
+[Variable: JpSalespersonSQL : String]
+    Type: String
+    Value: "SELECT $JwlSalesperson$$ AS JwlSp, COUNT($$VOUCHERID$$) AS JwlBills, SUM($$QUANTITY$$) AS JwlPiecesSold, SUM($JwlGrandTotal$$) AS JwlRevenue, SUM($JwlDiscAmt$$) AS JwlDiscount, SUM($JwlLnNet$$) AS JwlWeightSold, SUM($JwlLnCost$$) AS JwlCost FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ = 'Sales' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$ GROUP BY $JwlSalesperson$$ ORDER BY $$JwlRevenue$$ DESC"
+
+[Variable: JpSalespersonKey : String]
+    Type: String
+    Value: "JwlSp"
+
+; Target achievement. Target is monthly, so a period longer than one month is
+; scaled by the number of months covered rather than compared raw.
+[Function: JpTargetAchieved]
+    Returns: Number : Any
+    Var: tgt : Number, rev : Number
+    tgt = JpTargetFor($$JwlSp)
+    rev = JpNz($$JwlRevenue)
+    If (tgt <= 0) Then
+    {
+        JpTargetAchieved = 0
+        Exit
+    }
+    JpTargetAchieved = JpRound(rev * 100 / tgt)
+
+[Function: JpGrossProfit]
+    Returns: Number : Any
+    If (JpShowProfit() <> 1) Then
+    {
+        JpGrossProfit = 0
+        Exit
+    }
+    JpGrossProfit = JpRound($$JwlRevenue - JpNz($$JwlCost))
+
+
+; [Print: JpSalespersonPrint] -> [Form: JpSalespersonPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpSalespersonPrint]
+    Parts : JpSalespersonPrintLines
+
+[Part: JpSalespersonPrintLines]
+    Lines : Spacing, JpSalespersonPrintLine1, JpSalespersonPrintLine2, JpSalespersonPrintLine3, JpSalespersonPrintLine4, JpSalespersonPrintLine5, JpSalespersonPrintLine6, JpSalespersonPrintLine7, JpSalespersonPrintLine8, JpSalespersonPrintLine9, JpSalespersonPrintLine10, JpSalespersonPrintLine11, JpSalespersonPrintLine12, JpSalespersonPrintLine13, JpSalespersonPrintLine14, JpSalespersonPrintLine15, JpSalespersonPrintLine16, JpSalespersonPrintLine17, JpSalespersonPrintLine18, JpSalespersonPrintLine19, JpSalespersonPrintLine20, JpSalespersonPrintLine21, JpSalespersonPrintLine22, JpSalespersonPrintLine23, JpSalespersonPrintLine24, JpSalespersonPrintLine25, JpSalespersonPrintLine26, JpSalespersonPrintLine27, JpSalespersonPrintLine28, JpSalespersonPrintLine29, JpSalespersonPrintLine30, JpSalespersonPrintLine31, JpSalespersonPrintLine32, JpSalespersonPrintLine33, JpSalespersonPrintLine34, JpSalespersonPrintLine35, JpSalespersonPrintLine36, JpSalespersonPrintLine37, JpSalespersonPrintLine38, JpSalespersonPrintLine39, JpSalespersonPrintLine40, JpSalespersonPrintLine41, JpSalespersonPrintLine42, JpSalespersonPrintLine43, JpSalespersonPrintLine44, JpSalespersonPrintLine45, JpSalespersonPrintLine46, JpSalespersonPrintLine47
+
+[Line: JpSalespersonPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpSalespersonPrintLine2]
+    Field: JpSalespersonPrintLine2F1
+
+[Field: JpSalespersonPrintLine2F1]
+    Set As : "Salesperson"
+[Line: JpSalespersonPrintLine3]
+    Field: JpSalespersonPrintLine3F1
+
+[Field: JpSalespersonPrintLine3F1]
+    Style : JpGridHead
+[Line: JpSalespersonPrintLine4]
+    Field: JpSalespersonPrintLine4F1
+
+[Field: JpSalespersonPrintLine4F1]
+    Set As : "Bills"
+[Line: JpSalespersonPrintLine5]
+    Field: JpSalespersonPrintLine5F1
+
+[Field: JpSalespersonPrintLine5F1]
+    Style : JpGridHead
+[Line: JpSalespersonPrintLine6]
+    Field: JpSalespersonPrintLine6F1
+
+[Field: JpSalespersonPrintLine6F1]
+    Set As : "Pieces Sold"
+[Line: JpSalespersonPrintLine7]
+    Field: JpSalespersonPrintLine7F1
+
+[Field: JpSalespersonPrintLine7F1]
+    Style : JpGridHead
+[Line: JpSalespersonPrintLine8]
+    Field: JpSalespersonPrintLine8F1
+
+[Field: JpSalespersonPrintLine8F1]
+    Set As : "Weight Sold g"
+[Line: JpSalespersonPrintLine9]
+    Field: JpSalespersonPrintLine9F1
+
+[Field: JpSalespersonPrintLine9F1]
+    Style : JpGridHead
+[Line: JpSalespersonPrintLine10]
+    Field: JpSalespersonPrintLine10F1
+
+[Field: JpSalespersonPrintLine10F1]
+    Set As : "Revenue"
+[Line: JpSalespersonPrintLine11]
+    Field: JpSalespersonPrintLine11F1
+
+[Field: JpSalespersonPrintLine11F1]
+    Style : JpGridHead
+[Line: JpSalespersonPrintLine12]
+    Field: JpSalespersonPrintLine12F1
+
+[Field: JpSalespersonPrintLine12F1]
+    Set As : "Discount Given"
+[Line: JpSalespersonPrintLine13]
+    Field: JpSalespersonPrintLine13F1
+
+[Field: JpSalespersonPrintLine13F1]
+    Style : JpGridHead
+[Line: JpSalespersonPrintLine14]
+    Field: JpSalespersonPrintLine14F1
+
+[Field: JpSalespersonPrintLine14F1]
+    Set As : "Gross Profit"
+[Line: JpSalespersonPrintLine15]
+    Field: JpSalespersonPrintLine15F1
+
+[Field: JpSalespersonPrintLine15F1]
+    Style : JpGridHead
+[Line: JpSalespersonPrintLine16]
+    Field: JpSalespersonPrintLine16F1
+
+[Field: JpSalespersonPrintLine16F1]
+    Set As : "Target %"
+[Line: JpSalespersonPrintLine17]
+    Field: JpSalespersonPrintLine17F1
+
+[Field: JpSalespersonPrintLine17F1]
+    Style : JpGridHead
+[Line: JpSalespersonPrintLine18]
+    Field: JpSalespersonPrintLine18F1
+
+[Field: JpSalespersonPrintLine18F1]
+    Set As : $$JwlSp
+[Line: JpSalespersonPrintLine19]
+    Field: JpSalespersonPrintLine19F1
+
+[Field: JpSalespersonPrintLine19F1]
+    Style : JpGrid
+[Line: JpSalespersonPrintLine20]
+    Field: JpSalespersonPrintLine20F1
+
+[Field: JpSalespersonPrintLine20F1]
+    Set As : $$JwlBills
+[Line: JpSalespersonPrintLine21]
+    Field: JpSalespersonPrintLine21F1
+
+[Field: JpSalespersonPrintLine21F1]
+    Style : JpGrid
+[Line: JpSalespersonPrintLine22]
+    Field: JpSalespersonPrintLine22F1
+
+[Field: JpSalespersonPrintLine22F1]
+    Set As : $JwlPiecesSold
+[Line: JpSalespersonPrintLine23]
+    Field: JpSalespersonPrintLine23F1
+
+[Field: JpSalespersonPrintLine23F1]
+    Style : JpGrid
+[Line: JpSalespersonPrintLine24]
+    Field: JpSalespersonPrintLine24F1
+
+[Field: JpSalespersonPrintLine24F1]
+    Set As : $$JwlWeightSold
+[Line: JpSalespersonPrintLine25]
+    Field: JpSalespersonPrintLine25F1
+
+[Field: JpSalespersonPrintLine25F1]
+    Style : JpWeightBold
+[Line: JpSalespersonPrintLine26]
+    Field: JpSalespersonPrintLine26F1
+
+[Field: JpSalespersonPrintLine26F1]
+    Set As : $$JwlRevenue
+[Line: JpSalespersonPrintLine27]
+    Field: JpSalespersonPrintLine27F1
+
+[Field: JpSalespersonPrintLine27F1]
+    Style : JpMoneyBold
+[Line: JpSalespersonPrintLine28]
+    Field: JpSalespersonPrintLine28F1
+
+[Field: JpSalespersonPrintLine28F1]
+    Set As : $$JwlDiscount
+[Line: JpSalespersonPrintLine29]
+    Field: JpSalespersonPrintLine29F1
+
+[Field: JpSalespersonPrintLine29F1]
+    Style : JpMoney
+[Line: JpSalespersonPrintLine30]
+    Field: JpSalespersonPrintLine30F1
+
+[Field: JpSalespersonPrintLine30F1]
+    Set As : JpGrossProfit()
+[Line: JpSalespersonPrintLine31]
+    Field: JpSalespersonPrintLine31F1
+
+[Field: JpSalespersonPrintLine31F1]
+    Style : JpMoneyBold
+[Line: JpSalespersonPrintLine32]
+    Field: JpSalespersonPrintLine32F1
+
+[Field: JpSalespersonPrintLine32F1]
+    Set As : JpTargetAchieved()
+[Line: JpSalespersonPrintLine33]
+    Field: JpSalespersonPrintLine33F1
+
+[Field: JpSalespersonPrintLine33F1]
+    Style : JpMoney
+[Line: JpSalespersonPrintLine34]
+    Field: JpSalespersonPrintLine34F1
+
+[Field: JpSalespersonPrintLine34F1]
+    Set As : "TOTAL"
+[Line: JpSalespersonPrintLine35]
+    Field: JpSalespersonPrintLine35F1
+
+[Field: JpSalespersonPrintLine35F1]
+    Style : JpTotal
+[Line: JpSalespersonPrintLine36]
+    Field: JpSalespersonPrintLine36F1
+
+[Field: JpSalespersonPrintLine36F1]
+    Set As : Sum($$JwlBills)
+[Line: JpSalespersonPrintLine37]
+    Field: JpSalespersonPrintLine37F1
+
+[Field: JpSalespersonPrintLine37F1]
+    Style : JpTotal
+[Line: JpSalespersonPrintLine38]
+    Field: JpSalespersonPrintLine38F1
+
+[Field: JpSalespersonPrintLine38F1]
+    Set As : Sum($JwlPiecesSold)
+[Line: JpSalespersonPrintLine39]
+    Field: JpSalespersonPrintLine39F1
+
+[Field: JpSalespersonPrintLine39F1]
+    Style : JpTotal
+[Line: JpSalespersonPrintLine40]
+    Field: JpSalespersonPrintLine40F1
+
+[Field: JpSalespersonPrintLine40F1]
+    Set As : Sum($$JwlWeightSold)
+[Line: JpSalespersonPrintLine41]
+    Field: JpSalespersonPrintLine41F1
+
+[Field: JpSalespersonPrintLine41F1]
+    Style : JpTotal
+[Line: JpSalespersonPrintLine42]
+    Field: JpSalespersonPrintLine42F1
+
+[Field: JpSalespersonPrintLine42F1]
+    Set As : Sum($$JwlRevenue)
+[Line: JpSalespersonPrintLine43]
+    Field: JpSalespersonPrintLine43F1
+
+[Field: JpSalespersonPrintLine43F1]
+    Style : JpTotal
+[Line: JpSalespersonPrintLine44]
+    Field: JpSalespersonPrintLine44F1
+
+[Field: JpSalespersonPrintLine44F1]
+    Set As : Sum($$JwlDiscount)
+[Line: JpSalespersonPrintLine45]
+    Field: JpSalespersonPrintLine45F1
+
+[Field: JpSalespersonPrintLine45F1]
+    Style : JpTotal
+[Line: JpSalespersonPrintLine46]
+    Field: JpSalespersonPrintLine46F1
+
+[Field: JpSalespersonPrintLine46F1]
+    Set As : Sum($$JwlRevenue) - Sum($$JwlCost)
+[Line: JpSalespersonPrintLine47]
+    Field: JpSalespersonPrintLine47F1
+
+[Field: JpSalespersonPrintLine47F1]
+    Style : JpTotal
+[Export: JpSalespersonExport]
+    Title: <1000, "Salesperson Performance">
+    Repeat: Over: JpSalespersonReport
+    Export Title: Detail
+    Export: Value: $$JwlSp
+    Export: Value: $$JwlBills
+    Export: Value: $JwlPiecesSold
+    Export: Value: $$JwlWeightSold
+    Export: Value: $$JwlRevenue
+    Export: Value: $$JwlDiscount
+    Export: Value: $$JwlCost
+
+
+; =============================================================================
+;  REPORT 15 - ITEM PROFITABILITY  (restricted to JADE_VIEW_PROFIT)
+; =============================================================================
+[Collection: Report: JpItemProfitReport]
+    Source: JpItemProfitSQL
+    Var: JpFromDate, JpToDate, JpProfitCat
+    Title: <1000,###,#a##"  ITEM PROFITABILITY">
+    Print: JpItemProfitPrint
+    Export: JpItemProfitExport
+    Key: JpItemProfitKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>, <JpProfitCat, <String, "Category">>
+
+[Variable: JpItemProfitSQL : String]
+    Type: String
+    Value: "SELECT $$ITEMNAME$$ AS JwlItem, $JwlCategory$$ AS JwlCat, SUM($$QUANTITY$$) AS JwlQty, SUM($JwlLnNet$$) AS JwlWt, SUM($JwlLnTotal$$) AS JwlRevenue, SUM($JwlLnCost$$) AS JwlCost FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ = 'Sales' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$ GROUP BY $$ITEMNAME$$,$JwlCategory$$ ORDER BY $$JwlRevenue$$ DESC"
+
+[Variable: JpItemProfitKey : String]
+    Type: String
+    Value: "JwlItem"
+
+
+; [Print: JpItemProfitPrint] -> [Form: JpItemProfitPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpItemProfitPrint]
+    Parts : JpItemProfitPrintLines
+
+[Part: JpItemProfitPrintLines]
+    Lines : Spacing, JpItemProfitPrintLine1, JpItemProfitPrintLine2, JpItemProfitPrintLine3, JpItemProfitPrintLine4, JpItemProfitPrintLine5, JpItemProfitPrintLine6, JpItemProfitPrintLine7, JpItemProfitPrintLine8, JpItemProfitPrintLine9, JpItemProfitPrintLine10, JpItemProfitPrintLine11, JpItemProfitPrintLine12, JpItemProfitPrintLine13, JpItemProfitPrintLine14, JpItemProfitPrintLine15, JpItemProfitPrintLine16, JpItemProfitPrintLine17, JpItemProfitPrintLine18, JpItemProfitPrintLine19, JpItemProfitPrintLine20, JpItemProfitPrintLine21, JpItemProfitPrintLine22, JpItemProfitPrintLine23, JpItemProfitPrintLine24, JpItemProfitPrintLine25, JpItemProfitPrintLine26, JpItemProfitPrintLine27, JpItemProfitPrintLine28, JpItemProfitPrintLine29, JpItemProfitPrintLine30, JpItemProfitPrintLine31, JpItemProfitPrintLine32, JpItemProfitPrintLine33, JpItemProfitPrintLine34, JpItemProfitPrintLine35, JpItemProfitPrintLine36, JpItemProfitPrintLine37, JpItemProfitPrintLine38, JpItemProfitPrintLine39, JpItemProfitPrintLine40, JpItemProfitPrintLine41, JpItemProfitPrintLine42, JpItemProfitPrintLine43, JpItemProfitPrintLine44, JpItemProfitPrintLine45
+
+[Line: JpItemProfitPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpItemProfitPrintLine2]
+    Field: JpItemProfitPrintLine2F1
+
+[Field: JpItemProfitPrintLine2F1]
+    Set As : "Item"
+[Line: JpItemProfitPrintLine3]
+    Field: JpItemProfitPrintLine3F1
+
+[Field: JpItemProfitPrintLine3F1]
+    Style : JpGridHead
+[Line: JpItemProfitPrintLine4]
+    Field: JpItemProfitPrintLine4F1
+
+[Field: JpItemProfitPrintLine4F1]
+    Set As : "Category"
+[Line: JpItemProfitPrintLine5]
+    Field: JpItemProfitPrintLine5F1
+
+[Field: JpItemProfitPrintLine5F1]
+    Style : JpGridHead
+[Line: JpItemProfitPrintLine6]
+    Field: JpItemProfitPrintLine6F1
+
+[Field: JpItemProfitPrintLine6F1]
+    Set As : "Pcs"
+[Line: JpItemProfitPrintLine7]
+    Field: JpItemProfitPrintLine7F1
+
+[Field: JpItemProfitPrintLine7F1]
+    Style : JpGridHead
+[Line: JpItemProfitPrintLine8]
+    Field: JpItemProfitPrintLine8F1
+
+[Field: JpItemProfitPrintLine8F1]
+    Set As : "Weight g"
+[Line: JpItemProfitPrintLine9]
+    Field: JpItemProfitPrintLine9F1
+
+[Field: JpItemProfitPrintLine9F1]
+    Style : JpGridHead
+[Line: JpItemProfitPrintLine10]
+    Field: JpItemProfitPrintLine10F1
+
+[Field: JpItemProfitPrintLine10F1]
+    Set As : "Revenue"
+[Line: JpItemProfitPrintLine11]
+    Field: JpItemProfitPrintLine11F1
+
+[Field: JpItemProfitPrintLine11F1]
+    Style : JpGridHead
+[Line: JpItemProfitPrintLine12]
+    Field: JpItemProfitPrintLine12F1
+
+[Field: JpItemProfitPrintLine12F1]
+    Set As : "Cost"
+[Line: JpItemProfitPrintLine13]
+    Field: JpItemProfitPrintLine13F1
+
+[Field: JpItemProfitPrintLine13F1]
+    Style : JpGridHead
+[Line: JpItemProfitPrintLine14]
+    Field: JpItemProfitPrintLine14F1
+
+[Field: JpItemProfitPrintLine14F1]
+    Set As : "Gross Profit"
+[Line: JpItemProfitPrintLine15]
+    Field: JpItemProfitPrintLine15F1
+
+[Field: JpItemProfitPrintLine15F1]
+    Style : JpGridHead
+[Line: JpItemProfitPrintLine16]
+    Field: JpItemProfitPrintLine16F1
+
+[Field: JpItemProfitPrintLine16F1]
+    Set As : "Margin %"
+[Line: JpItemProfitPrintLine17]
+    Field: JpItemProfitPrintLine17F1
+
+[Field: JpItemProfitPrintLine17F1]
+    Style : JpGridHead
+[Line: JpItemProfitPrintLine18]
+    Field: JpItemProfitPrintLine18F1
+
+[Field: JpItemProfitPrintLine18F1]
+    Set As : $$JwlItem
+[Line: JpItemProfitPrintLine19]
+    Field: JpItemProfitPrintLine19F1
+
+[Field: JpItemProfitPrintLine19F1]
+    Style : JpGrid
+[Line: JpItemProfitPrintLine20]
+    Field: JpItemProfitPrintLine20F1
+
+[Field: JpItemProfitPrintLine20F1]
+    Set As : $$JwlCat
+[Line: JpItemProfitPrintLine21]
+    Field: JpItemProfitPrintLine21F1
+
+[Field: JpItemProfitPrintLine21F1]
+    Style : JpGrid
+[Line: JpItemProfitPrintLine22]
+    Field: JpItemProfitPrintLine22F1
+
+[Field: JpItemProfitPrintLine22F1]
+    Set As : $$JwlQty
+[Line: JpItemProfitPrintLine23]
+    Field: JpItemProfitPrintLine23F1
+
+[Field: JpItemProfitPrintLine23F1]
+    Style : JpGrid
+[Line: JpItemProfitPrintLine24]
+    Field: JpItemProfitPrintLine24F1
+
+[Field: JpItemProfitPrintLine24F1]
+    Set As : $$JwlWt
+[Line: JpItemProfitPrintLine25]
+    Field: JpItemProfitPrintLine25F1
+
+[Field: JpItemProfitPrintLine25F1]
+    Style : JpWeight
+[Line: JpItemProfitPrintLine26]
+    Field: JpItemProfitPrintLine26F1
+
+[Field: JpItemProfitPrintLine26F1]
+    Set As : $$JwlRevenue
+[Line: JpItemProfitPrintLine27]
+    Field: JpItemProfitPrintLine27F1
+
+[Field: JpItemProfitPrintLine27F1]
+    Style : JpMoneyBold
+[Line: JpItemProfitPrintLine28]
+    Field: JpItemProfitPrintLine28F1
+
+[Field: JpItemProfitPrintLine28F1]
+    Set As : $$JwlCost
+[Line: JpItemProfitPrintLine29]
+    Field: JpItemProfitPrintLine29F1
+
+[Field: JpItemProfitPrintLine29F1]
+    Style : JpMoney
+[Line: JpItemProfitPrintLine30]
+    Field: JpItemProfitPrintLine30F1
+
+[Field: JpItemProfitPrintLine30F1]
+    Set As : JpItemProfit()
+[Line: JpItemProfitPrintLine31]
+    Field: JpItemProfitPrintLine31F1
+
+[Field: JpItemProfitPrintLine31F1]
+    Style : JpMoneyBold
+[Line: JpItemProfitPrintLine32]
+    Field: JpItemProfitPrintLine32F1
+
+[Field: JpItemProfitPrintLine32F1]
+    Set As : JpItemMargin()
+[Line: JpItemProfitPrintLine33]
+    Field: JpItemProfitPrintLine33F1
+
+[Field: JpItemProfitPrintLine33F1]
+    Style : JpMoney
+[Line: JpItemProfitPrintLine34]
+    Field: JpItemProfitPrintLine34F1
+
+[Field: JpItemProfitPrintLine34F1]
+    Set As : "TOTAL"
+[Line: JpItemProfitPrintLine35]
+    Field: JpItemProfitPrintLine35F1
+
+[Field: JpItemProfitPrintLine35F1]
+    Style : JpTotal
+[Line: JpItemProfitPrintLine36]
+    Field: JpItemProfitPrintLine36F1
+
+[Field: JpItemProfitPrintLine36F1]
+    Set As : Sum($$JwlQty)
+[Line: JpItemProfitPrintLine37]
+    Field: JpItemProfitPrintLine37F1
+
+[Field: JpItemProfitPrintLine37F1]
+    Style : JpTotal
+[Line: JpItemProfitPrintLine38]
+    Field: JpItemProfitPrintLine38F1
+
+[Field: JpItemProfitPrintLine38F1]
+    Set As : Sum($$JwlWt)
+[Line: JpItemProfitPrintLine39]
+    Field: JpItemProfitPrintLine39F1
+
+[Field: JpItemProfitPrintLine39F1]
+    Style : JpTotal
+[Line: JpItemProfitPrintLine40]
+    Field: JpItemProfitPrintLine40F1
+
+[Field: JpItemProfitPrintLine40F1]
+    Set As : Sum($$JwlRevenue)
+[Line: JpItemProfitPrintLine41]
+    Field: JpItemProfitPrintLine41F1
+
+[Field: JpItemProfitPrintLine41F1]
+    Style : JpTotal
+[Line: JpItemProfitPrintLine42]
+    Field: JpItemProfitPrintLine42F1
+
+[Field: JpItemProfitPrintLine42F1]
+    Set As : Sum($$JwlCost)
+[Line: JpItemProfitPrintLine43]
+    Field: JpItemProfitPrintLine43F1
+
+[Field: JpItemProfitPrintLine43F1]
+    Style : JpTotal
+[Line: JpItemProfitPrintLine44]
+    Field: JpItemProfitPrintLine44F1
+
+[Field: JpItemProfitPrintLine44F1]
+    Set As : Sum($$JwlRevenue) - Sum($$JwlCost)
+[Line: JpItemProfitPrintLine45]
+    Field: JpItemProfitPrintLine45F1
+
+[Field: JpItemProfitPrintLine45F1]
+    Style : JpTotal
+[Function: JpItemProfit]
+    Returns: Number : Any
+    If (JpProfitReportOk() <> 1) Then
+    {
+        JpItemProfit = 0
+        Exit
+    }
+    JpItemProfit = JpRound(JpNz($$JwlRevenue) - JpNz($$JwlCost))
+
+[Function: JpItemMargin]
+    Returns: Number : Any
+    Var: r : Number, p : Number
+    r = JpNz($$JwlRevenue)
+    If (r <= 0) Then
+    {
+        JpItemMargin = 0
+        Exit
+    }
+    p = JpItemProfit()
+    JpItemMargin = JpRound(p * 100 / r)
+
+[Export: JpItemProfitExport]
+    Title: <1000, "Item Profitability">
+    Repeat: Over: JpItemProfitReport
+    Export Title: Detail
+    Export: Value: $$JwlItem
+    Export: Value: $$JwlCat
+    Export: Value: $$JwlQty
+    Export: Value: $$JwlWt
+    Export: Value: $$JwlRevenue
+    Export: Value: $$JwlCost
+
+
+; =============================================================================
+;  REPORT 16 - CATEGORY PROFITABILITY
+; =============================================================================
+[Collection: Report: JpCategoryProfitReport]
+    Source: JpCategoryProfitSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  CATEGORY PROFITABILITY">
+    Print: JpCategoryProfitPrint
+    Export: JpCategoryProfitExport
+    Key: JpCategoryProfitKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>
+
+[Variable: JpCategoryProfitSQL : String]
+    Type: String
+    Value: "SELECT $JwlCategory$$ AS JwlCat, SUM($$QUANTITY$$) AS JwlQty, SUM($JwlLnNet$$) AS JwlWt, SUM($JwlLnTotal$$) AS JwlRevenue, SUM($JwlLnCost$$) AS JwlCost FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ = 'Sales' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$ GROUP BY $JwlCategory$$ ORDER BY $$JwlRevenue$$ DESC"
+
+[Variable: JpCategoryProfitKey : String]
+    Type: String
+    Value: "JwlCat"
+
+
+; [Print: JpCategoryProfitPrint] -> [Form: JpCategoryProfitPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpCategoryProfitPrint]
+    Parts : JpCategoryProfitPrintLines
+
+[Part: JpCategoryProfitPrintLines]
+    Lines : Spacing, JpCategoryProfitPrintLine1, JpCategoryProfitPrintLine2, JpCategoryProfitPrintLine3, JpCategoryProfitPrintLine4, JpCategoryProfitPrintLine5, JpCategoryProfitPrintLine6, JpCategoryProfitPrintLine7, JpCategoryProfitPrintLine8, JpCategoryProfitPrintLine9, JpCategoryProfitPrintLine10, JpCategoryProfitPrintLine11, JpCategoryProfitPrintLine12, JpCategoryProfitPrintLine13, JpCategoryProfitPrintLine14, JpCategoryProfitPrintLine15, JpCategoryProfitPrintLine16, JpCategoryProfitPrintLine17, JpCategoryProfitPrintLine18, JpCategoryProfitPrintLine19, JpCategoryProfitPrintLine20, JpCategoryProfitPrintLine21, JpCategoryProfitPrintLine22, JpCategoryProfitPrintLine23, JpCategoryProfitPrintLine24, JpCategoryProfitPrintLine25, JpCategoryProfitPrintLine26, JpCategoryProfitPrintLine27, JpCategoryProfitPrintLine28, JpCategoryProfitPrintLine29, JpCategoryProfitPrintLine30, JpCategoryProfitPrintLine31, JpCategoryProfitPrintLine32, JpCategoryProfitPrintLine33, JpCategoryProfitPrintLine34, JpCategoryProfitPrintLine35, JpCategoryProfitPrintLine36, JpCategoryProfitPrintLine37, JpCategoryProfitPrintLine38, JpCategoryProfitPrintLine39, JpCategoryProfitPrintLine40, JpCategoryProfitPrintLine41
+
+[Line: JpCategoryProfitPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpCategoryProfitPrintLine2]
+    Field: JpCategoryProfitPrintLine2F1
+
+[Field: JpCategoryProfitPrintLine2F1]
+    Set As : "Category"
+[Line: JpCategoryProfitPrintLine3]
+    Field: JpCategoryProfitPrintLine3F1
+
+[Field: JpCategoryProfitPrintLine3F1]
+    Style : JpGridHead
+[Line: JpCategoryProfitPrintLine4]
+    Field: JpCategoryProfitPrintLine4F1
+
+[Field: JpCategoryProfitPrintLine4F1]
+    Set As : "Pcs"
+[Line: JpCategoryProfitPrintLine5]
+    Field: JpCategoryProfitPrintLine5F1
+
+[Field: JpCategoryProfitPrintLine5F1]
+    Style : JpGridHead
+[Line: JpCategoryProfitPrintLine6]
+    Field: JpCategoryProfitPrintLine6F1
+
+[Field: JpCategoryProfitPrintLine6F1]
+    Set As : "Weight g"
+[Line: JpCategoryProfitPrintLine7]
+    Field: JpCategoryProfitPrintLine7F1
+
+[Field: JpCategoryProfitPrintLine7F1]
+    Style : JpGridHead
+[Line: JpCategoryProfitPrintLine8]
+    Field: JpCategoryProfitPrintLine8F1
+
+[Field: JpCategoryProfitPrintLine8F1]
+    Set As : "Revenue"
+[Line: JpCategoryProfitPrintLine9]
+    Field: JpCategoryProfitPrintLine9F1
+
+[Field: JpCategoryProfitPrintLine9F1]
+    Style : JpGridHead
+[Line: JpCategoryProfitPrintLine10]
+    Field: JpCategoryProfitPrintLine10F1
+
+[Field: JpCategoryProfitPrintLine10F1]
+    Set As : "Cost"
+[Line: JpCategoryProfitPrintLine11]
+    Field: JpCategoryProfitPrintLine11F1
+
+[Field: JpCategoryProfitPrintLine11F1]
+    Style : JpGridHead
+[Line: JpCategoryProfitPrintLine12]
+    Field: JpCategoryProfitPrintLine12F1
+
+[Field: JpCategoryProfitPrintLine12F1]
+    Set As : "Gross Profit"
+[Line: JpCategoryProfitPrintLine13]
+    Field: JpCategoryProfitPrintLine13F1
+
+[Field: JpCategoryProfitPrintLine13F1]
+    Style : JpGridHead
+[Line: JpCategoryProfitPrintLine14]
+    Field: JpCategoryProfitPrintLine14F1
+
+[Field: JpCategoryProfitPrintLine14F1]
+    Set As : "Margin %"
+[Line: JpCategoryProfitPrintLine15]
+    Field: JpCategoryProfitPrintLine15F1
+
+[Field: JpCategoryProfitPrintLine15F1]
+    Style : JpGridHead
+[Line: JpCategoryProfitPrintLine16]
+    Field: JpCategoryProfitPrintLine16F1
+
+[Field: JpCategoryProfitPrintLine16F1]
+    Set As : $$JwlCat
+[Line: JpCategoryProfitPrintLine17]
+    Field: JpCategoryProfitPrintLine17F1
+
+[Field: JpCategoryProfitPrintLine17F1]
+    Style : JpGrid
+[Line: JpCategoryProfitPrintLine18]
+    Field: JpCategoryProfitPrintLine18F1
+
+[Field: JpCategoryProfitPrintLine18F1]
+    Set As : $$JwlQty
+[Line: JpCategoryProfitPrintLine19]
+    Field: JpCategoryProfitPrintLine19F1
+
+[Field: JpCategoryProfitPrintLine19F1]
+    Style : JpGrid
+[Line: JpCategoryProfitPrintLine20]
+    Field: JpCategoryProfitPrintLine20F1
+
+[Field: JpCategoryProfitPrintLine20F1]
+    Set As : $$JwlWt
+[Line: JpCategoryProfitPrintLine21]
+    Field: JpCategoryProfitPrintLine21F1
+
+[Field: JpCategoryProfitPrintLine21F1]
+    Style : JpWeight
+[Line: JpCategoryProfitPrintLine22]
+    Field: JpCategoryProfitPrintLine22F1
+
+[Field: JpCategoryProfitPrintLine22F1]
+    Set As : $$JwlRevenue
+[Line: JpCategoryProfitPrintLine23]
+    Field: JpCategoryProfitPrintLine23F1
+
+[Field: JpCategoryProfitPrintLine23F1]
+    Style : JpMoneyBold
+[Line: JpCategoryProfitPrintLine24]
+    Field: JpCategoryProfitPrintLine24F1
+
+[Field: JpCategoryProfitPrintLine24F1]
+    Set As : $$JwlCost
+[Line: JpCategoryProfitPrintLine25]
+    Field: JpCategoryProfitPrintLine25F1
+
+[Field: JpCategoryProfitPrintLine25F1]
+    Style : JpMoney
+[Line: JpCategoryProfitPrintLine26]
+    Field: JpCategoryProfitPrintLine26F1
+
+[Field: JpCategoryProfitPrintLine26F1]
+    Set As : JpItemProfit()
+[Line: JpCategoryProfitPrintLine27]
+    Field: JpCategoryProfitPrintLine27F1
+
+[Field: JpCategoryProfitPrintLine27F1]
+    Style : JpMoneyBold
+[Line: JpCategoryProfitPrintLine28]
+    Field: JpCategoryProfitPrintLine28F1
+
+[Field: JpCategoryProfitPrintLine28F1]
+    Set As : JpItemMargin()
+[Line: JpCategoryProfitPrintLine29]
+    Field: JpCategoryProfitPrintLine29F1
+
+[Field: JpCategoryProfitPrintLine29F1]
+    Style : JpMoney
+[Line: JpCategoryProfitPrintLine30]
+    Field: JpCategoryProfitPrintLine30F1
+
+[Field: JpCategoryProfitPrintLine30F1]
+    Set As : "TOTAL"
+[Line: JpCategoryProfitPrintLine31]
+    Field: JpCategoryProfitPrintLine31F1
+
+[Field: JpCategoryProfitPrintLine31F1]
+    Style : JpTotal
+[Line: JpCategoryProfitPrintLine32]
+    Field: JpCategoryProfitPrintLine32F1
+
+[Field: JpCategoryProfitPrintLine32F1]
+    Set As : Sum($$JwlQty)
+[Line: JpCategoryProfitPrintLine33]
+    Field: JpCategoryProfitPrintLine33F1
+
+[Field: JpCategoryProfitPrintLine33F1]
+    Style : JpTotal
+[Line: JpCategoryProfitPrintLine34]
+    Field: JpCategoryProfitPrintLine34F1
+
+[Field: JpCategoryProfitPrintLine34F1]
+    Set As : Sum($$JwlWt)
+[Line: JpCategoryProfitPrintLine35]
+    Field: JpCategoryProfitPrintLine35F1
+
+[Field: JpCategoryProfitPrintLine35F1]
+    Style : JpTotal
+[Line: JpCategoryProfitPrintLine36]
+    Field: JpCategoryProfitPrintLine36F1
+
+[Field: JpCategoryProfitPrintLine36F1]
+    Set As : Sum($$JwlRevenue)
+[Line: JpCategoryProfitPrintLine37]
+    Field: JpCategoryProfitPrintLine37F1
+
+[Field: JpCategoryProfitPrintLine37F1]
+    Style : JpTotal
+[Line: JpCategoryProfitPrintLine38]
+    Field: JpCategoryProfitPrintLine38F1
+
+[Field: JpCategoryProfitPrintLine38F1]
+    Set As : Sum($$JwlCost)
+[Line: JpCategoryProfitPrintLine39]
+    Field: JpCategoryProfitPrintLine39F1
+
+[Field: JpCategoryProfitPrintLine39F1]
+    Style : JpTotal
+[Line: JpCategoryProfitPrintLine40]
+    Field: JpCategoryProfitPrintLine40F1
+
+[Field: JpCategoryProfitPrintLine40F1]
+    Set As : Sum($$JwlRevenue) - Sum($$JwlCost)
+[Line: JpCategoryProfitPrintLine41]
+    Field: JpCategoryProfitPrintLine41F1
+
+[Field: JpCategoryProfitPrintLine41F1]
+    Style : JpTotal
+[Export: JpCategoryProfitExport]
+    Title: <1000, "Category Profitability">
+    Repeat: Over: JpCategoryProfitReport
+    Export Title: Detail
+    Export: Value: $$JwlCat
+    Export: Value: $$JwlQty
+    Export: Value: $$JwlWt
+    Export: Value: $$JwlRevenue
+    Export: Value: $$JwlCost
+
+
+; =============================================================================
+;  REPORT 17 - CUSTOMER PURCHASE HISTORY (drill-down per bill)
+; =============================================================================
+[Collection: Report: JpCustomerHistory]
+    Source: JpCustomerHistorySQL
+    Var: JpFromDate, JpToDate, JpCustFilter
+    Title: <1000,###,#a##"  CUSTOMER PURCHASE HISTORY">
+    Print: JpCustomerHistoryPrint
+    Export: JpCustomerHistoryExport
+    Key: JpVoucherKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>, <JpCustFilter, <String, "Customer">>
+
+[Variable: JpCustomerHistorySQL : String]
+    Type: String
+    Value: "SELECT $$VOUCHERID$$,$$DATE$$,$JwlInvNo$$,$$PARTYNAME$$,$JwlSalesperson$$,$JwlLnNet$$,$JwlLnTotal$$,$JwlGrandTotal$$,$JwlPayTotal$$,$JwlPayBalance$$ FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ = 'Sales' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$ ORDER BY $$PARTYNAME$$,$$DATE$$"
+
+
+; [Print: JpCustomerHistoryPrint] -> [Form: JpCustomerHistoryPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpCustomerHistoryPrint]
+    Parts : JpCustomerHistoryPrintLines
+
+[Part: JpCustomerHistoryPrintLines]
+    Lines : Spacing, JpCustomerHistoryPrintLine1, JpCustomerHistoryPrintLine2, JpCustomerHistoryPrintLine3, JpCustomerHistoryPrintLine4, JpCustomerHistoryPrintLine5, JpCustomerHistoryPrintLine6, JpCustomerHistoryPrintLine7, JpCustomerHistoryPrintLine8, JpCustomerHistoryPrintLine9, JpCustomerHistoryPrintLine10, JpCustomerHistoryPrintLine11, JpCustomerHistoryPrintLine12, JpCustomerHistoryPrintLine13, JpCustomerHistoryPrintLine14, JpCustomerHistoryPrintLine15, JpCustomerHistoryPrintLine16, JpCustomerHistoryPrintLine17, JpCustomerHistoryPrintLine18, JpCustomerHistoryPrintLine19, JpCustomerHistoryPrintLine20, JpCustomerHistoryPrintLine21, JpCustomerHistoryPrintLine22, JpCustomerHistoryPrintLine23, JpCustomerHistoryPrintLine24, JpCustomerHistoryPrintLine25, JpCustomerHistoryPrintLine26, JpCustomerHistoryPrintLine27, JpCustomerHistoryPrintLine28, JpCustomerHistoryPrintLine29, JpCustomerHistoryPrintLine30, JpCustomerHistoryPrintLine31, JpCustomerHistoryPrintLine32, JpCustomerHistoryPrintLine33, JpCustomerHistoryPrintLine34, JpCustomerHistoryPrintLine35, JpCustomerHistoryPrintLine36, JpCustomerHistoryPrintLine37, JpCustomerHistoryPrintLine38, JpCustomerHistoryPrintLine39, JpCustomerHistoryPrintLine40, JpCustomerHistoryPrintLine41, JpCustomerHistoryPrintLine42, JpCustomerHistoryPrintLine43
+
+[Line: JpCustomerHistoryPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpCustomerHistoryPrintLine2]
+    Field: JpCustomerHistoryPrintLine2F1
+
+[Field: JpCustomerHistoryPrintLine2F1]
+    Set As : "Date"
+[Line: JpCustomerHistoryPrintLine3]
+    Field: JpCustomerHistoryPrintLine3F1
+
+[Field: JpCustomerHistoryPrintLine3F1]
+    Style : JpGridHead
+[Line: JpCustomerHistoryPrintLine4]
+    Field: JpCustomerHistoryPrintLine4F1
+
+[Field: JpCustomerHistoryPrintLine4F1]
+    Set As : "Invoice"
+[Line: JpCustomerHistoryPrintLine5]
+    Field: JpCustomerHistoryPrintLine5F1
+
+[Field: JpCustomerHistoryPrintLine5F1]
+    Style : JpGridHead
+[Line: JpCustomerHistoryPrintLine6]
+    Field: JpCustomerHistoryPrintLine6F1
+
+[Field: JpCustomerHistoryPrintLine6F1]
+    Set As : "Customer"
+[Line: JpCustomerHistoryPrintLine7]
+    Field: JpCustomerHistoryPrintLine7F1
+
+[Field: JpCustomerHistoryPrintLine7F1]
+    Style : JpGridHead
+[Line: JpCustomerHistoryPrintLine8]
+    Field: JpCustomerHistoryPrintLine8F1
+
+[Field: JpCustomerHistoryPrintLine8F1]
+    Set As : "Salesperson"
+[Line: JpCustomerHistoryPrintLine9]
+    Field: JpCustomerHistoryPrintLine9F1
+
+[Field: JpCustomerHistoryPrintLine9F1]
+    Style : JpGridHead
+[Line: JpCustomerHistoryPrintLine10]
+    Field: JpCustomerHistoryPrintLine10F1
+
+[Field: JpCustomerHistoryPrintLine10F1]
+    Set As : "Weight g"
+[Line: JpCustomerHistoryPrintLine11]
+    Field: JpCustomerHistoryPrintLine11F1
+
+[Field: JpCustomerHistoryPrintLine11F1]
+    Style : JpGridHead
+[Line: JpCustomerHistoryPrintLine12]
+    Field: JpCustomerHistoryPrintLine12F1
+
+[Field: JpCustomerHistoryPrintLine12F1]
+    Set As : "Bill Value"
+[Line: JpCustomerHistoryPrintLine13]
+    Field: JpCustomerHistoryPrintLine13F1
+
+[Field: JpCustomerHistoryPrintLine13F1]
+    Style : JpGridHead
+[Line: JpCustomerHistoryPrintLine14]
+    Field: JpCustomerHistoryPrintLine14F1
+
+[Field: JpCustomerHistoryPrintLine14F1]
+    Set As : "Paid"
+[Line: JpCustomerHistoryPrintLine15]
+    Field: JpCustomerHistoryPrintLine15F1
+
+[Field: JpCustomerHistoryPrintLine15F1]
+    Style : JpGridHead
+[Line: JpCustomerHistoryPrintLine16]
+    Field: JpCustomerHistoryPrintLine16F1
+
+[Field: JpCustomerHistoryPrintLine16F1]
+    Set As : "Balance"
+[Line: JpCustomerHistoryPrintLine17]
+    Field: JpCustomerHistoryPrintLine17F1
+
+[Field: JpCustomerHistoryPrintLine17F1]
+    Style : JpGridHead
+[Line: JpCustomerHistoryPrintLine18]
+    Field: JpCustomerHistoryPrintLine18F1
+
+[Field: JpCustomerHistoryPrintLine18F1]
+    Set As : $$DATE
+[Line: JpCustomerHistoryPrintLine19]
+    Field: JpCustomerHistoryPrintLine19F1
+
+[Field: JpCustomerHistoryPrintLine19F1]
+    Style : JpGrid
+[Line: JpCustomerHistoryPrintLine20]
+    Field: JpCustomerHistoryPrintLine20F1
+
+[Field: JpCustomerHistoryPrintLine20F1]
+    Set As : $JwlInvNo
+[Line: JpCustomerHistoryPrintLine21]
+    Field: JpCustomerHistoryPrintLine21F1
+
+[Field: JpCustomerHistoryPrintLine21F1]
+    Style : JpGrid
+[Line: JpCustomerHistoryPrintLine22]
+    Field: JpCustomerHistoryPrintLine22F1
+
+[Field: JpCustomerHistoryPrintLine22F1]
+    Set As : $$PARTYNAME
+[Line: JpCustomerHistoryPrintLine23]
+    Field: JpCustomerHistoryPrintLine23F1
+
+[Field: JpCustomerHistoryPrintLine23F1]
+    Style : JpGrid
+[Line: JpCustomerHistoryPrintLine24]
+    Field: JpCustomerHistoryPrintLine24F1
+
+[Field: JpCustomerHistoryPrintLine24F1]
+    Set As : $JwlSalesperson
+[Line: JpCustomerHistoryPrintLine25]
+    Field: JpCustomerHistoryPrintLine25F1
+
+[Field: JpCustomerHistoryPrintLine25F1]
+    Style : JpGrid
+[Line: JpCustomerHistoryPrintLine26]
+    Field: JpCustomerHistoryPrintLine26F1
+
+[Field: JpCustomerHistoryPrintLine26F1]
+    Set As : $JwlLnNet
+[Line: JpCustomerHistoryPrintLine27]
+    Field: JpCustomerHistoryPrintLine27F1
+
+[Field: JpCustomerHistoryPrintLine27F1]
+    Style : JpWeight
+[Line: JpCustomerHistoryPrintLine28]
+    Field: JpCustomerHistoryPrintLine28F1
+
+[Field: JpCustomerHistoryPrintLine28F1]
+    Set As : $JwlLnTotal
+[Line: JpCustomerHistoryPrintLine29]
+    Field: JpCustomerHistoryPrintLine29F1
+
+[Field: JpCustomerHistoryPrintLine29F1]
+    Style : JpMoney
+[Line: JpCustomerHistoryPrintLine30]
+    Field: JpCustomerHistoryPrintLine30F1
+
+[Field: JpCustomerHistoryPrintLine30F1]
+    Set As : $JwlPayTotal
+[Line: JpCustomerHistoryPrintLine31]
+    Field: JpCustomerHistoryPrintLine31F1
+
+[Field: JpCustomerHistoryPrintLine31F1]
+    Style : JpMoney
+[Line: JpCustomerHistoryPrintLine32]
+    Field: JpCustomerHistoryPrintLine32F1
+
+[Field: JpCustomerHistoryPrintLine32F1]
+    Set As : $JwlPayBalance
+[Line: JpCustomerHistoryPrintLine33]
+    Field: JpCustomerHistoryPrintLine33F1
+
+[Field: JpCustomerHistoryPrintLine33F1]
+    Style : JpMoneyBold
+[Line: JpCustomerHistoryPrintLine34]
+    Field: JpCustomerHistoryPrintLine34F1
+
+[Field: JpCustomerHistoryPrintLine34F1]
+    Set As : "TOTAL"
+[Line: JpCustomerHistoryPrintLine35]
+    Field: JpCustomerHistoryPrintLine35F1
+
+[Field: JpCustomerHistoryPrintLine35F1]
+    Style : JpTotal
+[Line: JpCustomerHistoryPrintLine36]
+    Field: JpCustomerHistoryPrintLine36F1
+
+[Field: JpCustomerHistoryPrintLine36F1]
+    Set As : Sum($JwlLnNet)
+[Line: JpCustomerHistoryPrintLine37]
+    Field: JpCustomerHistoryPrintLine37F1
+
+[Field: JpCustomerHistoryPrintLine37F1]
+    Style : JpTotal
+[Line: JpCustomerHistoryPrintLine38]
+    Field: JpCustomerHistoryPrintLine38F1
+
+[Field: JpCustomerHistoryPrintLine38F1]
+    Set As : Sum($JwlLnTotal)
+[Line: JpCustomerHistoryPrintLine39]
+    Field: JpCustomerHistoryPrintLine39F1
+
+[Field: JpCustomerHistoryPrintLine39F1]
+    Style : JpTotal
+[Line: JpCustomerHistoryPrintLine40]
+    Field: JpCustomerHistoryPrintLine40F1
+
+[Field: JpCustomerHistoryPrintLine40F1]
+    Set As : Sum($JwlPayTotal)
+[Line: JpCustomerHistoryPrintLine41]
+    Field: JpCustomerHistoryPrintLine41F1
+
+[Field: JpCustomerHistoryPrintLine41F1]
+    Style : JpTotal
+[Line: JpCustomerHistoryPrintLine42]
+    Field: JpCustomerHistoryPrintLine42F1
+
+[Field: JpCustomerHistoryPrintLine42F1]
+    Set As : Sum($JwlPayBalance)
+[Line: JpCustomerHistoryPrintLine43]
+    Field: JpCustomerHistoryPrintLine43F1
+
+[Field: JpCustomerHistoryPrintLine43F1]
+    Style : JpTotal
+[Export: JpCustomerHistoryExport]
+    Title: <1000, "Customer Purchase History">
+    Repeat: Over: JpCustomerHistory
+    Export Title: Detail
+    Export: Value: $$DATE
+    Export: Value: $JwlInvNo
+    Export: Value: $$PARTYNAME
+    Export: Value: $JwlSalesperson
+    Export: Value: $JwlLnNet
+    Export: Value: $JwlLnTotal
+    Export: Value: $JwlPayBalance
+
+
+; =============================================================================
+;  REPORT 18 - TOP AND REPEAT CUSTOMERS
+; =============================================================================
+[Collection: Report: JpTopCustomerReport]
+    Source: JpTopCustomerSQL
+    Var: JpFromDate, JpToDate
+    Title: <1000,###,#a##"  TOP AND REPEAT CUSTOMERS">
+    Print: JpTopCustomerPrint
+    Export: JpTopCustomerExport
+    Key: JpTopCustomerKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>
+
+[Variable: JpTopCustomerSQL : String]
+    Type: String
+    Value: "SELECT $$PARTYNAME$$ AS JwlCust, COUNT($$VOUCHERID$$) AS JwlVisits, SUM($JwlGrandTotal$$) AS JwlSpend, SUM($JwlLnNet$$) AS JwlWt, MAX($$DATE$$) AS JwlLastBuy FROM $$LINEITEMS$$ WHERE $$VOUCHERTYPE$$ = 'Sales' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$ GROUP BY $$PARTYNAME$$ ORDER BY $$JwlSpend$$ DESC"
+
+[Variable: JpTopCustomerKey : String]
+    Type: String
+    Value: "JwlCust"
+
+[Function: JpCustomerClass]
+    Param: vVisits : Number : Optional
+    Returns: String : Any
+    Var: v : Number
+    v = JpNz(Param(0))
+    If (v >= 5) Then
+    {
+        JpCustomerClass = "LOYAL (5+)"
+        Exit
+    }
+    If (v >= 2) Then
+    {
+        JpCustomerClass = "REPEAT"
+        Exit
+    }
+    JpCustomerClass = "FIRST TIME"
+
+
+; [Print: JpTopCustomerPrint] -> [Form: JpTopCustomerPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpTopCustomerPrint]
+    Parts : JpTopCustomerPrintLines
+
+[Part: JpTopCustomerPrintLines]
+    Lines : Spacing, JpTopCustomerPrintLine1, JpTopCustomerPrintLine2, JpTopCustomerPrintLine3, JpTopCustomerPrintLine4, JpTopCustomerPrintLine5, JpTopCustomerPrintLine6, JpTopCustomerPrintLine7, JpTopCustomerPrintLine8, JpTopCustomerPrintLine9, JpTopCustomerPrintLine10, JpTopCustomerPrintLine11, JpTopCustomerPrintLine12, JpTopCustomerPrintLine13, JpTopCustomerPrintLine14, JpTopCustomerPrintLine15, JpTopCustomerPrintLine16, JpTopCustomerPrintLine17, JpTopCustomerPrintLine18, JpTopCustomerPrintLine19, JpTopCustomerPrintLine20, JpTopCustomerPrintLine21, JpTopCustomerPrintLine22, JpTopCustomerPrintLine23, JpTopCustomerPrintLine24, JpTopCustomerPrintLine25, JpTopCustomerPrintLine26, JpTopCustomerPrintLine27, JpTopCustomerPrintLine28, JpTopCustomerPrintLine29, JpTopCustomerPrintLine30, JpTopCustomerPrintLine31, JpTopCustomerPrintLine32, JpTopCustomerPrintLine33
+
+[Line: JpTopCustomerPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+    Part Name: JpReportHeader
+[Line: JpTopCustomerPrintLine2]
+    Field: JpTopCustomerPrintLine2F1
+
+[Field: JpTopCustomerPrintLine2F1]
+    Set As : "Customer"
+[Line: JpTopCustomerPrintLine3]
+    Field: JpTopCustomerPrintLine3F1
+
+[Field: JpTopCustomerPrintLine3F1]
+    Style : JpGridHead
+[Line: JpTopCustomerPrintLine4]
+    Field: JpTopCustomerPrintLine4F1
+
+[Field: JpTopCustomerPrintLine4F1]
+    Set As : "Visits"
+[Line: JpTopCustomerPrintLine5]
+    Field: JpTopCustomerPrintLine5F1
+
+[Field: JpTopCustomerPrintLine5F1]
+    Style : JpGridHead
+[Line: JpTopCustomerPrintLine6]
+    Field: JpTopCustomerPrintLine6F1
+
+[Field: JpTopCustomerPrintLine6F1]
+    Set As : "Weight Bought g"
+[Line: JpTopCustomerPrintLine7]
+    Field: JpTopCustomerPrintLine7F1
+
+[Field: JpTopCustomerPrintLine7F1]
+    Style : JpGridHead
+[Line: JpTopCustomerPrintLine8]
+    Field: JpTopCustomerPrintLine8F1
+
+[Field: JpTopCustomerPrintLine8F1]
+    Set As : "Total Spend"
+[Line: JpTopCustomerPrintLine9]
+    Field: JpTopCustomerPrintLine9F1
+
+[Field: JpTopCustomerPrintLine9F1]
+    Style : JpGridHead
+[Line: JpTopCustomerPrintLine10]
+    Field: JpTopCustomerPrintLine10F1
+
+[Field: JpTopCustomerPrintLine10F1]
+    Set As : "Last Purchase"
+[Line: JpTopCustomerPrintLine11]
+    Field: JpTopCustomerPrintLine11F1
+
+[Field: JpTopCustomerPrintLine11F1]
+    Style : JpGridHead
+[Line: JpTopCustomerPrintLine12]
+    Field: JpTopCustomerPrintLine12F1
+
+[Field: JpTopCustomerPrintLine12F1]
+    Set As : "Segment"
+[Line: JpTopCustomerPrintLine13]
+    Field: JpTopCustomerPrintLine13F1
+
+[Field: JpTopCustomerPrintLine13F1]
+    Style : JpGridHead
+[Line: JpTopCustomerPrintLine14]
+    Field: JpTopCustomerPrintLine14F1
+
+[Field: JpTopCustomerPrintLine14F1]
+    Set As : $$JwlCust
+[Line: JpTopCustomerPrintLine15]
+    Field: JpTopCustomerPrintLine15F1
+
+[Field: JpTopCustomerPrintLine15F1]
+    Style : JpGrid
+[Line: JpTopCustomerPrintLine16]
+    Field: JpTopCustomerPrintLine16F1
+
+[Field: JpTopCustomerPrintLine16F1]
+    Set As : $$JwlVisits
+[Line: JpTopCustomerPrintLine17]
+    Field: JpTopCustomerPrintLine17F1
+
+[Field: JpTopCustomerPrintLine17F1]
+    Style : JpGrid
+[Line: JpTopCustomerPrintLine18]
+    Field: JpTopCustomerPrintLine18F1
+
+[Field: JpTopCustomerPrintLine18F1]
+    Set As : $$JwlWt
+[Line: JpTopCustomerPrintLine19]
+    Field: JpTopCustomerPrintLine19F1
+
+[Field: JpTopCustomerPrintLine19F1]
+    Style : JpWeight
+[Line: JpTopCustomerPrintLine20]
+    Field: JpTopCustomerPrintLine20F1
+
+[Field: JpTopCustomerPrintLine20F1]
+    Set As : $$JwlSpend
+[Line: JpTopCustomerPrintLine21]
+    Field: JpTopCustomerPrintLine21F1
+
+[Field: JpTopCustomerPrintLine21F1]
+    Style : JpMoneyBold
+[Line: JpTopCustomerPrintLine22]
+    Field: JpTopCustomerPrintLine22F1
+
+[Field: JpTopCustomerPrintLine22F1]
+    Set As : $$JwlLastBuy
+[Line: JpTopCustomerPrintLine23]
+    Field: JpTopCustomerPrintLine23F1
+
+[Field: JpTopCustomerPrintLine23F1]
+    Style : JpGrid
+[Line: JpTopCustomerPrintLine24]
+    Field: JpTopCustomerPrintLine24F1
+
+[Field: JpTopCustomerPrintLine24F1]
+    Set As : JpCustomerClass($$JwlVisits)
+[Line: JpTopCustomerPrintLine25]
+    Field: JpTopCustomerPrintLine25F1
+
+[Field: JpTopCustomerPrintLine25F1]
+    Style : JpGrid
+[Line: JpTopCustomerPrintLine26]
+    Field: JpTopCustomerPrintLine26F1
+
+[Field: JpTopCustomerPrintLine26F1]
+    Set As : "TOTAL"
+[Line: JpTopCustomerPrintLine27]
+    Field: JpTopCustomerPrintLine27F1
+
+[Field: JpTopCustomerPrintLine27F1]
+    Style : JpTotal
+[Line: JpTopCustomerPrintLine28]
+    Field: JpTopCustomerPrintLine28F1
+
+[Field: JpTopCustomerPrintLine28F1]
+    Set As : Sum($$JwlVisits)
+[Line: JpTopCustomerPrintLine29]
+    Field: JpTopCustomerPrintLine29F1
+
+[Field: JpTopCustomerPrintLine29F1]
+    Style : JpTotal
+[Line: JpTopCustomerPrintLine30]
+    Field: JpTopCustomerPrintLine30F1
+
+[Field: JpTopCustomerPrintLine30F1]
+    Set As : Sum($$JwlWt)
+[Line: JpTopCustomerPrintLine31]
+    Field: JpTopCustomerPrintLine31F1
+
+[Field: JpTopCustomerPrintLine31F1]
+    Style : JpTotal
+[Line: JpTopCustomerPrintLine32]
+    Field: JpTopCustomerPrintLine32F1
+
+[Field: JpTopCustomerPrintLine32F1]
+    Set As : Sum($$JwlSpend)
+[Line: JpTopCustomerPrintLine33]
+    Field: JpTopCustomerPrintLine33F1
+
+[Field: JpTopCustomerPrintLine33F1]
+    Style : JpTotal
+[Export: JpTopCustomerExport]
+    Title: <1000, "Top Customers">
+    Repeat: Over: JpTopCustomerReport
+    Export Title: Detail
+    Export: Value: $$JwlCust
+    Export: Value: $$JwlVisits
+    Export: Value: $$JwlWt
+    Export: Value: $$JwlSpend
+    Export: Value: $$JwlLastBuy
+
+
+; =============================================================================
+;  REPORT 19 - BIRTHDAY AND ANNIVERSARY CUSTOMERS
+;  CRM fields live on the Ledger master; a SQL month/day comparison means the
+;  report stays instant even with tens of thousands of customers.
+; =============================================================================
+[Collection: Report: JpBirthdayReport]
+    Source: JpBirthdaySQL
+    Var: JpFromDate, JpToDate, JpCrmEvent
+    Title: <1000,###,#a##"  BIRTHDAY AND ANNIVERSARY CUSTOMERS">
+    Print: JpBirthdayPrint
+    Export: JpBirthdayExport
+    Key: JpBirthdayKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>, <JpCrmEvent, <String, "Event: All / Birthday / Anniversary">>
+
+[Variable: JpBirthdaySQL : String]
+    Type: String
+    Value: "SELECT $$NAME$$ AS JwlCust, $JwlCustDOB$$ AS JwlDob, $JwlCustAnniversary$$ AS JwlAnniv, $JwlLoyaltyPts$$ AS JwlPts, $JwlTotalPurchases$$ AS JwlSpend FROM $$CREATENMASTER$$ WHERE $JwlTotalPurchases$$ > 0"
+
+[Variable: JpBirthdayKey : String]
+    Type: String
+    Value: "JwlCust"
+
+[Function: JpEventText]
+    Returns: String : Any
+    Var: s : String
+    s = ""
+    If ($$JwlDob is not null) Then
+    {
+        s = "Birthday: " + JpFmtDate($$JwlDob)
+    }
+    If ($$JwlAnniv is not null) Then
+    {
+        If (s <> "") Then
+        {
+            s = s + "   |   "
+        }
+        s = s + "Anniversary: " + JpFmtDate($$JwlAnniv)
+    }
+    JpEventText = s
+
+
+; [Print: JpBirthdayPrint] -> [Form: JpBirthdayPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpBirthdayPrint]
+    Parts : JpBirthdayPrintLines
+
+[Part: JpBirthdayPrintLines]
+    Lines : Spacing, JpBirthdayPrintLine1, JpBirthdayPrintLine2, JpBirthdayPrintLine3, JpBirthdayPrintLine4, JpBirthdayPrintLine5, JpBirthdayPrintLine6, JpBirthdayPrintLine7, JpBirthdayPrintLine8, JpBirthdayPrintLine9, JpBirthdayPrintLine10, JpBirthdayPrintLine11, JpBirthdayPrintLine12, JpBirthdayPrintLine13, JpBirthdayPrintLine14, JpBirthdayPrintLine15, JpBirthdayPrintLine16, JpBirthdayPrintLine17, JpBirthdayPrintLine18, JpBirthdayPrintLine19, JpBirthdayPrintLine20, JpBirthdayPrintLine21, JpBirthdayPrintLine22, JpBirthdayPrintLine23, JpBirthdayPrintLine24, JpBirthdayPrintLine25, JpBirthdayPrintLine26, JpBirthdayPrintLine27, JpBirthdayPrintLine28, JpBirthdayPrintLine29
+
+[Line: JpBirthdayPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpBirthdayPrintLine2]
+    Field: JpBirthdayPrintLine2F1
+
+[Field: JpBirthdayPrintLine2F1]
+    Set As : Upr(##JwlShopName) + "   -   CRM Dates"
+    Style : JpFontBold
+[Line: JpBirthdayPrintLine3]
+    Field: JpBirthdayPrintLine3F1
+
+[Field: JpBirthdayPrintLine3F1]
+    Set As : "Use this list to call customers before the occasion and convert it into a sale."
+    Style : JpFontBold
+[Line: JpBirthdayPrintLine4]
+    Field: JpBirthdayPrintLine4F1
+
+[Field: JpBirthdayPrintLine4F1]
+    Set As : "Customer"
+[Line: JpBirthdayPrintLine5]
+    Field: JpBirthdayPrintLine5F1
+
+[Field: JpBirthdayPrintLine5F1]
+    Style : JpGridHead
+[Line: JpBirthdayPrintLine6]
+    Field: JpBirthdayPrintLine6F1
+
+[Field: JpBirthdayPrintLine6F1]
+    Set As : "Mobile"
+[Line: JpBirthdayPrintLine7]
+    Field: JpBirthdayPrintLine7F1
+
+[Field: JpBirthdayPrintLine7F1]
+    Style : JpGridHead
+[Line: JpBirthdayPrintLine8]
+    Field: JpBirthdayPrintLine8F1
+
+[Field: JpBirthdayPrintLine8F1]
+    Set As : "Events"
+[Line: JpBirthdayPrintLine9]
+    Field: JpBirthdayPrintLine9F1
+
+[Field: JpBirthdayPrintLine9F1]
+    Style : JpGridHead
+[Line: JpBirthdayPrintLine10]
+    Field: JpBirthdayPrintLine10F1
+
+[Field: JpBirthdayPrintLine10F1]
+    Set As : "Lifetime Spend"
+[Line: JpBirthdayPrintLine11]
+    Field: JpBirthdayPrintLine11F1
+
+[Field: JpBirthdayPrintLine11F1]
+    Style : JpGridHead
+[Line: JpBirthdayPrintLine12]
+    Field: JpBirthdayPrintLine12F1
+
+[Field: JpBirthdayPrintLine12F1]
+    Set As : "Loyalty Points"
+[Line: JpBirthdayPrintLine13]
+    Field: JpBirthdayPrintLine13F1
+
+[Field: JpBirthdayPrintLine13F1]
+    Style : JpGridHead
+[Line: JpBirthdayPrintLine14]
+    Field: JpBirthdayPrintLine14F1
+
+[Field: JpBirthdayPrintLine14F1]
+    Set As : $$JwlCust
+[Line: JpBirthdayPrintLine15]
+    Field: JpBirthdayPrintLine15F1
+
+[Field: JpBirthdayPrintLine15F1]
+    Style : JpGrid
+[Line: JpBirthdayPrintLine16]
+    Field: JpBirthdayPrintLine16F1
+
+[Field: JpBirthdayPrintLine16F1]
+    Set As : $$MOBILE
+[Line: JpBirthdayPrintLine17]
+    Field: JpBirthdayPrintLine17F1
+
+[Field: JpBirthdayPrintLine17F1]
+    Style : JpGrid
+[Line: JpBirthdayPrintLine18]
+    Field: JpBirthdayPrintLine18F1
+
+[Field: JpBirthdayPrintLine18F1]
+    Set As : JpEventText()
+[Line: JpBirthdayPrintLine19]
+    Field: JpBirthdayPrintLine19F1
+
+[Field: JpBirthdayPrintLine19F1]
+    Style : JpGrid
+[Line: JpBirthdayPrintLine20]
+    Field: JpBirthdayPrintLine20F1
+
+[Field: JpBirthdayPrintLine20F1]
+    Set As : $$JwlSpend
+[Line: JpBirthdayPrintLine21]
+    Field: JpBirthdayPrintLine21F1
+
+[Field: JpBirthdayPrintLine21F1]
+    Style : JpMoneyBold
+[Line: JpBirthdayPrintLine22]
+    Field: JpBirthdayPrintLine22F1
+
+[Field: JpBirthdayPrintLine22F1]
+    Set As : $$JwlPts
+[Line: JpBirthdayPrintLine23]
+    Field: JpBirthdayPrintLine23F1
+
+[Field: JpBirthdayPrintLine23F1]
+    Style : JpGrid
+[Line: JpBirthdayPrintLine24]
+    Field: JpBirthdayPrintLine24F1
+
+[Field: JpBirthdayPrintLine24F1]
+    Set As : "TOTAL"
+[Line: JpBirthdayPrintLine25]
+    Field: JpBirthdayPrintLine25F1
+
+[Field: JpBirthdayPrintLine25F1]
+    Style : JpTotal
+[Line: JpBirthdayPrintLine26]
+    Field: JpBirthdayPrintLine26F1
+
+[Field: JpBirthdayPrintLine26F1]
+    Set As : Sum($$JwlSpend)
+[Line: JpBirthdayPrintLine27]
+    Field: JpBirthdayPrintLine27F1
+
+[Field: JpBirthdayPrintLine27F1]
+    Style : JpTotal
+[Line: JpBirthdayPrintLine28]
+    Field: JpBirthdayPrintLine28F1
+
+[Field: JpBirthdayPrintLine28F1]
+    Set As : Sum($$JwlPts)
+[Line: JpBirthdayPrintLine29]
+    Field: JpBirthdayPrintLine29F1
+
+[Field: JpBirthdayPrintLine29F1]
+    Style : JpTotal
+[Export: JpBirthdayExport]
+    Title: <1000, "Birthday and Anniversary Customers">
+    Repeat: Over: JpBirthdayReport
+    Export Title: Detail
+    Export: Value: $$JwlCust
+    Export: Value: $$MOBILE
+    Export: Value: $$JwlDob
+    Export: Value: $$JwlAnniv
+    Export: Value: $$JwlSpend
+    Export: Value: $$JwlPts
+
+
+; =============================================================================
+;  REPORT 20 - OLD GOLD EXCHANGE REGISTER
+; =============================================================================
+[Collection: Report: JpOldGoldRegister]
+    Source: JpOldGoldSQL
+    Var: JpFromDate, JpToDate, JpOgMetalFilter
+    Title: <1000,###,#a##"  OLD GOLD EXCHANGE REGISTER">
+    Print: JpOldGoldPrint
+    Export: JpOldGoldExport
+    Key: JpOldGoldKey
+    Filters: <JpFromDate, <Date, "From Date">>, <JpToDate, <Date, "To Date">>, <JpOgMetalFilter, <String, "Metal">>
+
+[Variable: JpOldGoldSQL : String]
+    Type: String
+    Value: "SELECT $JwlOgVchNo$$ AS JwlOgRef, $$DATE$$ AS JwlOgDate, $JwlOgCustName$$ AS JwlOgCust, $JwlOgMetal$$ AS JwlOgMetal, $JwlOgPurity$$ AS JwlOgPur, $JwlOgPurityPc$$ AS JwlOgPc, $JwlOgGrossWt$$ AS JwlOgGross, $JwlOgStoneWt$$ AS JwlOgStone, $JwlOgNetWt$$ AS JwlOgNet, $JwlOgFineWt$$ AS JwlOgFine, $JwlOgRate$$ AS JwlOgRate, $JwlOgDedPc$$ AS JwlOgDed, $JwlOgValue$$ AS JwlOgValue, $JwlOgAdjAmt$$ AS JwlOgAdj, $JwlOgBalAmt$$ AS JwlOgBal FROM $$JOURNAL$$ WHERE $JwlVchKind$$ = 'OldGold' AND $$DATE$$ BETWEEN $$JpFromDate$$ AND $$JpToDate$$"
+
+[Variable: JpOldGoldKey : String]
+    Type: String
+    Value: "JwlOgRef"
+
+
+; [Print: JpOldGoldPrint] -> [Form: JpOldGoldPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+; dropped (no home in TallyPrime, per user decision): Width (column widths)
+
+[Form: JpOldGoldPrint]
+    Parts : JpOldGoldPrintLines
+
+[Part: JpOldGoldPrintLines]
+    Lines : Spacing, JpOldGoldPrintLine1, JpOldGoldPrintLine2, JpOldGoldPrintLine3, JpOldGoldPrintLine4, JpOldGoldPrintLine5, JpOldGoldPrintLine6, JpOldGoldPrintLine7, JpOldGoldPrintLine8, JpOldGoldPrintLine9, JpOldGoldPrintLine10, JpOldGoldPrintLine11, JpOldGoldPrintLine12, JpOldGoldPrintLine13, JpOldGoldPrintLine14, JpOldGoldPrintLine15, JpOldGoldPrintLine16, JpOldGoldPrintLine17, JpOldGoldPrintLine18, JpOldGoldPrintLine19, JpOldGoldPrintLine20, JpOldGoldPrintLine21, JpOldGoldPrintLine22, JpOldGoldPrintLine23, JpOldGoldPrintLine24, JpOldGoldPrintLine25, JpOldGoldPrintLine26, JpOldGoldPrintLine27, JpOldGoldPrintLine28, JpOldGoldPrintLine29, JpOldGoldPrintLine30, JpOldGoldPrintLine31, JpOldGoldPrintLine32, JpOldGoldPrintLine33, JpOldGoldPrintLine34, JpOldGoldPrintLine35, JpOldGoldPrintLine36, JpOldGoldPrintLine37, JpOldGoldPrintLine38, JpOldGoldPrintLine39, JpOldGoldPrintLine40, JpOldGoldPrintLine41, JpOldGoldPrintLine42, JpOldGoldPrintLine43, JpOldGoldPrintLine44, JpOldGoldPrintLine45, JpOldGoldPrintLine46, JpOldGoldPrintLine47, JpOldGoldPrintLine48, JpOldGoldPrintLine49, JpOldGoldPrintLine50, JpOldGoldPrintLine51, JpOldGoldPrintLine52, JpOldGoldPrintLine53, JpOldGoldPrintLine54, JpOldGoldPrintLine55, JpOldGoldPrintLine56, JpOldGoldPrintLine57, JpOldGoldPrintLine58, JpOldGoldPrintLine59, JpOldGoldPrintLine60, JpOldGoldPrintLine61, JpOldGoldPrintLine62, JpOldGoldPrintLine63, JpOldGoldPrintLine64, JpOldGoldPrintLine65, JpOldGoldPrintLine66, JpOldGoldPrintLine67, JpOldGoldPrintLine68, JpOldGoldPrintLine69
+
+[Line: JpOldGoldPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpOldGoldPrintLine2]
+    Field: JpOldGoldPrintLine2F1
+
+[Field: JpOldGoldPrintLine2F1]
+    Set As : Upr(##JwlShopName) + "   -   Old Gold Exchange"
+    Style : JpFontBold
+[Line: JpOldGoldPrintLine3]
+    Field: JpOldGoldPrintLine3F1
+
+[Field: JpOldGoldPrintLine3F1]
+    Set As : "Fine Weight = Net Weight x Purity %     Exchange Value = Fine Weight x Rate at the purity"
+    Style : JpFontBold
+[Line: JpOldGoldPrintLine4]
+    Field: JpOldGoldPrintLine4F1
+
+[Field: JpOldGoldPrintLine4F1]
+    Set As : "Ref"
+[Line: JpOldGoldPrintLine5]
+    Field: JpOldGoldPrintLine5F1
+
+[Field: JpOldGoldPrintLine5F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine6]
+    Field: JpOldGoldPrintLine6F1
+
+[Field: JpOldGoldPrintLine6F1]
+    Set As : "Date"
+[Line: JpOldGoldPrintLine7]
+    Field: JpOldGoldPrintLine7F1
+
+[Field: JpOldGoldPrintLine7F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine8]
+    Field: JpOldGoldPrintLine8F1
+
+[Field: JpOldGoldPrintLine8F1]
+    Set As : "Customer"
+[Line: JpOldGoldPrintLine9]
+    Field: JpOldGoldPrintLine9F1
+
+[Field: JpOldGoldPrintLine9F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine10]
+    Field: JpOldGoldPrintLine10F1
+
+[Field: JpOldGoldPrintLine10F1]
+    Set As : "Metal"
+[Line: JpOldGoldPrintLine11]
+    Field: JpOldGoldPrintLine11F1
+
+[Field: JpOldGoldPrintLine11F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine12]
+    Field: JpOldGoldPrintLine12F1
+
+[Field: JpOldGoldPrintLine12F1]
+    Set As : "Pur"
+[Line: JpOldGoldPrintLine13]
+    Field: JpOldGoldPrintLine13F1
+
+[Field: JpOldGoldPrintLine13F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine14]
+    Field: JpOldGoldPrintLine14F1
+
+[Field: JpOldGoldPrintLine14F1]
+    Set As : "Gross"
+[Line: JpOldGoldPrintLine15]
+    Field: JpOldGoldPrintLine15F1
+
+[Field: JpOldGoldPrintLine15F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine16]
+    Field: JpOldGoldPrintLine16F1
+
+[Field: JpOldGoldPrintLine16F1]
+    Set As : "Stone"
+[Line: JpOldGoldPrintLine17]
+    Field: JpOldGoldPrintLine17F1
+
+[Field: JpOldGoldPrintLine17F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine18]
+    Field: JpOldGoldPrintLine18F1
+
+[Field: JpOldGoldPrintLine18F1]
+    Set As : "Net"
+[Line: JpOldGoldPrintLine19]
+    Field: JpOldGoldPrintLine19F1
+
+[Field: JpOldGoldPrintLine19F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine20]
+    Field: JpOldGoldPrintLine20F1
+
+[Field: JpOldGoldPrintLine20F1]
+    Set As : "Fine"
+[Line: JpOldGoldPrintLine21]
+    Field: JpOldGoldPrintLine21F1
+
+[Field: JpOldGoldPrintLine21F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine22]
+    Field: JpOldGoldPrintLine22F1
+
+[Field: JpOldGoldPrintLine22F1]
+    Set As : "Rate"
+[Line: JpOldGoldPrintLine23]
+    Field: JpOldGoldPrintLine23F1
+
+[Field: JpOldGoldPrintLine23F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine24]
+    Field: JpOldGoldPrintLine24F1
+
+[Field: JpOldGoldPrintLine24F1]
+    Set As : "Ded %"
+[Line: JpOldGoldPrintLine25]
+    Field: JpOldGoldPrintLine25F1
+
+[Field: JpOldGoldPrintLine25F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine26]
+    Field: JpOldGoldPrintLine26F1
+
+[Field: JpOldGoldPrintLine26F1]
+    Set As : "Exchange Val"
+[Line: JpOldGoldPrintLine27]
+    Field: JpOldGoldPrintLine27F1
+
+[Field: JpOldGoldPrintLine27F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine28]
+    Field: JpOldGoldPrintLine28F1
+
+[Field: JpOldGoldPrintLine28F1]
+    Set As : "Adjusted"
+[Line: JpOldGoldPrintLine29]
+    Field: JpOldGoldPrintLine29F1
+
+[Field: JpOldGoldPrintLine29F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine30]
+    Field: JpOldGoldPrintLine30F1
+
+[Field: JpOldGoldPrintLine30F1]
+    Set As : "Refund"
+[Line: JpOldGoldPrintLine31]
+    Field: JpOldGoldPrintLine31F1
+
+[Field: JpOldGoldPrintLine31F1]
+    Style : JpGridHead
+[Line: JpOldGoldPrintLine32]
+    Field: JpOldGoldPrintLine32F1
+
+[Field: JpOldGoldPrintLine32F1]
+    Set As : $$JwlOgRef
+[Line: JpOldGoldPrintLine33]
+    Field: JpOldGoldPrintLine33F1
+
+[Field: JpOldGoldPrintLine33F1]
+    Style : JpGrid
+[Line: JpOldGoldPrintLine34]
+    Field: JpOldGoldPrintLine34F1
+
+[Field: JpOldGoldPrintLine34F1]
+    Set As : $$JwlOgDate
+[Line: JpOldGoldPrintLine35]
+    Field: JpOldGoldPrintLine35F1
+
+[Field: JpOldGoldPrintLine35F1]
+    Style : JpGrid
+[Line: JpOldGoldPrintLine36]
+    Field: JpOldGoldPrintLine36F1
+
+[Field: JpOldGoldPrintLine36F1]
+    Set As : $$JwlOgCust
+[Line: JpOldGoldPrintLine37]
+    Field: JpOldGoldPrintLine37F1
+
+[Field: JpOldGoldPrintLine37F1]
+    Style : JpGrid
+[Line: JpOldGoldPrintLine38]
+    Field: JpOldGoldPrintLine38F1
+
+[Field: JpOldGoldPrintLine38F1]
+    Set As : $JwlOgMetal
+[Line: JpOldGoldPrintLine39]
+    Field: JpOldGoldPrintLine39F1
+
+[Field: JpOldGoldPrintLine39F1]
+    Style : JpGrid
+[Line: JpOldGoldPrintLine40]
+    Field: JpOldGoldPrintLine40F1
+
+[Field: JpOldGoldPrintLine40F1]
+    Set As : $$JwlOgPur
+[Line: JpOldGoldPrintLine41]
+    Field: JpOldGoldPrintLine41F1
+
+[Field: JpOldGoldPrintLine41F1]
+    Style : JpGrid
+[Line: JpOldGoldPrintLine42]
+    Field: JpOldGoldPrintLine42F1
+
+[Field: JpOldGoldPrintLine42F1]
+    Set As : $$JwlOgGross
+[Line: JpOldGoldPrintLine43]
+    Field: JpOldGoldPrintLine43F1
+
+[Field: JpOldGoldPrintLine43F1]
+    Style : JpWeight
+[Line: JpOldGoldPrintLine44]
+    Field: JpOldGoldPrintLine44F1
+
+[Field: JpOldGoldPrintLine44F1]
+    Set As : $$JwlOgStone
+[Line: JpOldGoldPrintLine45]
+    Field: JpOldGoldPrintLine45F1
+
+[Field: JpOldGoldPrintLine45F1]
+    Style : JpWeight
+[Line: JpOldGoldPrintLine46]
+    Field: JpOldGoldPrintLine46F1
+
+[Field: JpOldGoldPrintLine46F1]
+    Set As : $$JwlOgNet
+[Line: JpOldGoldPrintLine47]
+    Field: JpOldGoldPrintLine47F1
+
+[Field: JpOldGoldPrintLine47F1]
+    Style : JpWeight
+[Line: JpOldGoldPrintLine48]
+    Field: JpOldGoldPrintLine48F1
+
+[Field: JpOldGoldPrintLine48F1]
+    Set As : $$JwlOgFine
+[Line: JpOldGoldPrintLine49]
+    Field: JpOldGoldPrintLine49F1
+
+[Field: JpOldGoldPrintLine49F1]
+    Style : JpWeightBold
+[Line: JpOldGoldPrintLine50]
+    Field: JpOldGoldPrintLine50F1
+
+[Field: JpOldGoldPrintLine50F1]
+    Set As : $JwlOgRate
+[Line: JpOldGoldPrintLine51]
+    Field: JpOldGoldPrintLine51F1
+
+[Field: JpOldGoldPrintLine51F1]
+    Style : JpMoney
+[Line: JpOldGoldPrintLine52]
+    Field: JpOldGoldPrintLine52F1
+
+[Field: JpOldGoldPrintLine52F1]
+    Set As : $$JwlOgDed
+[Line: JpOldGoldPrintLine53]
+    Field: JpOldGoldPrintLine53F1
+
+[Field: JpOldGoldPrintLine53F1]
+    Style : JpGrid
+[Line: JpOldGoldPrintLine54]
+    Field: JpOldGoldPrintLine54F1
+
+[Field: JpOldGoldPrintLine54F1]
+    Set As : $JwlOgValue
+[Line: JpOldGoldPrintLine55]
+    Field: JpOldGoldPrintLine55F1
+
+[Field: JpOldGoldPrintLine55F1]
+    Style : JpMoneyBold
+[Line: JpOldGoldPrintLine56]
+    Field: JpOldGoldPrintLine56F1
+
+[Field: JpOldGoldPrintLine56F1]
+    Set As : $$JwlOgAdj
+[Line: JpOldGoldPrintLine57]
+    Field: JpOldGoldPrintLine57F1
+
+[Field: JpOldGoldPrintLine57F1]
+    Style : JpMoney
+[Line: JpOldGoldPrintLine58]
+    Field: JpOldGoldPrintLine58F1
+
+[Field: JpOldGoldPrintLine58F1]
+    Set As : $$JwlOgBal
+[Line: JpOldGoldPrintLine59]
+    Field: JpOldGoldPrintLine59F1
+
+[Field: JpOldGoldPrintLine59F1]
+    Style : JpMoney
+[Line: JpOldGoldPrintLine60]
+    Field: JpOldGoldPrintLine60F1
+
+[Field: JpOldGoldPrintLine60F1]
+    Set As : "TOTAL"
+[Line: JpOldGoldPrintLine61]
+    Field: JpOldGoldPrintLine61F1
+
+[Field: JpOldGoldPrintLine61F1]
+    Style : JpTotal
+[Line: JpOldGoldPrintLine62]
+    Field: JpOldGoldPrintLine62F1
+
+[Field: JpOldGoldPrintLine62F1]
+    Set As : Sum($$JwlOgFine)
+[Line: JpOldGoldPrintLine63]
+    Field: JpOldGoldPrintLine63F1
+
+[Field: JpOldGoldPrintLine63F1]
+    Style : JpTotal
+[Line: JpOldGoldPrintLine64]
+    Field: JpOldGoldPrintLine64F1
+
+[Field: JpOldGoldPrintLine64F1]
+    Set As : Sum($JwlOgValue)
+[Line: JpOldGoldPrintLine65]
+    Field: JpOldGoldPrintLine65F1
+
+[Field: JpOldGoldPrintLine65F1]
+    Style : JpTotal
+[Line: JpOldGoldPrintLine66]
+    Field: JpOldGoldPrintLine66F1
+
+[Field: JpOldGoldPrintLine66F1]
+    Set As : Sum($$JwlOgAdj)
+[Line: JpOldGoldPrintLine67]
+    Field: JpOldGoldPrintLine67F1
+
+[Field: JpOldGoldPrintLine67F1]
+    Style : JpTotal
+[Line: JpOldGoldPrintLine68]
+    Field: JpOldGoldPrintLine68F1
+
+[Field: JpOldGoldPrintLine68F1]
+    Set As : Sum($$JwlOgBal)
+[Line: JpOldGoldPrintLine69]
+    Field: JpOldGoldPrintLine69F1
+
+[Field: JpOldGoldPrintLine69F1]
+    Style : JpTotal
+[Export: JpOldGoldExport]
+    Title: <1000, "Old Gold Exchange Register">
+    Repeat: Over: JpOldGoldRegister
+    Export Title: Detail
+    Export: Value: $$JwlOgRef
+    Export: Value: $$JwlOgDate
+    Export: Value: $$JwlOgCust
+    Export: Value: $JwlOgMetal
+    Export: Value: $$JwlOgPur
+    Export: Value: $$JwlOgGross
+    Export: Value: $$JwlOgStone
+    Export: Value: $$JwlOgNet
+    Export: Value: $$JwlOgFine
+    Export: Value: $JwlOgRate
+    Export: Value: $$JwlOgDed
+    Export: Value: $JwlOgValue
+    Export: Value: $$JwlOgAdj
+    Export: Value: $$JwlOgBal

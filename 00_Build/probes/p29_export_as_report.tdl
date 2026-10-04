@@ -1,0 +1,22 @@
+; p29 - Output is a Report declared Plain XML / Plain JSON with XMLTag.
+; Decides the rewrite of all 30 `[Export:]` blocks in JadePro.
+[Report: ZzP29ExportReport]
+    Form : ZzP29ExportForm
+    Plain XML : Yes
+    Export Header : Yes
+    Export Empty Fields : No
+    Title : "ZzP29 export"
+
+[Form: ZzP29ExportForm]
+    Parts : ZzP29ExportPart
+
+[Part: ZzP29ExportPart]
+    Lines : ZzP29ExportLine
+    XMLTag : "Item"
+
+[Line: ZzP29ExportLine]
+    Field : ZzP29ExportField
+
+[Field: ZzP29ExportField]
+    Set As : "exported"
+    XMLAttr : "Value"

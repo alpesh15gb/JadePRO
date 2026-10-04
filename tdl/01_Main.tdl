@@ -1,0 +1,358 @@
+; =============================================================================
+;  JadePro  ::  01_Main.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Application entry point.
+;            1. Attaches the "Jewellery" menu to the Gateway of Tally.
+;            2. Declares the menu tree (Masters / Transactions / Reports /
+;               Dashboard) exactly as delivered.
+;            3. Adds the JadePro settings block to the Company master so every
+;               configurable number (discount ceiling, default tax rate, shop
+;               details, invoice terms) lives in DATA, not in code.
+;
+;  LOAD    : After 00_Core.tdl. May be loaded before the feature modules - menu
+;            items resolve their targets lazily when the menu is opened.
+;
+;  REQUIRES : 00_Core.tdl
+; =============================================================================
+
+; -----------------------------------------------------------------------------
+;  COMPANY MASTER - JADEPRO SETTINGS
+;  Everything configurable the business needs. Changing GST slabs, discount
+;  policy or invoice wording is a master edit here, never a TDL edit.
+; -----------------------------------------------------------------------------
+    ; Label: "Enable JadePro Jewellery"
+[System: UDF]
+JwlJadeProOn : Logical : 20001
+    ; Label: "Shop / Showroom Name"
+[System: UDF]
+JwlShopName : String : 20002
+    ; Label: "Shop Address"
+[System: UDF]
+JwlShopAddress : String : 20003
+    ; Label: "Logo File"
+[System: UDF]
+JwlShopLogo : String : 20004
+    ; Label: "Company GSTIN"
+[System: UDF]
+JwlCompanyGSTIN : String : 20005
+    ; Label: "Shop Phone"
+[System: UDF]
+JwlCompanyPhone : String : 20006
+    ; Label: "Company State"
+[System: UDF]
+JwlCompanyState : String : 20007
+    ; Label: "Default GST Rate %"
+[System: UDF]
+JwlDefaultGstRate : Number : 20008
+    ; Label: "Salesperson Discount Ceiling %"
+[System: UDF]
+JwlMaxDiscountPc : Number : 20009
+    ; Label: "Old Gold Deduction %"
+[System: UDF]
+JwlOldGoldDedPc : Number : 20010
+    ; Label: "Invoice Terms"
+[System: UDF]
+JwlInvoiceTerms : String : 20011
+    ; Label: "Salesperson Commission %"
+[System: UDF]
+JwlCommissionPc : Number : 20012
+Alter: Company
+    Add: Field
+        Field-id: JpEnableChk
+        Label: "Enable JadePro Jewellery"
+        Type: Logical
+        Value: ##JwlJadeProOn
+        Width: 200
+        Style: UseFormCtrl
+
+    Add: Field
+        Field-id: JpCompanySettings
+        Part-id: JpCompanySettings
+        Width: 100
+        Invisible: ##JwlJadeProOn = 0
+
+[Part: JpCompanySettings]
+    Line: JpCompanySettingsLine1, JpCompanySettingsLine2, JpCompanySettingsLine3, JpCompanySettingsLine4, JpCompanySettingsLine5, JpCompanySettingsLine6, JpCompanySettingsLine7, JpCompanySettingsLine8, JpCompanySettingsLine9, JpCompanySettingsLine10, JpCompanySettingsLine11
+
+[Line: JpCompanySettingsLine1]
+    Field: JpCompanySettingsLine1F1
+
+[Field: JpCompanySettingsLine1F1]
+    Storage : JwlShopName
+    Label : "Shop / Showroom Name"
+    Width : 400
+[Line: JpCompanySettingsLine2]
+    Field: JpCompanySettingsLine2F1
+
+[Field: JpCompanySettingsLine2F1]
+    Storage : JwlShopAddress
+    Label : "Address"
+    Width : 400
+[Line: JpCompanySettingsLine3]
+    Field: JpCompanySettingsLine3F1
+
+[Field: JpCompanySettingsLine3F1]
+    Storage : JwlCompanyGSTIN
+    Label : "Company GSTIN"
+    Width : 300
+[Line: JpCompanySettingsLine4]
+    Field: JpCompanySettingsLine4F1
+
+[Field: JpCompanySettingsLine4F1]
+    Storage : JwlCompanyPhone
+    Label : "Phone"
+    Width : 300
+[Line: JpCompanySettingsLine5]
+    Field: JpCompanySettingsLine5F1
+
+[Field: JpCompanySettingsLine5F1]
+    Storage : JwlShopLogo
+    Label : "Logo File (for invoice)"
+    Width : 300
+[Line: JpCompanySettingsLine6]
+    Field: JpCompanySettingsLine6F1
+
+[Field: JpCompanySettingsLine6F1]
+    Storage : JwlDefaultGstRate
+    Label : "Default GST Rate %"
+    Width : 100
+[Line: JpCompanySettingsLine7]
+    Field: JpCompanySettingsLine7F1
+
+[Field: JpCompanySettingsLine7F1]
+    Storage : JwlMaxDiscountPc
+    Label : "Salesperson Discount Ceiling %"
+    Width : 100
+[Line: JpCompanySettingsLine8]
+    Field: JpCompanySettingsLine8F1
+
+[Field: JpCompanySettingsLine8F1]
+    Storage : JwlOldGoldDedPc
+    Label : "Old Gold Deduction %"
+    Width : 100
+[Line: JpCompanySettingsLine9]
+    Field: JpCompanySettingsLine9F1
+
+[Field: JpCompanySettingsLine9F1]
+    Storage : JwlCommissionPc
+    Label : "Salesperson Commission %"
+    Width : 100
+[Line: JpCompanySettingsLine10]
+    Field: JpCompanySettingsLine10F1
+
+[Field: JpCompanySettingsLine10F1]
+    Storage : JwlCompanyState
+    Label : "Company State"
+    Width : 200
+[Line: JpCompanySettingsLine11]
+    Field: JpCompanySettingsLine11F1
+
+[Field: JpCompanySettingsLine11F1]
+    Storage : JwlInvoiceTerms
+    Label : "Invoice Terms"
+    Width : 400
+[#Menu: Gateway of Tally]
+    Add: Item: Jewellery: Menu: JpMainMenu
+
+[Menu: JpMainMenu]
+    Title: "JadePro Jewellery"
+    Indent: "Daily Operations"
+
+    Item: Daily Gold / Silver Rate: Display: JpRateScreen
+    Item: Jewellery Sales Invoice: Display: JpSalesScreen
+    Item: Jewellery Purchase: Display: JpPurchaseScreen
+    Item: Old Gold Exchange: Display: JpOldGoldScreen
+    Item: Karigar Job Work: Display: JpKarigarScreen
+    Item: Advance / Custom Order: Display: JpOrderScreen
+    Item: Jewellery Repair: Display: JpRepairScreen
+    Item: Print Jewellery Tag: Display: JpTagScreen
+
+    Indent: "Masters"
+    Item: Create Jewellery Item: Display: JpItemCreateScreen
+    Item: Alter Jewellery Item: Display: JpItemAlterScreen
+    Item: Barcode / Tag Register: Display: JpBarcodeReg
+
+    Indent: "Barcode & Labels"
+    Item: Barcode Tag Printer (Tally / Code 128): Display: JpTallyBarcodeScreen
+    Item: Zebra Label Setup (203 dpi): Display: JpZplConfigScreen
+    Item: Zebra Label Print Queue: Display: JpZplLabelQueue
+
+    Indent: "Dashboard"
+    Item: 1 of 4 - Sales and Collections: Display: JpDashboard
+    Item: 2 of 4 - Gold Sold and Top Performers: Display: JpWeightDashboard
+    Item: 3 of 4 - Pending Orders, Repairs, Karigar Metal: Display: JpAlertDashboard
+    Item: 4 of 4 - Inventory and Stock Value: Display: JpInvDashboard
+
+    Indent: "Sales Reports"
+    Item: Daily Sales: Display: JpDailySales
+    Item: Monthly Sales: Display: JpMonthlySales
+    Item: Sales Register: Display: JpSalesRegister
+    Item: Salesperson Performance: Display: JpSalespersonReport
+    Item: Item Profitability: Display: JpItemProfitReport
+    Item: Category Profitability: Display: JpCategoryProfitReport
+
+    Indent: "Inventory Reports"
+    Item: Jewellery Stock (Pieces & Weight): Display: JpStockReport
+    Item: Metal-wise Stock: Display: JpMetalStockReport
+    Item: Purity-wise Stock: Display: JpPurityStockReport
+    Item: Category-wise Stock: Display: JpCategoryStockReport
+    Item: Design-wise Stock: Display: JpDesignStockReport
+    Item: Counter-wise Stock: Display: JpCounterStockReport
+    Item: Stock Ageing: Display: JpAgeingReport
+    Item: Fast / Slow / Dead Stock: Display: JpMovementReport
+
+    Indent: "Purchase & Tax"
+    Item: Purchase Register: Display: JpPurchaseRegister
+    Item: GST Summary: Display: JpGSTReport
+
+    Indent: "Customer & Karigar"
+    Item: Customer Purchase History: Display: JpCustomerHistory
+    Item: Top / Repeat Customers: Display: JpTopCustomerReport
+    Item: Birthday & Anniversary: Display: JpBirthdayReport
+    Item: Karigar Outstanding: Display: JpKarigarOutstanding
+    Item: Old Gold Exchange Register: Display: JpOldGoldRegister
+    Item: Custom Order Register: Display: JpOrderRegister
+    Item: Repair Register: Display: JpRepairRegister
+
+    Indent: "System"
+    Item: JadePro Setup / Install: Display: JpInstallerScreen
+    Item: Setup Checklist (print): Display: JpInstallChecklist
+    Item: Role Setup (user to role map): Display: JpRoleSetupScreen
+    Item: Salesperson Targets: Display: JpTargetScreen
+    Item: About JadePro: Display: JpAboutReport
+
+; -----------------------------------------------------------------------------
+;  KEY BINDINGS
+;  Three [Keys:] blocks lived here (Ctrl+S -> Sales, Ctrl+Shift+D -> Gold Rate).
+;  T0006: "Keys" is not one of TallyPrime's 28 definition types. TallyHelp's Menu
+;  page states that for `Item` "the system automatically assigns the next
+;  available hotkey", and offers `Key Item : <Name>:<Hot Key>:<Action>:<Param>`
+;  when a hotkey must be pinned - i.e. the shortcut belongs on the menu item,
+;  not in a standalone definition. The menu above already routes to both screens
+;  with `Display:`, so no navigation was lost. See 00_Build/TDL-SPEC.md section 11.
+
+[Report: JpAboutReport]
+    Title: <1000, "JadePro Jewellery - About">
+    Print: JpAboutPrint
+
+
+; [Print: JpAboutPrint] -> [Form: JpAboutPrint] by fix-print-to-form.mjs.
+; "Print" is a Report attribute, not a definition type; a print layout is a Form.
+
+[Form: JpAboutPrint]
+    Height : 14
+    Parts : JpAboutPrintLines
+
+[Part: JpAboutPrintLines]
+    Lines : JpAboutPrintLine1, JpAboutPrintLine2, JpAboutPrintLine3, JpAboutPrintLine4, JpAboutPrintLine5, JpAboutPrintLine6, JpAboutPrintLine7, JpAboutPrintLine8, JpAboutPrintLine9, JpAboutPrintLine10, JpAboutPrintLine11, JpAboutPrintLine12, JpAboutPrintLine13, JpAboutPrintLine14, JpAboutPrintLine15, JpAboutPrintLine16, JpAboutPrintLine17, JpAboutPrintLine18, JpAboutPrintLine19
+
+[Line: JpAboutPrintLine1]
+    ; removed by fix-line-container-attrs.mjs - Title is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
+    ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
+[Line: JpAboutPrintLine2]
+    Field: JpAboutPrintLine2F1
+
+[Field: JpAboutPrintLine2F1]
+    Set As : "JadePro Jewellery ERP for Tally Prime"
+    Style : JpFontBold
+[Line: JpAboutPrintLine3]
+    Field: JpAboutPrintLine3F1
+
+[Field: JpAboutPrintLine3F1]
+    Set As : "Version: " + JpVersion() + "      Schema version: " + JpSchemaVer()
+    Style : JpFontBold
+[Line: JpAboutPrintLine4]
+    Field: JpAboutPrintLine4F1
+
+[Field: JpAboutPrintLine4F1]
+    Set As : "Minimum Tally release required: Tally Prime v3.0 (release 2400) or later"
+    Style : JpFontBold
+[Line: JpAboutPrintLine5]
+    Field: JpAboutPrintLine5F1
+
+[Field: JpAboutPrintLine5F1]
+    Set As : "Company: " + $$CompanyName
+    Style : JpFontBold
+[Line: JpAboutPrintLine6]
+    Field: JpAboutPrintLine6F1
+
+[Field: JpAboutPrintLine6F1]
+    Set As : "Logged in as: " + JpUserName + "    Role: " + JpUserRole
+    Style : JpFontBold
+[Line: JpAboutPrintLine7]
+    Field: JpAboutPrintLine7F1
+
+[Field: JpAboutPrintLine7F1]
+    Set As : " "
+[Line: JpAboutPrintLine8]
+    Field: JpAboutPrintLine8F1
+
+[Field: JpAboutPrintLine8F1]
+    Set As : "Rates in cache today:"
+    Style : JpFontBold
+[Line: JpAboutPrintLine9]
+    Field: JpAboutPrintLine9F1
+
+[Field: JpAboutPrintLine9F1]
+    Set As : "  24K = " + JpFmtAmt(JpCache24K) + "          22K = " + JpFmtAmt(JpCache22K)
+    Style : JpFontBold
+[Line: JpAboutPrintLine10]
+    Field: JpAboutPrintLine10F1
+
+[Field: JpAboutPrintLine10F1]
+    Set As : "  18K = " + JpFmtAmt(JpCache18K) + "          14K = " + JpFmtAmt(JpCache14K)
+    Style : JpFontBold
+[Line: JpAboutPrintLine11]
+    Field: JpAboutPrintLine11F1
+
+[Field: JpAboutPrintLine11F1]
+    Set As : "  Silver = " + JpFmtAmt(JpCacheSilver) + "      Platinum = " + JpFmtAmt(JpCachePlatinum)
+    Style : JpFontBold
+[Line: JpAboutPrintLine12]
+    Field: JpAboutPrintLine12F1
+
+[Field: JpAboutPrintLine12F1]
+    Set As : " "
+[Line: JpAboutPrintLine13]
+    Field: JpAboutPrintLine13F1
+
+[Field: JpAboutPrintLine13F1]
+    Set As : "Modules: 00_Core 01_Main 02_ItemMaster 03_GoldRate 04_Sales"
+    Style : JpFontBold
+[Line: JpAboutPrintLine14]
+    Field: JpAboutPrintLine14F1
+
+[Field: JpAboutPrintLine14F1]
+    Set As : "         05_Purchase 06_OldGold 07_Karigar 08_Barcode"
+    Style : JpFontBold
+[Line: JpAboutPrintLine15]
+    Field: JpAboutPrintLine15F1
+
+[Field: JpAboutPrintLine15F1]
+    Set As : "         09_Orders 10_Repairs 11_Reports 12_Dashboard"
+    Style : JpFontBold
+[Line: JpAboutPrintLine16]
+    Field: JpAboutPrintLine16F1
+
+[Field: JpAboutPrintLine16F1]
+    Set As : "         13_Security 14_PrintInvoice 15_Install"
+    Style : JpFontBold
+[Line: JpAboutPrintLine17]
+    Field: JpAboutPrintLine17F1
+
+[Field: JpAboutPrintLine17F1]
+    Set As : " "
+[Line: JpAboutPrintLine18]
+    Field: JpAboutPrintLine18F1
+
+[Field: JpAboutPrintLine18F1]
+    Set As : "If a screen fails to open, go to F11 : Alter : Manage TDL Functions,"
+    Style : JpFontBold
+[Line: JpAboutPrintLine19]
+    Field: JpAboutPrintLine19F1
+
+[Field: JpAboutPrintLine19F1]
+    Set As : "unload the module, then load 00_Core.tdl FIRST and the rest in order."
+    Style : JpFontBold

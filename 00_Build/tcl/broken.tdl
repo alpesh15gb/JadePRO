@@ -1,0 +1,3 @@
+; deliberately invalid: NotADefinitionType is not a TDL definition type
+[NotADefinitionType: ZzProbe]
+    Title: "probe"

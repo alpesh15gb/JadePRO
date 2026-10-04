@@ -1,0 +1,28 @@
+; p24 - Width / Style / Align / Color / Format / Dynamic / Skip on a Field.
+; These are the 699+84+16+11+7+5+2 attributes the router moved.
+[Report: ZzP24Report]
+    Form: ZzP24Form
+
+[Form: ZzP24Form]
+    Parts: ZzP24Part
+
+[Part: ZzP24Part]
+    Lines: ZzP24Line
+
+[Line: ZzP24Line]
+    Field: ZzP24Field
+
+[Style: ZzP24Style]
+    Font : Arial
+    Height : 10
+    Bold : Yes
+
+[Field: ZzP24Field]
+    Set As : "formatted"
+    Style : ZzP24Style
+    Align : Right
+    Width : 30
+    Color : Blue
+    Format : "NoZero,10.2"
+    Dynamic : ""
+    Skip : No

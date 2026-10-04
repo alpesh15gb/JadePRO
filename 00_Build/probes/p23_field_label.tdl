@@ -1,0 +1,18 @@
+; p23 - Is `Label : "..."` an attribute of Field?
+; The remaining 84 misrouted attributes are exactly this.
+[Report: ZzP23Report]
+    Form: ZzP23Form
+
+[Form: ZzP23Form]
+    Parts: ZzP23Part
+
+[Part: ZzP23Part]
+    Lines: ZzP23Line
+
+[Line: ZzP23Line]
+    Field: ZzP23Field
+
+[Field: ZzP23Field]
+    Label : "Shop / Showroom Name"
+    Set As : "x"
+    Width : 40

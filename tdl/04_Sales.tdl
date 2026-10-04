@@ -1,0 +1,811 @@
+; =============================================================================
+;  JadePro  ::  04_Sales.tdl
+; -----------------------------------------------------------------------------
+;  PURPOSE : Premium Jewellery Sales Invoice.
+;            Enriches Tally's STANDARD Sales voucher with the jewellery
+;            header block, a full jewellery column set on every inventory
+;            entry line, GST breakdown, split payments and old-gold
+;            adjustment.
+;
+;  WHY THE STANDARD SALES VOUCHER
+;  ------------------------------
+;  The shop keeps Tally's normal Sales voucher, normal ledgers, normal stock
+;  journals and normal GST posting. We only APPEND fields. Consequences:
+;    * Inventory falls by weight automatically (Tally's own engine).
+;    * GST returns, TDS returns, reconciliation and the P&L keep working.
+;    * A shop that does not want JadePro still has a normal Sales voucher.
+;  A TDL screen cannot programmatically add inventory-entry rows, so the item
+;  grid must be Tally's own grid. That is the one place where we extend rather
+;  than replace, and it is what makes unlimited multi-item invoices possible.
+;
+;  LOAD    : After 00_Core, 02_ItemMaster, 03_GoldRate. Before 14_PrintInvoice.
+;  REQUIRES : 00_Core.tdl, 02_ItemMaster.tdl, 03_GoldRate.tdl
+; =============================================================================
+
+; =============================================================================
+;  SECTION A - VOUCHER HEADER UDFs
+; =============================================================================
+
+    ; Label: "Invoice Number"
+[System: UDF]
+JwlInvNo : String : 20054
+    ; Label: "Salesperson"
+[System: UDF]
+JwlSalesperson : String : 20055
+    ; Label: "Payment Mode"
+[System: UDF]
+JwlPayMode : String : 20056
+    ; Label: "Paid by Cash"
+[System: UDF]
+JwlPayCash : Number : 20057
+    ; Label: "Paid by Card"
+[System: UDF]
+JwlPayCard : Number : 20058
+    ; Label: "Paid by UPI"
+[System: UDF]
+JwlPayUpi : Number : 20059
+    ; Label: "Paid by Bank Transfer"
+[System: UDF]
+JwlPayBank : Number : 20060
+    ; Label: "Paid from Customer Advance"
+[System: UDF]
+JwlPayAdvance : Number : 20061
+    ; Label: "Paid by Old Gold Exchange"
+[System: UDF]
+JwlPayOldGold : Number : 20062
+    ; Label: "Invoice Discount %"
+[System: UDF]
+JwlDiscPc : Number : 20063
+    ; Label: "Invoice Discount Amount"
+[System: UDF]
+JwlDiscAmt : Number : 20064
+    ; Label: "GST Rate % applied"
+[System: UDF]
+JwlGstRate : Number : 20065
+    ; Label: "Taxable Jewellery Value"
+[System: UDF]
+JwlTaxableVal : Number : 20066
+    ; Label: "Making Charges Value"
+[System: UDF]
+JwlMakeVal : Number : 20067
+    ; Label: "CGST"
+[System: UDF]
+JwlCgst : Number : 20068
+    ; Label: "SGST"
+[System: UDF]
+JwlSgst : Number : 20069
+    ; Label: "IGST"
+[System: UDF]
+JwlIgst : Number : 20070
+    ; Label: "Total GST"
+[System: UDF]
+JwlTaxTotal : Number : 20071
+    ; Label: "Invoice Grand Total"
+[System: UDF]
+JwlGrandTotal : Number : 20072
+    ; Label: "Total Received"
+[System: UDF]
+JwlPayTotal : Number : 20073
+    ; Label: "Balance Due"
+[System: UDF]
+JwlPayBalance : Number : 20074
+    ; Label: "Inter State Supply"
+[System: UDF]
+JwlInterState : Number : 20075
+    ; Label: "Adjusted Old Gold Voucher"
+[System: UDF]
+JwlOldGoldRef : String : 20076
+    ; Label: "Delivered Order Reference"
+[System: UDF]
+JwlOrderRef : String : 20077
+    ; Label: "Delivered Repair Reference"
+[System: UDF]
+JwlRepairRef : String : 20078
+    ; Label: "Customer Mobile on Invoice"
+[System: UDF]
+JwlCustMobile : String : 20079
+; =============================================================================
+;  SECTION B - INVENTORY-ENTRY (PER JEWELLERY PIECE) UDFs
+;  These repeat once per item on the invoice, which is what makes a multi-item
+;  jewellery invoice possible with its own weights, rate and charges per piece.
+; =============================================================================
+
+    ; Label: "Barcode"
+[System: UDF]
+JwlLnBarcode : String : 20080
+    ; Label: "HUID"
+[System: UDF]
+JwlLnHuid : String : 20081
+    ; Label: "Purity"
+[System: UDF]
+JwlLnPurity : String : 20082
+    ; Label: "Metal Type"
+[System: UDF]
+JwlLnMetal : String : 20083
+    ; Label: "Gross Weight"
+[System: UDF]
+JwlLnGross : Quantity : 20084
+    ; Label: "Stone Weight"
+[System: UDF]
+JwlLnStone : Quantity : 20085
+    ; Label: "Diamond Carat"
+[System: UDF]
+JwlLnCarat : Quantity : 20086
+    ; Label: "Net Weight"
+[System: UDF]
+JwlLnNet : Quantity : 20087
+    ; Label: "Metal Rate"
+[System: UDF]
+JwlLnRate : Number : 20088
+    ; Label: "Metal Value"
+[System: UDF]
+JwlLnMetalVal : Number : 20089
+    ; Label: "Wastage %"
+[System: UDF]
+JwlLnWastagePc : Number : 20090
+    ; Label: "Wastage Value"
+[System: UDF]
+JwlLnWastageVal : Number : 20091
+    ; Label: "Making Type"
+[System: UDF]
+JwlLnMakeType : String : 20092
+    ; Label: "Making Charges"
+[System: UDF]
+JwlLnMakeAmt : Number : 20093
+    ; Label: "Stone Value"
+[System: UDF]
+JwlLnStoneVal : Number : 20094
+    ; Label: "Diamond Value"
+[System: UDF]
+JwlLnDiaVal : Number : 20095
+    ; Label: "Line Base Value"
+[System: UDF]
+JwlLnBaseVal : Number : 20096
+    ; Label: "Line Discount %"
+[System: UDF]
+JwlLnDiscPc : Number : 20097
+    ; Label: "Line Stone Rate"
+[System: UDF]
+JwlLnStoneRate : Number : 20098
+    ; Label: "Line Diamond Rate"
+[System: UDF]
+JwlLnDiaRate : Number : 20099
+; The making-charge AMOUNT typed by the user. It is stored separately from
+; JwlLnMakeAmt, which is the CALCULATED making charge for this line, so the
+; input is never overwritten by the calculation.
+    ; Label: "Making Charge Input"
+[System: UDF]
+JwlLnMakeAmtIn : Number : 20100
+; Screen-level flag set by 13_Security.tdl: 1 when the logged-in user may see
+; cost and profit figures.
+    ; Label: "Show Cost Columns"
+[System: UDF]
+JwlShowCost : Logical : 20101
+    ; Label: "Line Discount Amount"
+[System: UDF]
+JwlLnDiscAmt : Number : 20102
+    ; Label: "Line Taxable Value"
+[System: UDF]
+JwlLnTaxable : Number : 20103
+    ; Label: "Line Total"
+[System: UDF]
+JwlLnTotal : Number : 20104
+    ; Label: "Line Cost (restricted)"; =============================================================================
+[System: UDF]
+JwlLnCost : Number : 20105
+;  SECTION C - SALES VOUCHER HEADER BLOCK
+; =============================================================================
+Alter: Sales Voucher
+    Add: Field
+        Field-id: JpSalesJewelHdr
+        Part-id: JpSalesJewelHdrPart
+        Width: 100
+        Invisible: ##JwlVchKind = "STANDARD"
+
+    Add: Field
+        Field-id: JpSalesLineMsg
+        Part-id: JpSalesLineMsgPart
+        Width: 100
+        Invisible: ##JwlVchKind = "STANDARD"
+
+    ; --- header level totals ------------------------------------------------
+    Modify Group: JpSalesHdrCalcGroup
+        Add: Field-id: JwlPayTotal
+            Set: Value: JpPayTotal($JwlPayCash, $JwlPayCard, $JwlPayUpi, $JwlPayBank, $JwlPayAdvance, $JwlPayOldGold)
+        Add: Field-id: JwlPayBalance
+            Set: Value: JpPayBalance($JwlGrandTotal, $JwlPayTotal, 0)
+        Add: Field-id: JpSalesMsg
+            Set: Value: JpSalesValidationText()
+        Add: Field-id: JpSalesHint
+            Set: Value: JpSalesValidationText()
+
+    ; --- GST breakdown. JpSplitGst publishes JpTaxCGST / JpTaxSGST / JpTaxIGST
+    ;     from the taxable value and the rate ALREADY on the voucher. The rate
+    ;     comes from the shop's own GST masters, so a slab change needs no TDL
+    ;     edit anywhere in this module.
+    Modify Group: JpSalesTaxGroup
+        Add: Field-id: JwlTaxTotal
+            Set: Value: JpSplitGst($JwlTaxableVal, $JwlGstRate, $JwlInterState)
+        Add: Field-id: JwlCgst
+            Set: Value: JpTaxCGST
+        Add: Field-id: JwlSgst
+            Set: Value: JpTaxSGST
+        Add: Field-id: JwlIgst
+            Set: Value: JpTaxIGST
+        Add: Field-id: JwlGrandTotal
+            Set: Value: JpRound($JwlTaxableVal + $JwlTaxTotal)
+
+[Part: JpSalesJewelHdrPart]
+
+
+; =============================================================================
+;  SECTION D - PER-PIECE COLUMNS ON THE ITEM GRID
+;  "Item Details" is Tally's inventory-entry grid; "Invoicemain" is the part
+;  that renders ONE row inside it. Adding fields with Part-id: Invoicemain is
+;  how a UDF gets its own column, repeated for every item on the invoice.
+; =============================================================================
+    Line: Spacing, JpSalesJewelHdrPartLine1, JpSalesJewelHdrPartLine2, JpSalesJewelHdrPartLine3, JpSalesJewelHdrPartLine4, JpSalesJewelHdrPartLine5, JpSalesJewelHdrPartLine6, JpSalesJewelHdrPartLine7, JpSalesJewelHdrPartLine8, JpSalesJewelHdrPartLine9, JpSalesJewelHdrPartLine10, JpSalesJewelHdrPartLine11, JpSalesJewelHdrPartLine12, JpSalesJewelHdrPartLine13, JpSalesJewelHdrPartLine14
+
+[Line: JpSalesJewelHdrPartLine1]
+    Height : 1
+    Field: JpSalesJewelHdrPartLine1F1
+
+[Field: JpSalesJewelHdrPartLine1F1]
+    Set As : "  JEWELLERY INVOICE DETAILS"
+    Style : JpTitle
+[Line: JpSalesJewelHdrPartLine2]
+    Field: JpSalesJewelHdrPartLine2F1
+
+[Field: JpSalesJewelHdrPartLine2F1]
+    Storage : JwlInvNo
+    Label : "Invoice No."
+    Width : 150
+[Line: JpSalesJewelHdrPartLine3]
+    Field: JpSalesJewelHdrPartLine3F1
+
+[Field: JpSalesJewelHdrPartLine3F1]
+    Storage : JwlSalesperson
+    Label : "Salesperson"
+    Width : 150
+[Line: JpSalesJewelHdrPartLine4]
+    Field: JpSalesJewelHdrPartLine4F1
+
+[Field: JpSalesJewelHdrPartLine4F1]
+    Storage : JwlCustMobile
+    Label : "Customer Mobile"
+    Width : 150
+[Line: JpSalesJewelHdrPartLine5]
+    Field: JpSalesJewelHdrPartLine5F1
+
+[Field: JpSalesJewelHdrPartLine5F1]
+    Storage : JwlOrderRef
+    Label : "Order Ref"
+    Width : 150
+[Line: JpSalesJewelHdrPartLine6]
+    Field: JpSalesJewelHdrPartLine6F1
+
+[Field: JpSalesJewelHdrPartLine6F1]
+    Storage : JwlRepairRef
+    Label : "Repair Ref"
+    Width : 150
+[Line: JpSalesJewelHdrPartLine7]
+    Height : 1
+    Field: JpSalesJewelHdrPartLine7F1
+
+[Field: JpSalesJewelHdrPartLine7F1]
+    Set As : " PAYMENT BREAKUP"
+    Style : JpSectionBox
+[Line: JpSalesJewelHdrPartLine8]
+    Field: JpSalesJewelHdrPartLine8F1
+
+[Field: JpSalesJewelHdrPartLine8F1]
+    Storage : JwlPayMode
+    Label : "Payment Mode"
+    Width : 150
+    Dynamic : Pick From: JpPayModePick
+[Line: JpSalesJewelHdrPartLine9]
+    Field: JpSalesJewelHdrPartLine9F1
+
+[Field: JpSalesJewelHdrPartLine9F1]
+    Storage : JwlPayCash
+    Label : "Cash"
+    Width : 120
+[Line: JpSalesJewelHdrPartLine10]
+    Field: JpSalesJewelHdrPartLine10F1
+
+[Field: JpSalesJewelHdrPartLine10F1]
+    Storage : JwlPayCard
+    Label : "Card"
+    Width : 120
+[Line: JpSalesJewelHdrPartLine11]
+    Field: JpSalesJewelHdrPartLine11F1
+
+[Field: JpSalesJewelHdrPartLine11F1]
+    Storage : JwlPayUpi
+    Label : "UPI"
+    Width : 120
+[Line: JpSalesJewelHdrPartLine12]
+    Field: JpSalesJewelHdrPartLine12F1
+
+[Field: JpSalesJewelHdrPartLine12F1]
+    Storage : JwlPayBank
+    Label : "Bank Transfer"
+    Width : 120
+[Line: JpSalesJewelHdrPartLine13]
+    Field: JpSalesJewelHdrPartLine13F1
+
+[Field: JpSalesJewelHdrPartLine13F1]
+    Storage : JwlPayAdvance
+    Label : "Customer Advance"
+    Width : 120
+[Line: JpSalesJewelHdrPartLine14]
+    Field: JpSalesJewelHdrPartLine14F1
+
+[Field: JpSalesJewelHdrPartLine14F1]
+    Storage : JwlPayOldGold
+    Label : "Old Gold Exchange"
+    Width : 130
+Alter: Sales Voucher, Item Details
+    Add: Field
+        Field-id: JpLnBarcode
+        Part-id: Invoicemain
+        Label: "Barcode"
+        Type: Text
+        Width: 90
+    Add: Field
+        Field-id: JpLnHuid
+        Part-id: Invoicemain
+        Label: "HUID"
+        Type: Text
+        Width: 80
+    Add: Field
+        Field-id: JpLnPurity
+        Part-id: Invoicemain
+        Label: "Purity"
+        Type: Text
+        Width: 55
+    Add: Field
+        Field-id: JpLnGross
+        Part-id: Invoicemain
+        Label: "Gr Wt"
+        Type: Quantity
+        Width: 60
+    Add: Field
+        Field-id: JpLnStone
+        Part-id: Invoicemain
+        Label: "St Wt"
+        Type: Quantity
+        Width: 55
+    Add: Field
+        Field-id: JpLnNet
+        Part-id: Invoicemain
+        Label: "Net Wt"
+        Type: Quantity
+        Width: 60
+        Color: #6B4E1E
+        Font: Bold
+    Add: Field
+        Field-id: JpLnRate
+        Part-id: Invoicemain
+        Label: "Rate"
+        Type: Number
+        Width: 70
+    Add: Field
+        Field-id: JpLnMetalVal
+        Part-id: Invoicemain
+        Label: "Metal Val"
+        Type: Number
+        Width: 80
+    Add: Field
+        Field-id: JpLnWastageVal
+        Part-id: Invoicemain
+        Label: "Wastage"
+        Type: Number
+        Width: 70
+    Add: Field
+        Field-id: JpLnMakeAmt
+        Part-id: Invoicemain
+        Label: "Making"
+        Type: Number
+        Width: 70
+    Add: Field
+        Field-id: JpLnStoneVal
+        Part-id: Invoicemain
+        Label: "Stone/Dia"
+        Type: Number
+        Width: 80
+    Add: Field
+        Field-id: JpLnBaseVal
+        Part-id: Invoicemain
+        Label: "Base Value"
+        Type: Number
+        Width: 85
+        Font: Bold
+    Add: Field
+        Field-id: JpLnDiscAmt
+        Part-id: Invoicemain
+        Label: "Discount"
+        Type: Number
+        Width: 75
+    Add: Field
+        Field-id: JpLnTotal
+        Part-id: Invoicemain
+        Label: "Line Total"
+        Type: Number
+        Width: 90
+        Font: Bold
+        Color: #A06000
+    ; Cost is present in the data model but hidden from anyone without the
+    ; profit right - that is the "salesperson must not see cost price" rule.
+    Add: Field
+        Field-id: JpLnCost
+        Part-id: Invoicemain
+        Label: "Cost"
+        Type: Number
+        Width: 75
+        Invisible: ##JwlShowCost <> 1
+
+; --- yes/no pick list used on the Sales header ---------------------------
+    ; message field so validation text appears next to the items too
+    Add: Field
+        Field-id: JpSalesMsg
+        Part-id: Invoicemain
+        Label: " "
+        Type: Text
+        Width: 80
+        Skip: Yes
+
+    Modify Group: JpLnCalcGroup
+        Add: Field-id: JwlLnNet
+            Set: Value: JpNetWeight($JwlLnGross, $JwlLnStone)
+        Add: Field-id: JwlLnMetalVal
+            Set: Value: JpMetalValue($JwlLnNet, $JwlLnRate)
+        Add: Field-id: JwlLnWastageVal
+            Set: Value: JpWastageValue($JwlLnMetalVal, $JwlLnWastagePc)
+        Add: Field-id: JwlLnStoneVal
+            Set: Value: JpStoneValue($JwlLnStone, $JwlLnStoneRate)
+        Add: Field-id: JwlLnDiaVal
+            Set: Value: JpDiamondValue($JwlLnCarat, $JwlLnDiaRate)
+        Add: Field-id: JwlLnMakeAmt
+            Set: Value: JpMakingCharge($JwlLnMakeType, $JwlLnNet, $JwlLnMetalVal, $JwlLnMakeAmtIn, $JwlLnRate)
+        Add: Field-id: JwlLnBaseVal
+            Set: Value: JpRound($JwlLnMetalVal + $JwlLnWastageVal + $JwlLnMakeAmt + $JwlLnStoneVal + $JwlLnDiaVal)
+        Add: Field-id: JwlLnDiscAmt
+            Set: Value: JpDiscAmt($JwlLnBaseVal, $JwlLnDiscPc, $JwlDiscAmt)
+        Add: Field-id: JwlLnTaxable
+            Set: Value: JpRound($JwlLnBaseVal - $JwlLnDiscAmt)
+        Add: Field-id: JwlLnTotal
+            Set: Value: JpRound($JwlLnTaxable + JpTaxAmount($JwlLnTaxable, $JwlGstRate))
+
+    ; --- pull the jewellery facts off the item when the item is chosen ----
+    Modify Group: JpLnFromItemGroup
+        Add: Field-id: JwlLnBarcode
+            Set: Value: JpItemFact($$InventoryItem, "JwlBarcode")
+        Add: Field-id: JwlLnHuid
+            Set: Value: JpItemFact($$InventoryItem, "JwlHuid")
+        Add: Field-id: JwlLnPurity
+            Set: Value: JpItemFact($$InventoryItem, "JwlPurity")
+        Add: Field-id: JwlLnMetal
+            Set: Value: JpItemFact($$InventoryItem, "JwlMetalType")
+        Add: Field-id: JwlLnGross
+            Set: Value: JpItemFact($$InventoryItem, "JwlGrossWt")
+        Add: Field-id: JwlLnStone
+            Set: Value: JpItemFact($$InventoryItem, "JwlStoneWt")
+        Add: Field-id: JwlLnCarat
+            Set: Value: JpItemFact($$InventoryItem, "JwlDiamondCarat")
+        Add: Field-id: JwlLnWastagePc
+            Set: Value: JpItemFact($$InventoryItem, "JwlWastagePc")
+        Add: Field-id: JwlLnMakeType
+            Set: Value: JpItemFact($$InventoryItem, "JwlMakingType")
+        Add: Field-id: JwlLnStoneRate
+            Set: Value: JpItemFact($$InventoryItem, "JwlStoneRate")
+        Add: Field-id: JwlLnDiaRate
+            Set: Value: JpItemFact($$InventoryItem, "JwlDiamondRate")
+        Add: Field-id: JwlLnCost
+            Set: Value: JpItemFact($$InventoryItem, "JwlFinalValue")
+        ; rate: item override first, otherwise TODAY's rate for the purity
+    Text: " DISCOUNT  AND  GST"
+    Style: JpSectionBox
+    Line Height: 1
+
+    Field: <Field-Id: JwlDiscPc, Label: "Invoice Discount %">
+        Width: 120
+    Field: <Field-Id: JwlDiscAmt, Label: "Discount Amount">
+        Width: 120
+    Field: <Field-Id: JwlGstRate, Label: "GST Rate %">
+        Width: 120
+    Field: <Field-Id: JwlInterState, Label: "Inter State">
+        Width: 120
+        Dynamic: Pick From: JpYesNoPick
+    Field: <Field-Id: JwlOldGoldRef, Label: "Old Gold Vch Ref">
+        Width: 140
+
+    Line: Spacing
+    Text: " INVOICE TOTALS"
+    Style: JpSectionBox
+    Line Height: 1
+
+    Field: <Field-Id: JwlTaxableVal, Label: "Taxable Jewellery Value">
+        Width: 150
+    Field: <Field-Id: JwlMakeVal, Label: "Making Charges Value">
+        Width: 150
+    Field: <Field-Id: JwlCgst, Label: "CGST">
+        Width: 110
+    Field: <Field-Id: JwlSgst, Label: "SGST">
+        Width: 110
+    Field: <Field-Id: JwlIgst, Label: "IGST">
+        Width: 110
+    Field: <Field-Id: JwlTaxTotal, Label: "Total GST">
+        Width: 120
+        Color: #6B4E1E
+        Font: Bold
+    Field: <Field-Id: JwlGrandTotal, Label: "GRAND TOTAL">
+        Width: 140
+        Color: #A06000
+        Font: Bold
+    Field: <Field-Id: JwlPayTotal, Label: "Total Received">
+        Width: 130
+    Field: <Field-Id: JwlPayBalance, Label: "Balance Due">
+        Width: 120
+[Collection: Source: JpYesNoPick]
+    Data: JpYesNoPickRow
+
+[Collection: Data: JpYesNoPickRow]
+    Fetch: JpYesNoPickFetch
+    Set: JpYesNoPickSet
+    Repeat: Over: JpYesNoPickRow
+
+[Collection: Data: JpYesNoPickFetch]
+    Include: JpYesNoPickRow
+
+[Collection: Data: JpYesNoPickSet]
+    Not On: ##<Not>
+    Set: $$Name: Value: JpYesNoList()
+
+; =============================================================================
+;  SECTION E - LINE AUTO CALCULATION
+;  Runs on every inventory line as it is filled in. This is the same arithmetic
+;  as 00_Core, so a line can never disagree with the item master.
+; =============================================================================
+        Add: Field-id: JwlLnRate
+            Set: Value: JpLineRate($$InventoryItem, $JwlLnMetal, $JwlLnPurity, $JwlLnRate); =============================================================================
+;  SECTION F - HELPERS
+; =============================================================================
+
+; Reads a jewellery fact from the ITEM master. $$InventoryItem is the item on
+; the current inventory line; JpGetUDFNum/Str read the named UDF from it.
+[Function: JpItemFact]
+    Param: vItem : String : Optional, vFieldName : String : Optional
+    Returns: String : Any
+    JpItemFact = JpGetUDFStr(Param(0), Param(1))
+
+; The rate to charge on a line: the item's own rate if it has one, otherwise
+; TODAY's rate for that metal and purity. A value the user typed wins only if
+; they hold JADE_OVERRIDE_RATE.
+[Function: JpLineRate]
+    Param: vItem : String : Optional, vMetal : String : Optional, vPurity : String : Optional, vTyped : Number : Optional
+    Returns: Number : Any
+    Var: own : Number, today : Number
+    own = JpGetUDFNum(Param(0), "JwlGoldRate")
+    If (own > 0) Then
+    {
+        JpLineRate = JpEffectiveRate(own, Param(3))
+        Exit
+    }
+    today = JpRateFor(Param(1), Param(2), 0)
+    JpLineRate = JpEffectiveRate(today, Param(3))
+
+; Discount for one line: line % wins; otherwise the invoice level %; otherwise
+; an invoice level flat amount spread over the lines.
+[Function: JpDiscAmt]
+    Param: vBase : Number : Optional, vLinePc : Number : Optional, vInvAmt : Number : Optional
+    Returns: Number : Any
+    Var: b : Number, p : Number
+    b = Param(0)
+    p = Param(1)
+    If (b is null) Then { b = 0; }
+    If (p is null) Then { p = 0; }
+    If (p <= 0) Then { JpDiscAmt = 0; Exit; }
+    If (p > 100) Then { p = 100; }
+    JpDiscAmt = JpRound(b * p / 100)
+
+; Splits GST into CGST / SGST / IGST and returns the total. The results land in
+; the JpTaxCGST / JpTaxSGST / JpTaxIGST globals declared in 00_Core.
+[Function: JpSplitGst]
+    Param: vTaxable : Number : Optional, vRate : Number : Optional, vInterState : Number : Optional
+    Returns: Number : Any
+    JpSplitGst = JpComputeTax(Param(0), Param(1), Param(2))
+
+; Header-level validation. Returns "" when the invoice is acceptable, otherwise
+; the first problem worth telling the user about.
+[Function: JpSalesValidationText]
+    Returns: String : Any
+    Var: m : String
+    m = ""
+    If (JpBlankIfNull($JwlInvNo) = "") Then
+    {
+        JpSalesValidationText = "Invoice Number is mandatory."
+        Exit
+    }
+    If (JpBlankIfNull($JwlSalesperson) = "") Then
+    {
+        JpSalesValidationText = "Salesperson is mandatory for salesperson reports."
+        Exit
+    }
+    If ($JwlGstRate < 0) Then
+    {
+        JpSalesValidationText = "GST rate cannot be negative."
+        Exit
+    }
+    If (JpDiscountAllowed($JwlDiscPc, JpMaxDiscountPc) = 0) Then
+    {
+        JpSalesValidationText = JpDeniedMsg
+        Exit
+    }
+    If ($JwlPayBalance > 0.01) Then
+    {
+        JpSalesValidationText = "Balance due " + JpFmtAmt($JwlPayBalance) + " - split payment entered does not cover the grand total."
+        Exit
+    }
+    If ($$JpRateOverridden = 1) Then
+    {
+        If (JpHasRight(JpRtOverride()) = 0) Then
+        {
+            JpSalesValidationText = "A manually typed rate was ignored because you are not authorised to override the daily rate."
+            Exit
+        }
+    }
+    JpSalesValidationText = ""
+
+; =============================================================================
+;  SECTION G - THE BILLING FRONT SCREEN
+;  A thin cashier-facing landing screen: today's rates, the rate-change
+;  permission state, and a single keypress into the enriched Sales voucher.
+; =============================================================================
+[Variable: JpSalesMsg   : String]
+[Variable: JpSalesHint  : String]
+; Loaded from the Company master by 13_Security.tdl when the module starts.
+[Variable: JpMaxDiscountPc  : Number]
+[Variable: JpCommissionPc   : Number]
+[Variable: JpDefaultGstRate : Number]
+
+[Screen: JpSalesScreen]
+    Caption: "JadePro  ::  Jewellery Billing"
+    Key: <Ctrl+Q: System: Quit>
+
+    Line: Spacing
+    Lines: 1
+    Text: "           JEWELLERY BILLING"
+    Style: JpTitle
+    Line Height: 1
+[Part: JpSalesLineMsgPart]
+    Button: <Start Jewellery Invoice (F2), Key: F2, Action: JpStartInvoice>
+    Button: <Update Daily Rates (F8), Key: F8, Action: JpOpenRate>
+    Button: <Old Gold Exchange (F9), Key: F9, Action: JpOpenOldGold>
+    Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+    Line: Spacing, JpSalesLineMsgPartLine1, JpSalesLineMsgPartLine2, JpSalesLineMsgPartLine3, JpSalesLineMsgPartLine4, JpSalesLineMsgPartLine5, JpSalesLineMsgPartLine6, JpSalesLineMsgPartLine7, JpSalesLineMsgPartLine8, JpSalesLineMsgPartLine9, JpSalesLineMsgPartLine10, JpSalesLineMsgPartLine11, JpSalesLineMsgPartLine12, JpSalesLineMsgPartLine13, JpSalesLineMsgPartLine14, JpSalesLineMsgPartLine15
+
+[Line: JpSalesLineMsgPartLine1]
+    Field: JpSalesLineMsgPartLine1F1
+
+[Field: JpSalesLineMsgPartLine1F1]
+    Storage : JpSalesMsg
+    Label : " "
+    Width : 100
+    Style : JpWarn
+[Line: JpSalesLineMsgPartLine2]
+    Field: JpSalesLineMsgPartLine2F1
+
+[Field: JpSalesLineMsgPartLine2F1]
+    Storage : JpSalesHint
+    Label : " "
+    Width : 100
+    Style : JpMuted
+[Line: JpSalesLineMsgPartLine3]
+    Field: JpSalesLineMsgPartLine3F1
+
+[Field: JpSalesLineMsgPartLine3F1]
+    Set As : "Press F2 to open the Sales voucher, which now carries the full jewellery column set."
+    Style : JpSub
+[Line: JpSalesLineMsgPartLine4]
+    Field: JpSalesLineMsgPartLine4F1
+
+[Field: JpSalesLineMsgPartLine4F1]
+    Set As : " "
+    Style : JpMuted
+[Line: JpSalesLineMsgPartLine5]
+    Field: JpSalesLineMsgPartLine5F1
+
+[Field: JpSalesLineMsgPartLine5F1]
+    Set As : " TODAY'S RATES  (per gram)"
+    Style : JpSectionBox
+[Line: JpSalesLineMsgPartLine6]
+    Field: JpSalesLineMsgPartLine6F1
+
+[Field: JpSalesLineMsgPartLine6F1]
+    Set As : "   24K   " + JpFmtAmt(JpCache24K) + "          22K   " + JpFmtAmt(JpCache22K) + "          18K   " + JpFmtAmt(JpCache18K)
+[Line: JpSalesLineMsgPartLine7]
+    Field: JpSalesLineMsgPartLine7F1
+
+[Field: JpSalesLineMsgPartLine7F1]
+    Set As : "   14K   " + JpFmtAmt(JpCache14K) + "          Silver   " + JpFmtAmt(JpCacheSilver) + "          Platinum   " + JpFmtAmt(JpCachePlatinum)
+[Line: JpSalesLineMsgPartLine8]
+    Field: JpSalesLineMsgPartLine8F1
+
+[Field: JpSalesLineMsgPartLine8F1]
+    Set As : "   Rate date cached: " + JpBlankIfNull(JpCacheDate)
+    Style : JpWarn
+[Line: JpSalesLineMsgPartLine9]
+    Field: JpSalesLineMsgPartLine9F1
+
+[Field: JpSalesLineMsgPartLine9F1]
+    Set As : " YOUR PERMISSIONS"
+    Style : JpSectionBox
+[Line: JpSalesLineMsgPartLine10]
+    Field: JpSalesLineMsgPartLine10F1
+
+[Field: JpSalesLineMsgPartLine10F1]
+    Set As : "   Role ............ " + JpUserRole
+[Line: JpSalesLineMsgPartLine11]
+    Field: JpSalesLineMsgPartLine11F1
+
+[Field: JpSalesLineMsgPartLine11F1]
+    Set As : "   Change daily rate  " + JpPermText(JpRtChangeRate())
+[Line: JpSalesLineMsgPartLine12]
+    Field: JpSalesLineMsgPartLine12F1
+
+[Field: JpSalesLineMsgPartLine12F1]
+    Set As : "   Override rate      " + JpPermText(JpRtOverride())
+[Line: JpSalesLineMsgPartLine13]
+    Field: JpSalesLineMsgPartLine13F1
+
+[Field: JpSalesLineMsgPartLine13F1]
+    Set As : "   View cost / profit " + JpPermText(JpRtProfit())
+[Line: JpSalesLineMsgPartLine14]
+    Field: JpSalesLineMsgPartLine14F1
+
+[Field: JpSalesLineMsgPartLine14F1]
+    Storage : JpSalesMsg
+    Label : " "
+    Width : 100
+    Style : JpWarn
+[Line: JpSalesLineMsgPartLine15]
+    Field: JpSalesLineMsgPartLine15F1
+
+[Field: JpSalesLineMsgPartLine15F1]
+    Storage : JpSalesHint
+    Label : " "
+    Width : 100
+    Style : JpMuted
+[Function: JpPermText]
+    Param: vRight : String : Optional
+    Returns: String : Any
+    If (JpHasRight(Param(0)) = 1) Then
+    {
+        JpPermText = "ALLOWED"
+        Exit
+    }
+    JpPermText = "NOT ALLOWED"
+
+[Function: JpStartInvoice]
+    Returns: Integer : Any
+    If (JpCache24K <= 0) Then
+    {
+        JpSalesMsg = "No daily rate is loaded. Enter today's rate master first (F8) - otherwise every jewellery line will be blocked by the missing-rate validation."
+        JpStartInvoice = 0
+        Exit
+    }
+    JpSalesMsg = ""
+    Alter: Sales
+    JpStartInvoice = 1
+
+[Function: JpOpenRate]
+    Returns: Integer : Any
+    Alter: JpRateScreen
+    JpOpenRate = 1
+
+[Function: JpOpenOldGold]
+    Returns: Integer : Any
+    Alter: JpOldGoldScreen
+    JpOpenOldGold = 1

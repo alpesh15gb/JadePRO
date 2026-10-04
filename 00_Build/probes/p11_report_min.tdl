@@ -1,0 +1,4 @@
+; P11  Minimal Report: Title only. Tests whether a Report body may carry only a
+;      Title, and whether Report itself needs Lines:/Print: to be valid.
+[Report: ZzP11Report]
+    Title: <1000, "ZzP11">
