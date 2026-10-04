@@ -1583,119 +1583,119 @@ Alter: Company
 [Style: JpTitle]
     Font: Arial Bold
     Height: 22
-    Colour: White
-    Background Colour: #3B2A14
-    Border: Yes
-    Border Colour: #C8A44D
-    Border Style: Solid
-    Align: Centre
-    Font Color: White
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Color
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Background
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border : <name> + [Border:] definition
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Colour (no Field equivalent)
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Style (no Field equivalent)
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Color
 
 [Style: JpSub]
     Font: Arial Bold
     Height: 16
-    Colour: #6B4E1E
-    Border: Yes
-    Border Style: Solid
-    Border Colour: #C8A44D
-    Background Colour: #F7EFDD
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Color
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border : <name> + [Border:] definition
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Style (no Field equivalent)
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Colour (no Field equivalent)
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Background
 
 [Style: JpSectionBox]
     Font: Arial Bold
     Height: 15
-    Colour: #6B4E1E
-    Border: Yes
-    Border Style: Solid
-    Border Colour: #D8C79A
-    Background Colour: #FBF6EA
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Color
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border : <name> + [Border:] definition
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Style (no Field equivalent)
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Colour (no Field equivalent)
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Background
 
 [Style: JpBody]
     Font: Arial
     Height: 15
-    Border: No
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border : <name> + [Border:] definition
 
 [Style: JpMoney]
     Font: Arial
-    Align: Right
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
     Height: 15
 
 [Style: JpMoneyBold]
     Font: Arial Bold
-    Align: Right
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
     Height: 15
 
 [Style: JpWeight]
     Font: Arial
-    Align: Right
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
     Height: 15
 
 [Style: JpWeightBold]
     Font: Arial Bold
-    Align: Right
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
     Height: 15
 
 [Style: JpCenter]
     Font: Arial
-    Align: Centre
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
     Height: 15
 
 [Style: JpTotal]
     Font: Arial Bold
-    Align: Right
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
     Height: 16
-    Background Colour: #EFE6D2
-    Border: Yes
-    Border Style: Solid
-    Border Colour: #C8A44D
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Background
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border : <name> + [Border:] definition
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Style (no Field equivalent)
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Colour (no Field equivalent)
 
 [Style: JpWarn]
     Font: Arial Bold
-    Colour: #A00000
-    Background Colour: #FFE8E8
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Color
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Background
     Height: 15
 
 [Style: JpMuted]
     Font: Arial
-    Colour: #707070
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Color
     Height: 14
 
 [Style: JpCardHdr]
     Font: Arial Bold
     Height: 17
-    Colour: White
-    Background Colour: #6B4E1E
-    Align: Centre
-    Border: Yes
-    Border Style: Solid
-    Border Colour: #C8A44D
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Color
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Background
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border : <name> + [Border:] definition
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Style (no Field equivalent)
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Colour (no Field equivalent)
 
 [Style: JpCardVal]
     Font: Arial Bold
     Height: 20
-    Align: Centre
-    Colour: #3B2A14
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Color
 
 [Style: JpBigNum]
     Font: Arial Bold
     Height: 19
-    Align: Centre
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
 
 [Style: JpGridHead]
     Font: Arial Bold
-    Colour: White
-    Background Colour: #4A3420
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Color
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Background
     Height: 16
-    Align: Centre
-    Border: Yes
-    Border Style: Solid
-    Border Colour: #C8A44D
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border : <name> + [Border:] definition
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Style (no Field equivalent)
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Colour (no Field equivalent)
 
 [Style: JpGrid]
     Font: Arial
     Height: 15
-    Border: Yes
-    Border Style: Solid
-    Border Colour: #C8A44D
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border : <name> + [Border:] definition
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Style (no Field equivalent)
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Border Colour (no Field equivalent)
 
 ; =============================================================================
 ;  SECTION A - PICK LISTS
@@ -6347,17 +6347,17 @@ Alter: Ledger
 [Style: JpBarcodeText]
     Font: Arial
     Height: 10
-    Align: CENTRE
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
 
 [Style: JpBarcodeHead]
     Font: Arial Bold
     Height: 12
-    Align: CENTRE
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
 
 [Style: JpBarcodeSub]
     Font: Arial
     Height: 10
-    Align: CENTRE
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
 
 ; =============================================================================
 ;  THE TAG PART - the barcode block, identical data whichever path is used

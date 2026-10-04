@@ -84,17 +84,17 @@
 [Style: JpBarcodeText]
     Font: Arial
     Height: 10
-    Align: CENTRE
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
 
 [Style: JpBarcodeHead]
     Font: Arial Bold
     Height: 12
-    Align: CENTRE
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
 
 [Style: JpBarcodeSub]
     Font: Arial
     Height: 10
-    Align: CENTRE
+    ; removed by fix-style-attrs.mjs - Style takes only Font/Height/Bold/Italic; on a Field this would be: Align
 
 ; =============================================================================
 ;  THE TAG PART - the barcode block, identical data whichever path is used
