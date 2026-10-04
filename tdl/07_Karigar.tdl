@@ -563,7 +563,8 @@ Alter: Ledger
 [Field: JpKarigarOutstandingPrintLine3F1]
     Set As : "From " + JpFmtDate($$JpFromDate) + "   To " + JpFmtDate($$JpToDate)
 [Line: JpKarigarOutstandingPrintLine4]
-    Part Name : Width
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : Width : Yes
     Field: JpKarigarOutstandingPrintLine4F1
 
 [Field: JpKarigarOutstandingPrintLine4F1]

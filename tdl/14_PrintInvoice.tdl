@@ -129,7 +129,8 @@
     Line: Spacing, JpInvoiceItemsLine1, JpInvoiceItemsLine2, JpInvoiceItemsLine3, JpInvoiceItemsLine4, JpInvoiceItemsLine5, JpInvoiceItemsLine6, JpInvoiceItemsLine7, JpInvoiceItemsLine8, JpInvoiceItemsLine9, JpInvoiceItemsLine10, JpInvoiceItemsLine11, JpInvoiceItemsLine12, JpInvoiceItemsLine13, JpInvoiceItemsLine14, JpInvoiceItemsLine15, JpInvoiceItemsLine16, JpInvoiceItemsLine17, JpInvoiceItemsLine18, JpInvoiceItemsLine19, JpInvoiceItemsLine20, JpInvoiceItemsLine21, JpInvoiceItemsLine22, JpInvoiceItemsLine23, JpInvoiceItemsLine24, JpInvoiceItemsLine25, JpInvoiceItemsLine26, JpInvoiceItemsLine27, JpInvoiceItemsLine28, JpInvoiceItemsLine29, JpInvoiceItemsLine30, JpInvoiceItemsLine31, JpInvoiceItemsLine32, JpInvoiceItemsLine33, JpInvoiceItemsLine34, JpInvoiceItemsLine35, JpInvoiceItemsLine36, JpInvoiceItemsLine37
 
 [Line: JpInvoiceItemsLine1]
-    Part Name: JpInvoiceItemHead
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpInvoiceItemHead : Yes
 
 [Line: JpInvoiceItemsLine2]
     Field: JpInvoiceItemsLine2F1
@@ -328,7 +329,8 @@
     Line: Spacing, JpInvoiceItemHeadLine1, JpInvoiceItemHeadLine2, JpInvoiceItemHeadLine3, JpInvoiceItemHeadLine4, JpInvoiceItemHeadLine5, JpInvoiceItemHeadLine6, JpInvoiceItemHeadLine7, JpInvoiceItemHeadLine8, JpInvoiceItemHeadLine9, JpInvoiceItemHeadLine10, JpInvoiceItemHeadLine11, JpInvoiceItemHeadLine12, JpInvoiceItemHeadLine13, JpInvoiceItemHeadLine14, JpInvoiceItemHeadLine15, JpInvoiceItemHeadLine16, JpInvoiceItemHeadLine17, JpInvoiceItemHeadLine18, JpInvoiceItemHeadLine19, JpInvoiceItemHeadLine20, JpInvoiceItemHeadLine21, JpInvoiceItemHeadLine22, JpInvoiceItemHeadLine23, JpInvoiceItemHeadLine24, JpInvoiceItemHeadLine25, JpInvoiceItemHeadLine26, JpInvoiceItemHeadLine27
 
 [Line: JpInvoiceItemHeadLine1]
-    Part Name: Width
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : Width : Yes
 [Line: JpInvoiceItemHeadLine2]
     Field: JpInvoiceItemHeadLine2F1
 

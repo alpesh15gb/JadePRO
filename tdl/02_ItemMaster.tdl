@@ -627,7 +627,8 @@ Alter: Item
     Width : 100
     Skip : Yes
 [Line: JpItemJewelPartLine38]
-    Part Name: JpItemValidateMsg
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpItemValidateMsg : Yes
 
 ; --- validation message line ----------------------------------------------
 [Part: JpItemValidateMsg]

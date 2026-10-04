@@ -135,7 +135,8 @@ JwlTotalPurchases : Number : 20216
     Line: Spacing, JpReportHeaderLine1, JpReportHeaderLine2, JpReportHeaderLine3, JpReportHeaderLine4, JpReportHeaderLine5
 
 [Line: JpReportHeaderLine1]
-    Part Name: Width
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : Width : Yes
 [Line: JpReportHeaderLine2]
     Field: JpReportHeaderLine2F1
 
@@ -191,7 +192,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpDailySalesPrintLine2]
     Field: JpDailySalesPrintLine2F1
 
@@ -587,7 +589,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpMonthlySalesPrintLine2]
     Field: JpMonthlySalesPrintLine2F1
 
@@ -824,7 +827,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpSalesRegisterPrintLine2]
     Field: JpSalesRegisterPrintLine2F1
 
@@ -1256,7 +1260,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpPurchaseRegisterPrintLine2]
     Field: JpPurchaseRegisterPrintLine2F1
 
@@ -1641,7 +1646,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpGSTReportPrintLine2]
     Field: JpGSTReportPrintLine2F1
 
@@ -1753,7 +1759,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpStockReportPrintLine2]
     Field: JpStockReportPrintLine2F1
 
@@ -2309,7 +2316,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpPurityStockPrintLine2]
     Field: JpPurityStockPrintLine2F1
 
@@ -2566,7 +2574,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpCategoryStockPrintLine2]
     Field: JpCategoryStockPrintLine2F1
 
@@ -2774,7 +2783,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpDesignStockPrintLine2]
     Field: JpDesignStockPrintLine2F1
 
@@ -2993,7 +3003,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpCounterStockPrintLine2]
     Field: JpCounterStockPrintLine2F1
 
@@ -3441,7 +3452,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpMovementPrintLine2]
     Field: JpMovementPrintLine2F1
 
@@ -3672,7 +3684,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpSalespersonPrintLine2]
     Field: JpSalespersonPrintLine2F1
 
@@ -3952,7 +3965,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpItemProfitPrintLine2]
     Field: JpItemProfitPrintLine2F1
 
@@ -4242,7 +4256,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpCategoryProfitPrintLine2]
     Field: JpCategoryProfitPrintLine2F1
 
@@ -4486,7 +4501,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpCustomerHistoryPrintLine2]
     Field: JpCustomerHistoryPrintLine2F1
 
@@ -4763,7 +4779,8 @@ JwlTotalPurchases : Number : 20216
     ; removed by fix-line-container-attrs.mjs - Paper is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-right is a print-layout attribute, not a Line attribute
     ; removed by fix-line-container-attrs.mjs - Margin-bottom is a print-layout attribute, not a Line attribute
-    Part Name: JpReportHeader
+    ; Part Name routed to Explode by fix-line-part-name.mjs
+    Explode : JpReportHeader : Yes
 [Line: JpTopCustomerPrintLine2]
     Field: JpTopCustomerPrintLine2F1
 
