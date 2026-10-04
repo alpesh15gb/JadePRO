@@ -212,179 +212,263 @@ JplZplSettings : String : 20176
     Parts : JpZplConfigScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpZplConfigScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpZplConfigScreenL1, JpZplConfigScreenL2, JpZplConfigScreenL3, JpZplConfigScreenL4, JpZplConfigScreenL5, JpZplConfigScreenL6, JpZplConfigScreenL7, JpZplConfigScreenL8, JpZplConfigScreenL9, JpZplConfigScreenL10, JpZplConfigScreenL11, JpZplConfigScreenL12, JpZplConfigScreenL13, JpZplConfigScreenL14, JpZplConfigScreenL15, JpZplConfigScreenL16, JpZplConfigScreenL17, JpZplConfigScreenL18, JpZplConfigScreenL19, JpZplConfigScreenL20, JpZplConfigScreenL21, JpZplConfigScreenL22, JpZplConfigScreenL23, JpZplConfigScreenL24, JpZplConfigScreenL25, JpZplConfigScreenL26, JpZplConfigScreenL27, JpZplConfigScreenL28
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpZplConfigScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpZplConfigScreenT2
-    Field : JpZplConfigScreenT3
 
-    Line: Spacing
-    Lines: 1, 1, 1
-    Field: <Field-Id: JpZplProfile, Label: "Printer Profile">
-        Width: 100
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpZplConfigScreenT4
-    Lines: 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-    Field : JpZplConfigScreenT5
-    Field : JpZplConfigScreenT6
-    Field : JpZplConfigScreenT7
-    Field : JpZplConfigScreenT8
-    Field : JpZplConfigScreenT9
-    Field : JpZplConfigScreenT10
-    Field : JpZplConfigScreenT11
-    Field : JpZplConfigScreenT12
-    Field : JpZplConfigScreenT13
-    Field : JpZplConfigScreenT14
-    Field : JpZplConfigScreenT15
-    Field : JpZplConfigScreenT16
-    Field : JpZplConfigScreenT17
-    Field : JpZplConfigScreenT18
-    Field : JpZplConfigScreenT19
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpZplConfigScreenT20
-    Field : JpZplConfigScreenT21
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1, 1
-    Field: <Field-Id: JpZplMsg, Label: " ">
-        Width: 100
-        Style: JpWarn
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpZplConfigScreenT22
-    Lines: 1, 1, 1
-    Field : JpZplConfigScreenT23
-    Field : JpZplConfigScreenT24
-    Field : JpZplConfigScreenT25
-    Lines: 1, 1
-    Field: <Field-Id: JpZplMintItem, Label: "Item name">
-        Width: 40
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Mint Barcode (F3), Key: F3, Action: JpZplMintAction>
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Load Defaults (F8), Key: F8, Action: JpZplLoadDefaults>
     Button: <Save Profile (F2), Key: F2, Action: JpZplSaveProfile>
     Button: <Print Queue (F4), Key: F4, Action: JpZplOpenQueue>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
 
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpZplConfigScreenT1]
+[Line: JpZplConfigScreenL1]
+    Field : JpZplConfigScreenL1F
+
+[Line: JpZplConfigScreenL2]
+    Field : JpZplConfigScreenL2F
+
+[Line: JpZplConfigScreenL3]
+    Field : JpZplConfigScreenL3F
+
+[Line: JpZplConfigScreenL4]
+    Field : JpZplProfile
+
+[Line: JpZplConfigScreenL5]
+    Field : JpZplConfigScreenL5F
+
+[Line: JpZplConfigScreenL6]
+    Field : JpZplConfigScreenL6F
+
+[Line: JpZplConfigScreenL7]
+    Field : JpZplConfigScreenL7F
+
+[Line: JpZplConfigScreenL8]
+    Field : JpZplConfigScreenL8F
+
+[Line: JpZplConfigScreenL9]
+    Field : JpZplConfigScreenL9F
+
+[Line: JpZplConfigScreenL10]
+    Field : JpZplConfigScreenL10F
+
+[Line: JpZplConfigScreenL11]
+    Field : JpZplConfigScreenL11F
+
+[Line: JpZplConfigScreenL12]
+    Field : JpZplConfigScreenL12F
+
+[Line: JpZplConfigScreenL13]
+    Field : JpZplConfigScreenL13F
+
+[Line: JpZplConfigScreenL14]
+    Field : JpZplConfigScreenL14F
+
+[Line: JpZplConfigScreenL15]
+    Field : JpZplConfigScreenL15F
+
+[Line: JpZplConfigScreenL16]
+    Field : JpZplConfigScreenL16F
+
+[Line: JpZplConfigScreenL17]
+    Field : JpZplConfigScreenL17F
+
+[Line: JpZplConfigScreenL18]
+    Field : JpZplConfigScreenL18F
+
+[Line: JpZplConfigScreenL19]
+    Field : JpZplConfigScreenL19F
+
+[Line: JpZplConfigScreenL20]
+    Field : JpZplConfigScreenL20F
+
+[Line: JpZplConfigScreenL21]
+    Field : JpZplConfigScreenL21F
+
+[Line: JpZplConfigScreenL22]
+    Field : JpZplConfigScreenL22F
+
+[Line: JpZplConfigScreenL23]
+    Field : JpZplMsg
+
+[Line: JpZplConfigScreenL24]
+    Field : JpZplConfigScreenL24F
+
+[Line: JpZplConfigScreenL25]
+    Field : JpZplConfigScreenL25F
+
+[Line: JpZplConfigScreenL26]
+    Field : JpZplConfigScreenL26F
+
+[Line: JpZplConfigScreenL27]
+    Field : JpZplConfigScreenL27F
+
+[Line: JpZplConfigScreenL28]
+    Field : JpZplMintItem
+
+[Field: JpZplConfigScreenL1F]
     Set As : "           ZEBRA LABEL SETUP"
     Style : JpTitle
 
-[Field: JpZplConfigScreenT2]
+[Field: JpZplConfigScreenL2F]
     Set As : "Profile format:  dpi=203;w=54;h=40;dark=12;speed=4;copies=1;bcY=200;bcH=64;..."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT3]
+[Field: JpZplConfigScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpZplConfigScreenT4]
+[Field: JpZplProfile]
+    Label : "Printer Profile"
+        Width: 100
+        Style: UseFormCtrl
+
+[Field: JpZplConfigScreenL5F]
     Set As : " WHAT EACH SETTING MEANS"
     Style : JpSectionBox
 
-[Field: JpZplConfigScreenT5]
+[Field: JpZplConfigScreenL6F]
     Set As : "   dpi ....... resolution. 203 -> 8 dots/mm. 300 -> 12 dots/mm. Default 203."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT6]
+[Field: JpZplConfigScreenL7F]
     Set As : "   w, h ...... label width and length in MILLIMETRES. Default 54 x 40."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT7]
+[Field: JpZplConfigScreenL8F]
     Set As : "   dark ...... ^MD darkness, 0 (lightest) to 30 (darkest). Default 12."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT8]
+[Field: JpZplConfigScreenL9F]
     Set As : "   speed ..... ^PR print speed in inches/second. Default 4."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT9]
+[Field: JpZplConfigScreenL10F]
     Set As : "   copies .... ^PQ copies per label. Default 1."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT10]
+[Field: JpZplConfigScreenL11F]
     Set As : "   bcY ....... vertical position of the barcode, in DOTS from the top."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT11]
+[Field: JpZplConfigScreenL12F]
     Set As : "   bcH ....... barcode height in DOTS. 64 dots = 8 mm at 203 dpi."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT12]
+[Field: JpZplConfigScreenL13F]
     Set As : "   shopY ..... vertical position of the shop name line, in DOTS."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT13]
+[Field: JpZplConfigScreenL14F]
     Set As : "   addrY ..... vertical position of the shop address line, in DOTS."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT14]
+[Field: JpZplConfigScreenL15F]
     Set As : "   itemY ..... vertical position of the item name line, in DOTS."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT15]
+[Field: JpZplConfigScreenL16F]
     Set As : "   desY ...... vertical position of the design number line, in DOTS."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT16]
+[Field: JpZplConfigScreenL17F]
     Set As : "   purY ...... vertical position of the purity line, in DOTS."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT17]
+[Field: JpZplConfigScreenL18F]
     Set As : "   wtY ....... vertical position of the weight line, in DOTS."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT18]
+[Field: JpZplConfigScreenL19F]
     Set As : "   huidY ..... vertical position of the HUID line, in DOTS."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT19]
+[Field: JpZplConfigScreenL20F]
     Set As : "   mrpY ...... vertical position of the MRP line, in DOTS."
     Style : JpMuted
 
-[Field: JpZplConfigScreenT20]
+[Field: JpZplConfigScreenL21F]
     Set As : "   Save, then export from Zebra Label Print Queue and run:"
     Style : JpMuted
 
-[Field: JpZplConfigScreenT21]
+[Field: JpZplConfigScreenL22F]
     Set As : "   node 00_Build/zpl-emit.mjs labels.csv"
     Style : JpMuted
 
-[Field: JpZplConfigScreenT22]
+[Field: JpZplMsg]
+    Label : " "
+        Width: 100
+        Style: JpWarn
+
+[Field: JpZplConfigScreenL24F]
     Set As : " MINT A MISSING BARCODE"
     Style : JpSectionBox
 
-[Field: JpZplConfigScreenT23]
+[Field: JpZplConfigScreenL25F]
     Set As : "   The queue exports the item's stored barcode. A piece with none exports empty and"
     Style : JpMuted
 
-[Field: JpZplConfigScreenT24]
+[Field: JpZplConfigScreenL26F]
     Set As : "   zpl-emit.mjs skips it, so mint one here first - the Tally tag module then prints"
     Style : JpMuted
 
-[Field: JpZplConfigScreenT25]
+[Field: JpZplConfigScreenL27F]
     Set As : "   the identical value."
     Style : JpMuted
+
+[Field: JpZplMintItem]
+    Label : "Item name"
+        Width: 40
 
 [Function: JpZplLoadDefaults]
     Returns: Integer : Any

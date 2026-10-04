@@ -392,83 +392,120 @@ Alter: Purchase Voucher, Item Details
     Parts : JpPurchaseScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpPurchaseScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpPurchaseScreenL1, JpPurchaseScreenL2, JpPurchaseScreenL3, JpPurchaseScreenL4, JpPurchaseScreenL5, JpPurchaseScreenL6, JpPurchaseScreenL7, JpPurchaseScreenL8, JpPurchaseScreenL9, JpPurchaseScreenL10
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpPurchaseScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpPurchaseScreenT2
-    Field : JpPurchaseScreenT3
 
-    Line: Spacing
-    Lines: 1
-    Field : JpPurchaseScreenT4
-    Lines: 1, 1
-    Field : JpPurchaseScreenT5
-    Field : JpPurchaseScreenT6
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpPurchaseScreenT7
-    Lines: 1, 1
-    Field : JpPurchaseScreenT8
-    Field : JpPurchaseScreenT9
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1, 1
-    Field: <Field-Id: JpPurchaseMsg, Label: " ">
-        Width: 100
-        Style: JpWarn
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Start Purchase Voucher (F2), Key: F2, Action: JpOpenPurchase>
     Button: <Karigar Receipt (F8), Key: F8, Action: JpOpenKarigar>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
 
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpPurchaseScreenT1]
+[Line: JpPurchaseScreenL1]
+    Field : JpPurchaseScreenL1F
+
+[Line: JpPurchaseScreenL2]
+    Field : JpPurchaseScreenL2F
+
+[Line: JpPurchaseScreenL3]
+    Field : JpPurchaseScreenL3F
+
+[Line: JpPurchaseScreenL4]
+    Field : JpPurchaseScreenL4F
+
+[Line: JpPurchaseScreenL5]
+    Field : JpPurchaseScreenL5F
+
+[Line: JpPurchaseScreenL6]
+    Field : JpPurchaseScreenL6F
+
+[Line: JpPurchaseScreenL7]
+    Field : JpPurchaseScreenL7F
+
+[Line: JpPurchaseScreenL8]
+    Field : JpPurchaseScreenL8F
+
+[Line: JpPurchaseScreenL9]
+    Field : JpPurchaseScreenL9F
+
+[Line: JpPurchaseScreenL10]
+    Field : JpPurchaseMsg
+
+[Field: JpPurchaseScreenL1F]
     Set As : "           JEWELLERY PURCHASE"
     Style : JpTitle
 
-[Field: JpPurchaseScreenT2]
+[Field: JpPurchaseScreenL2F]
     Set As : "Purchase finished jewellery, loose metal, diamonds and stones, or jewellery received from a karigar."
     Style : JpMuted
 
-[Field: JpPurchaseScreenT3]
+[Field: JpPurchaseScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpPurchaseScreenT4]
+[Field: JpPurchaseScreenL4F]
     Set As : " BUYING RATES TODAY (per gram)"
     Style : JpSectionBox
 
-[Field: JpPurchaseScreenT5]
+[Field: JpPurchaseScreenL5F]
     Set As : "   24K " + JpFmtAmt(JpCache24K) + "      22K " + JpFmtAmt(JpCache22K) + "      18K " + JpFmtAmt(JpCache18K) + "      14K " + JpFmtAmt(JpCache14K)
 
-[Field: JpPurchaseScreenT6]
+[Field: JpPurchaseScreenL6F]
     Set As : "   Silver " + JpFmtAmt(JpCacheSilver) + "      Platinum " + JpFmtAmt(JpCachePlatinum)
 
-[Field: JpPurchaseScreenT7]
+[Field: JpPurchaseScreenL7F]
     Set As : " STOCK IN BY PIECES AND WEIGHT"
     Style : JpSectionBox
 
-[Field: JpPurchaseScreenT8]
+[Field: JpPurchaseScreenL8F]
     Set As : "   Every line posts weight as the Tally inventory quantity for the item's UOM."
     Style : JpMuted
 
-[Field: JpPurchaseScreenT9]
+[Field: JpPurchaseScreenL9F]
     Set As : "   Set each jewellery item's UOM to 'GMS' so stock reports are in grams automatically."
     Style : JpMuted
+
+[Field: JpPurchaseMsg]
+    Label : " "
+        Width: 100
+        Style: JpWarn
 
 [Function: JpOpenPurchase]
     Returns: Integer : Any

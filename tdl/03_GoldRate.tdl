@@ -84,83 +84,54 @@ JwlRateNote : String : 20053
     Parts : JpRateScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpRateScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpRateScreenL1, JpRateScreenL2, JpRateScreenL3, JpRateScreenL4, JpRateScreenL5, JpRateScreenL6, JpRateScreenL7, JpRateScreenL8, JpRateScreenL9, JpRateScreenL10, JpRateScreenL11, JpRateScreenL12, JpRateScreenL13, JpRateScreenL14, JpRateScreenL15, JpRateScreenL16, JpRateScreenL17, JpRateScreenL18, JpRateScreenL19, JpRateScreenL20
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRateScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpRateScreenT2
-    Field : JpRateScreenT3
-    Lines: 1, 1
-    Field: <Field-Id: JpRateDate, Label: "Rate Date">
-        Width: 180
-        Style: UseFormCtrl
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRateScreenT4
-    Lines: 1, 1, 1, 1
-    Field: <Field-Id: JpRateIn24K, Label: "24K  (995)">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRateIn22K, Label: "22K  (916)">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRateIn18K, Label: "18K  (750)">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRateIn14K, Label: "14K  (585)">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRateScreenT5
-    Lines: 1, 1, 1
-    Field: <Field-Id: JpRateInSilver, Label: "Silver 925">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRateInSil800, Label: "Silver 800">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRateInPlat, Label: "Platinum 950">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRateScreenT6
-    Lines: 1, 1, 1, 1
-    Field: <Field-Id: JpRateApproved, Label: "Approved By">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRateChangePc, Label: "Change in 22K %">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRateNote, Label: "Note">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRatePrev22K, Label: "Previous 22K">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #707070
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1, 1
-    Field: <Field-Id: JpRateMsg, Label: " ">
-        Width: 100
-        Style: JpWarn
-    Field : JpRateScreenT7
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Load Previous Rate, Key: F8, Action: JpRateLoad>
     Button: <Save Rate, Key: F2, Action: JpRateSave>
     Button: <Quit, Key: Esc, Action: System: Quit>
@@ -172,33 +143,159 @@ JwlRateNote : String : 20053
 ; Consistency check between purities. If the shop types rates out of order
 ; (22K above 24K) almost always a digit was dropped, so we warn before saving.
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpRateScreenT1]
+[Line: JpRateScreenL1]
+    Field : JpRateScreenL1F
+
+[Line: JpRateScreenL2]
+    Field : JpRateScreenL2F
+
+[Line: JpRateScreenL3]
+    Field : JpRateScreenL3F
+
+[Line: JpRateScreenL4]
+    Field : JpRateDate
+
+[Line: JpRateScreenL5]
+    Field : JpRateScreenL5F
+
+[Line: JpRateScreenL6]
+    Field : JpRateIn24K
+
+[Line: JpRateScreenL7]
+    Field : JpRateIn22K
+
+[Line: JpRateScreenL8]
+    Field : JpRateIn18K
+
+[Line: JpRateScreenL9]
+    Field : JpRateIn14K
+
+[Line: JpRateScreenL10]
+    Field : JpRateScreenL10F
+
+[Line: JpRateScreenL11]
+    Field : JpRateInSilver
+
+[Line: JpRateScreenL12]
+    Field : JpRateInSil800
+
+[Line: JpRateScreenL13]
+    Field : JpRateInPlat
+
+[Line: JpRateScreenL14]
+    Field : JpRateScreenL14F
+
+[Line: JpRateScreenL15]
+    Field : JpRateApproved
+
+[Line: JpRateScreenL16]
+    Field : JpRateChangePc
+
+[Line: JpRateScreenL17]
+    Field : JpRateNote
+
+[Line: JpRateScreenL18]
+    Field : JpRatePrev22K
+
+[Line: JpRateScreenL19]
+    Field : JpRateMsg
+
+[Line: JpRateScreenL20]
+    Field : JpRateScreenL20F
+
+[Field: JpRateScreenL1F]
     Set As : "           DAILY RATE MASTER"
     Style : JpTitle
 
-[Field: JpRateScreenT2]
+[Field: JpRateScreenL2F]
     Set As : "Rates entered here are used automatically on every sales, purchase and old-gold entry."
     Style : JpMuted
 
-[Field: JpRateScreenT3]
+[Field: JpRateScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpRateScreenT4]
+[Field: JpRateDate]
+    Label : "Rate Date"
+        Width: 180
+        Style: UseFormCtrl
+
+[Field: JpRateScreenL5F]
     Set As : " GOLD  (rate per 10 grams is converted to per gram on save)"
     Style : JpSectionBox
 
-[Field: JpRateScreenT5]
+[Field: JpRateIn24K]
+    Label : "24K  (995)"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRateIn22K]
+    Label : "22K  (916)"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRateIn18K]
+    Label : "18K  (750)"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRateIn14K]
+    Label : "14K  (585)"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRateScreenL10F]
     Set As : " SILVER,  PLATINUM"
     Style : JpSectionBox
 
-[Field: JpRateScreenT6]
+[Field: JpRateInSilver]
+    Label : "Silver 925"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRateInSil800]
+    Label : "Silver 800"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRateInPlat]
+    Label : "Platinum 950"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRateScreenL14F]
     Set As : " APPROVAL"
     Style : JpSectionBox
 
-[Field: JpRateScreenT7]
+[Field: JpRateApproved]
+    Label : "Approved By"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRateChangePc]
+    Label : "Change in 22K %"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRateNote]
+    Label : "Note"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRatePrev22K]
+    Label : "Previous 22K"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #707070
+
+[Field: JpRateMsg]
+    Label : " "
+        Width: 100
+        Style: JpWarn
+
+[Field: JpRateScreenL20F]
     Set As : "Enter rates PER GRAM. Saving requires the JADE_CHANGE_RATE permission (Owner / Manager)."
     Style : JpMuted
 

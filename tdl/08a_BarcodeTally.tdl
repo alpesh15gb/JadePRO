@@ -486,56 +486,55 @@
     Parts : JpTallyBarcodeScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpTallyBarcodeScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpTallyBarcodeScreenL1, JpTallyBarcodeScreenL2, JpTallyBarcodeScreenL3, JpTallyBarcodeScreenL4, JpTallyBarcodeScreenL5, JpTallyBarcodeScreenL6, JpTallyBarcodeScreenL7, JpTallyBarcodeScreenL8, JpTallyBarcodeScreenL9, JpTallyBarcodeScreenL10, JpTallyBarcodeScreenL11, JpTallyBarcodeScreenL12, JpTallyBarcodeScreenL13, JpTallyBarcodeScreenL14, JpTallyBarcodeScreenL15, JpTallyBarcodeScreenL16
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpTallyBarcodeScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpTallyBarcodeScreenT2
-    Field : JpTallyBarcodeScreenT3
 
-    Line: Spacing
-    Lines: 1
-    Field : JpTallyBarcodeScreenT4
-    Lines: 1, 1, 1
-    Field : JpTallyBarcodeScreenT5
-    Field : JpTallyBarcodeScreenT6
-    Field : JpTallyBarcodeScreenT7
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpTallyBarcodeScreenT8
-    Lines: 1, 1, 1
-    Field : JpTallyBarcodeScreenT9
-    Field : JpTallyBarcodeScreenT10
-    Field : JpTallyBarcodeScreenT11
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1, 1
-    Field: <Field-Id: JpTallyMsg, Label: " ">
-        Width: 100
-        Style: JpWarn
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpTallyBarcodeScreenT12
-    Lines: 1, 1, 1
-    Field : JpTallyBarcodeScreenT13
-    Field : JpTallyBarcodeScreenT14
-    Lines: 1, 1
-    Field: <Field-Id: JpTallyMintItem, Label: "Item name">
-        Width: 40
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Mint Barcode (F3), Key: F3, Action: JpTallyMintAction>
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Bulk Tag Print (F2), Key: F2, Action: JpTallyOpenBulk>
     Button: <Barcode Register (F4), Key: F4, Action: JpTallyOpenReg>
     Button: <Back to JadePro menu, Key: Esc, Action: System: Quit>
@@ -545,63 +544,120 @@
 ; returned unchanged, so pressing this repeatedly can never renumber a piece
 ; that is already on the shelf.
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpTallyBarcodeScreenT1]
+[Line: JpTallyBarcodeScreenL1]
+    Field : JpTallyBarcodeScreenL1F
+
+[Line: JpTallyBarcodeScreenL2]
+    Field : JpTallyBarcodeScreenL2F
+
+[Line: JpTallyBarcodeScreenL3]
+    Field : JpTallyBarcodeScreenL3F
+
+[Line: JpTallyBarcodeScreenL4]
+    Field : JpTallyBarcodeScreenL4F
+
+[Line: JpTallyBarcodeScreenL5]
+    Field : JpTallyBarcodeScreenL5F
+
+[Line: JpTallyBarcodeScreenL6]
+    Field : JpTallyBarcodeScreenL6F
+
+[Line: JpTallyBarcodeScreenL7]
+    Field : JpTallyBarcodeScreenL7F
+
+[Line: JpTallyBarcodeScreenL8]
+    Field : JpTallyBarcodeScreenL8F
+
+[Line: JpTallyBarcodeScreenL9]
+    Field : JpTallyBarcodeScreenL9F
+
+[Line: JpTallyBarcodeScreenL10]
+    Field : JpTallyBarcodeScreenL10F
+
+[Line: JpTallyBarcodeScreenL11]
+    Field : JpTallyBarcodeScreenL11F
+
+[Line: JpTallyBarcodeScreenL12]
+    Field : JpTallyMsg
+
+[Line: JpTallyBarcodeScreenL13]
+    Field : JpTallyBarcodeScreenL13F
+
+[Line: JpTallyBarcodeScreenL14]
+    Field : JpTallyBarcodeScreenL14F
+
+[Line: JpTallyBarcodeScreenL15]
+    Field : JpTallyBarcodeScreenL15F
+
+[Line: JpTallyBarcodeScreenL16]
+    Field : JpTallyMintItem
+
+[Field: JpTallyBarcodeScreenL1F]
     Set As : "           BARCODE PRINTING  -  TALLY NATIVE"
     Style : JpTitle
 
-[Field: JpTallyBarcodeScreenT2]
+[Field: JpTallyBarcodeScreenL2F]
     Set As : "Code 128 tags printed by Tally itself. No external software, no driver."
     Style : JpMuted
 
-[Field: JpTallyBarcodeScreenT3]
+[Field: JpTallyBarcodeScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpTallyBarcodeScreenT4]
+[Field: JpTallyBarcodeScreenL4F]
     Set As : " RENDERING PATH"
     Style : JpSectionBox
 
-[Field: JpTallyBarcodeScreenT5]
+[Field: JpTallyBarcodeScreenL5F]
     Set As : "   Active path ........ " + JpTallySymbologyText()
     Style : JpMuted
 
-[Field: JpTallyBarcodeScreenT6]
+[Field: JpTallyBarcodeScreenL6F]
     Set As : "   Barcode value ...... generated ONCE in 08_Barcode.tdl and shared with the Zebra module."
     Style : JpMuted
 
-[Field: JpTallyBarcodeScreenT7]
+[Field: JpTallyBarcodeScreenL7F]
     Set As : "   Changing a path .... edit Constant JpUseTdlBarcode() at the top of 08a_BarcodeTally.tdl."
     Style : JpMuted
 
-[Field: JpTallyBarcodeScreenT8]
+[Field: JpTallyBarcodeScreenL8F]
     Set As : " SCANNER AT THE COUNTER"
     Style : JpSectionBox
 
-[Field: JpTallyBarcodeScreenT9]
+[Field: JpTallyBarcodeScreenL9F]
     Set As : "   A USB barcode scanner is a keyboard. It types the barcode and presses Enter."
     Style : JpMuted
 
-[Field: JpTallyBarcodeScreenT10]
+[Field: JpTallyBarcodeScreenL10F]
     Set As : "   Leave the Item field focused in the Sales voucher and simply scan."
     Style : JpMuted
 
-[Field: JpTallyBarcodeScreenT11]
+[Field: JpTallyBarcodeScreenL11F]
     Set As : "   Every sales line already carries JwlLnBarcode, so the scanned piece is recorded on the invoice."
     Style : JpMuted
 
-[Field: JpTallyBarcodeScreenT12]
+[Field: JpTallyMsg]
+    Label : " "
+        Width: 100
+        Style: JpWarn
+
+[Field: JpTallyBarcodeScreenL13F]
     Set As : " MINT A MISSING BARCODE"
     Style : JpSectionBox
 
-[Field: JpTallyBarcodeScreenT13]
+[Field: JpTallyBarcodeScreenL14F]
     Set As : "   Tag printing only READS the stored barcode. If a piece has none, mint one here first"
     Style : JpMuted
 
-[Field: JpTallyBarcodeScreenT14]
+[Field: JpTallyBarcodeScreenL15F]
     Set As : "   and it is written to the item - the Zebra module then prints the identical value."
     Style : JpMuted
+
+[Field: JpTallyMintItem]
+    Label : "Item name"
+        Width: 40
 
 [Function: JpTallyMintAction]
     Returns: Integer : Any

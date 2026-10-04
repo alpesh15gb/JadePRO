@@ -677,22 +677,28 @@ Alter: Sales Voucher, Item Details
     Parts : JpSalesScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpSalesScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpSalesScreenL1
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpSalesScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpSalesScreenT1]
+[Line: JpSalesScreenL1]
+    Field : JpSalesScreenL1F
+
+[Field: JpSalesScreenL1F]
     Set As : "           JEWELLERY BILLING"
     Style : JpTitle
 

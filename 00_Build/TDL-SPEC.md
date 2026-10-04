@@ -435,13 +435,39 @@ own error:
   print layout is a Form, so `[Print: X]` became `[Form: X]` (plus a generated
   `[Part: XLines]` where the block listed Lines). The Form deliberately keeps the
   original name, so every existing `Print : X` reference still resolves.
-- **`[Screen:]` (15) — rewritten as Report + Form + Part.** Tally confirmed this
-  one directly: `error T0006 ... (2366)` on `[Screen: JpItemCreateScreen]`. The
-  bodies were already Part grammar, so they moved across under a new
-  `[Report: X]` + `[Form: XForm]` wrapper. 124 `Text:` lines became generated
-  `[Field:]` definitions (`Set As` + the run's `Style`), because Part has no
-  `text`; `Caption` moved to the Report's `Title`; `Key` and `Line Height` were
-  dropped — see `fix-screen-export-types.mjs` for why each.
+- **`[Screen:]` (15) — rewritten as Report + Form + Part + generated Lines.**
+  Tally confirmed this class directly: `error T0006 ... (2366)` on
+  `[Screen: JpItemCreateScreen]`. The bodies were already Part grammar, so they
+  moved across under a new `[Report: X]` + `[Form: XForm]` wrapper.
+
+  **A correction Tally forced, worth remembering: `Part` does NOT accept
+  `Field`.** The static oracle in `tdl-attributes.mjs` lists `field` among Part's
+  43 attributes; Tally rejected it at (2383) with
+  `T0014: Incorrect attribute 'Field' is used for the definition 'Part'`. Every
+  item is therefore hoisted onto a generated `[Line:]`, which does accept it (used
+  1,790 times in this file). Splitting Part attribute usage by whether Tally had
+  already walked past it gives the ground truth:
+
+  | `[Part:]` attribute | before the error | verdict |
+  |---|---|---|
+  | `line` | 4 | legal |
+  | `lines` | 2 | legal |
+  | `button` | 2 | legal |
+  | `field` | 0 | **illegal** |
+
+  124 `Text:` lines became `[Field:]` definitions (`Set As` + the run's `Style`),
+  and 128 `Field: <Field-Id: X, Label: ...>` inline blocks became real
+  `[Field: X]` definitions — verified collision-free first. Dropped, each with a
+  recorded reason: `Caption` → Report `Title`, plus `Key`, `Line Height`,
+  `Line: Spacing` (a spacer Line this file never defines), and `Lines: <counts>`.
+
+  **`Lines: 1, 1` could not be reproduced.** It is a column count, not a list of
+  Lines: checked against all 113 groups, it does not equal the number of items
+  that follow (46 mismatched — `Lines: 1, 1` followed by 8 fields). Rather than
+  invent a packing rule the source never states, these screens now render one item
+  per line. Every label, width, style, button and computed text survives; only
+  the row packing is gone.
+
 - **`[Export:]` (30) — rewritten as a `Plain XML` Report.** 244 `Export: Value:`
   lines became generated `[Field:]` definitions setting the same payload verbatim,
   with `XMLTag` on the Part and a derived `XMLAttr` per Field. `Repeat: Over:` was
@@ -459,6 +485,10 @@ Both rewrites keep the original definition name, so the 15 menu `Display:`
 references and the 30 `[Collection: Report:]` `Export:` references resolve
 unchanged and needed no edits. `[Barcode:]` also fails T0006, but lives only in
 `08c_BarcodeSection.tdl`, which is deliberately excluded from the bundle.
+
+> **Treat the oracle as a hint, not a fact.** It has now been wrong about at
+> least one attribute (`Part: field). Tally's verdict, split by line number, is
+> the only real evidence.
 
 Per decision: the **587 bare `Width:` column widths** were dropped rather than
 mapped positionally onto Fields, and `Paper:` / `Margin-*` (34 layouts) were

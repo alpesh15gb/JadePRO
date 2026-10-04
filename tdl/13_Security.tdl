@@ -360,107 +360,160 @@ JwlRoleSetupDone : Logical : 20218
     Parts : JpRoleSetupScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpRoleSetupScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpRoleSetupScreenL1, JpRoleSetupScreenL2, JpRoleSetupScreenL3, JpRoleSetupScreenL4, JpRoleSetupScreenL5, JpRoleSetupScreenL6, JpRoleSetupScreenL7, JpRoleSetupScreenL8, JpRoleSetupScreenL9, JpRoleSetupScreenL10, JpRoleSetupScreenL11, JpRoleSetupScreenL12, JpRoleSetupScreenL13, JpRoleSetupScreenL14, JpRoleSetupScreenL15, JpRoleSetupScreenL16
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRoleSetupScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpRoleSetupScreenT2
-    Field : JpRoleSetupScreenT3
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRoleSetupScreenT4
-    Lines: 1, 1, 1
-    Field : JpRoleSetupScreenT5
-    Field : JpRoleSetupScreenT6
-    Field : JpRoleSetupScreenT7
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRoleSetupScreenT8
-    Lines: 1, 1, 1, 1, 1
-    Field : JpRoleSetupScreenT9
-    Field : JpRoleSetupScreenT10
-    Field : JpRoleSetupScreenT11
-    Field : JpRoleSetupScreenT12
-    Field : JpRoleSetupScreenT13
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1, 1
-    Field: <Field-Id: JpRoleMapEdit, Label: "User|Role Map">
-        Width: 100
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRoleMsg, Label: " ">
-        Width: 100
-        Style: JpWarn
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRoleSetupScreenT14
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Save Mapping (F2), Key: F2, Action: JpRoleSave>
     Button: <Reload My Role (F7), Key: F7, Action: JpRoleReload>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
 
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpRoleSetupScreenT1]
+[Line: JpRoleSetupScreenL1]
+    Field : JpRoleSetupScreenL1F
+
+[Line: JpRoleSetupScreenL2]
+    Field : JpRoleSetupScreenL2F
+
+[Line: JpRoleSetupScreenL3]
+    Field : JpRoleSetupScreenL3F
+
+[Line: JpRoleSetupScreenL4]
+    Field : JpRoleSetupScreenL4F
+
+[Line: JpRoleSetupScreenL5]
+    Field : JpRoleSetupScreenL5F
+
+[Line: JpRoleSetupScreenL6]
+    Field : JpRoleSetupScreenL6F
+
+[Line: JpRoleSetupScreenL7]
+    Field : JpRoleSetupScreenL7F
+
+[Line: JpRoleSetupScreenL8]
+    Field : JpRoleSetupScreenL8F
+
+[Line: JpRoleSetupScreenL9]
+    Field : JpRoleSetupScreenL9F
+
+[Line: JpRoleSetupScreenL10]
+    Field : JpRoleSetupScreenL10F
+
+[Line: JpRoleSetupScreenL11]
+    Field : JpRoleSetupScreenL11F
+
+[Line: JpRoleSetupScreenL12]
+    Field : JpRoleSetupScreenL12F
+
+[Line: JpRoleSetupScreenL13]
+    Field : JpRoleSetupScreenL13F
+
+[Line: JpRoleSetupScreenL14]
+    Field : JpRoleMapEdit
+
+[Line: JpRoleSetupScreenL15]
+    Field : JpRoleMsg
+
+[Line: JpRoleSetupScreenL16]
+    Field : JpRoleSetupScreenL16F
+
+[Field: JpRoleSetupScreenL1F]
     Set As : "           JADEPRO ROLE SETUP"
     Style : JpTitle
 
-[Field: JpRoleSetupScreenT2]
+[Field: JpRoleSetupScreenL2F]
     Set As : "Map each Tally user name to a role:  TallyUserName|Role|TallyUserName|Role"
     Style : JpMuted
 
-[Field: JpRoleSetupScreenT3]
+[Field: JpRoleSetupScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpRoleSetupScreenT4]
+[Field: JpRoleSetupScreenL4F]
     Set As : " CURRENT SESSION"
     Style : JpSectionBox
 
-[Field: JpRoleSetupScreenT5]
+[Field: JpRoleSetupScreenL5F]
     Set As : "   Detected Tally user : " + JpBlankIfNull(JpUserName)
     Style : JpWarn
 
-[Field: JpRoleSetupScreenT6]
+[Field: JpRoleSetupScreenL6F]
     Set As : "   Assigned role ...... : " + JpRoleSummary(JpBlankIfNull(JpUserRole))
     Style : JpWarn
 
-[Field: JpRoleSetupScreenT7]
+[Field: JpRoleSetupScreenL7F]
     Set As : "   Detection source ... : " + JpRoleSource
     Style : JpWarn
 
-[Field: JpRoleSetupScreenT8]
+[Field: JpRoleSetupScreenL8F]
     Set As : " ROLE DEFINITIONS"
     Style : JpSectionBox
 
-[Field: JpRoleSetupScreenT9]
+[Field: JpRoleSetupScreenL9F]
     Set As : "   Owner        - everything"
 
-[Field: JpRoleSetupScreenT10]
+[Field: JpRoleSetupScreenL10F]
     Set As : "   Manager      - change rate, override rate, high discount, delete, view profit, barcode"
 
-[Field: JpRoleSetupScreenT11]
+[Field: JpRoleSetupScreenL11F]
     Set As : "   Accountant   - purchase, karigar, reports, change rate, delete, barcode"
 
-[Field: JpRoleSetupScreenT12]
+[Field: JpRoleSetupScreenL12F]
     Set As : "   Salesperson  - sell and close counter only. No cost, no profit, no rates."
 
-[Field: JpRoleSetupScreenT13]
+[Field: JpRoleSetupScreenL13F]
     Set As : "   Cashier      - billing and collections only."
 
-[Field: JpRoleSetupScreenT14]
+[Field: JpRoleMapEdit]
+    Label : "User|Role Map"
+        Width: 100
+        Style: UseFormCtrl
+
+[Field: JpRoleMsg]
+    Label : " "
+        Width: 100
+        Style: JpWarn
+
+[Field: JpRoleSetupScreenL16F]
     Set As : "Example:  Owner,Owner|Meera,Manager|Ravi,Salesperson|Priya,Cashier"
     Style : JpMuted
 
@@ -533,48 +586,72 @@ JwlSalesTargets : String : 20219
     Parts : JpTargetScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpTargetScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpTargetScreenL1, JpTargetScreenL2, JpTargetScreenL3, JpTargetScreenL4, JpTargetScreenL5, JpTargetScreenL6
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpTargetScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpTargetScreenT2
-    Field : JpTargetScreenT3
-    Lines: 1, 1, 1
-    Field: <Field-Id: JpTargetMapEdit, Label: "Target Map">
-        Width: 100
-        Style: UseFormCtrl
-    Field: <Field-Id: JpTargetMsg, Label: " ">
-        Width: 100
-        Style: JpWarn
-    Field : JpTargetScreenT4
-    Lines: 1
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Save Targets (F2), Key: F2, Action: JpTargetSave>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
 
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpTargetScreenT1]
+[Line: JpTargetScreenL1]
+    Field : JpTargetScreenL1F
+
+[Line: JpTargetScreenL2]
+    Field : JpTargetScreenL2F
+
+[Line: JpTargetScreenL3]
+    Field : JpTargetScreenL3F
+
+[Line: JpTargetScreenL4]
+    Field : JpTargetMapEdit
+
+[Line: JpTargetScreenL5]
+    Field : JpTargetMsg
+
+[Line: JpTargetScreenL6]
+    Field : JpTargetScreenL6F
+
+[Field: JpTargetScreenL1F]
     Set As : "           SALESPERSON MONTHLY TARGETS"
     Style : JpTitle
 
-[Field: JpTargetScreenT2]
+[Field: JpTargetScreenL2F]
     Set As : "Format:  SalespersonName,Target|SalespersonName,Target"
     Style : JpMuted
 
-[Field: JpTargetScreenT3]
+[Field: JpTargetScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpTargetScreenT4]
+[Field: JpTargetMapEdit]
+    Label : "Target Map"
+        Width: 100
+        Style: UseFormCtrl
+
+[Field: JpTargetMsg]
+    Label : " "
+        Width: 100
+        Style: JpWarn
+
+[Field: JpTargetScreenL6F]
     Set As : "Example:  Ravi,250000|Priya,180000"
     Style : JpMuted
 

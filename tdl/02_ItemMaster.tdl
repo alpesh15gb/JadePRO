@@ -811,160 +811,318 @@ Alter: Item, JpItemJewelPart
     Parts : JpItemCreateScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpItemCreateScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpItemCreateScreenL1, JpItemCreateScreenL2, JpItemCreateScreenL3, JpItemCreateScreenL4, JpItemCreateScreenL5, JpItemCreateScreenL6, JpItemCreateScreenL7, JpItemCreateScreenL8, JpItemCreateScreenL9, JpItemCreateScreenL10, JpItemCreateScreenL11, JpItemCreateScreenL12, JpItemCreateScreenL13, JpItemCreateScreenL14, JpItemCreateScreenL15, JpItemCreateScreenL16, JpItemCreateScreenL17, JpItemCreateScreenL18, JpItemCreateScreenL19, JpItemCreateScreenL20, JpItemCreateScreenL21, JpItemCreateScreenL22, JpItemCreateScreenL23, JpItemCreateScreenL24, JpItemCreateScreenL25, JpItemCreateScreenL26, JpItemCreateScreenL27, JpItemCreateScreenL28, JpItemCreateScreenL29, JpItemCreateScreenL30, JpItemCreateScreenL31, JpItemCreateScreenL32
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpItemCreateScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpItemCreateScreenT2
-    Field : JpItemCreateScreenT3
 
-    Line: Spacing
-    Lines: 1, 1
-    Field: <Field-Id: JpScrItemName, Label: "Item Name *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrBarcode, Label: "Barcode *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrCategory, Label: "Category *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpCatPick
-    Field: <Field-Id: JpScrDesign, Label: "Design Number *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrHuid, Label: "HUID">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrCert, Label: "Certificate No">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrCounter, Label: "Counter / Location">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrSupplier, Label: "Supplier / Karigar">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpItemCreateScreenT4
-    Lines: 1, 1, 1, 1
-    Field: <Field-Id: JpScrMetal, Label: "Metal Type *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpMetalPick
-    Field: <Field-Id: JpScrPurity, Label: "Purity *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpPurityPick
-    Field: <Field-Id: JpScrRate, Label: "Rate / gm *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrGross, Label: "Gross Weight *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrStone, Label: "Stone Weight">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrCarat, Label: "Diamond Carat">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrNet, Label: "Net Metal Weight">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #6B4E1E
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpItemCreateScreenT5
-    Lines: 1, 1, 1, 1
-    Field: <Field-Id: JpScrMakeType, Label: "Making Charge Type *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpMakeTypePick
-    Field: <Field-Id: JpScrMakeAmt, Label: "Making Charge *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrWastage, Label: "Wastage %">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrStoneRate, Label: "Stone Rate / gm">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrDiaRate, Label: "Diamond Rate / carat">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrMsp, Label: "Minimum Selling Price">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpScrMrp, Label: "MRP">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpItemCreateScreenT6
-    Lines: 1, 1
-    Field: <Field-Id: JpScrMetalVal, Label: "Metal Value">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #6B4E1E
-    Field: <Field-Id: JpScrFinalVal, Label: "FINAL JEWELLERY VALUE">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #A06000
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1, 1
-    Field: <Field-Id: JpScrMsg, Label: " ">
-        Width: 100
-        Style: JpWarn
-    Field : JpItemCreateScreenT7
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Recalculate Value, Key: F7, Action: JpCreateCalc>
     Button: <Save Item, Key: F2, Action: JpCreateItem>
     Button: <Quit, Key: Esc, Action: System: Quit>
 
 ; Category pick list - free text so a shop can invent its own taxonomy.
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpItemCreateScreenT1]
+[Line: JpItemCreateScreenL1]
+    Field : JpItemCreateScreenL1F
+
+[Line: JpItemCreateScreenL2]
+    Field : JpItemCreateScreenL2F
+
+[Line: JpItemCreateScreenL3]
+    Field : JpItemCreateScreenL3F
+
+[Line: JpItemCreateScreenL4]
+    Field : JpScrItemName
+
+[Line: JpItemCreateScreenL5]
+    Field : JpScrBarcode
+
+[Line: JpItemCreateScreenL6]
+    Field : JpScrCategory
+
+[Line: JpItemCreateScreenL7]
+    Field : JpScrDesign
+
+[Line: JpItemCreateScreenL8]
+    Field : JpScrHuid
+
+[Line: JpItemCreateScreenL9]
+    Field : JpScrCert
+
+[Line: JpItemCreateScreenL10]
+    Field : JpScrCounter
+
+[Line: JpItemCreateScreenL11]
+    Field : JpScrSupplier
+
+[Line: JpItemCreateScreenL12]
+    Field : JpItemCreateScreenL12F
+
+[Line: JpItemCreateScreenL13]
+    Field : JpScrMetal
+
+[Line: JpItemCreateScreenL14]
+    Field : JpScrPurity
+
+[Line: JpItemCreateScreenL15]
+    Field : JpScrRate
+
+[Line: JpItemCreateScreenL16]
+    Field : JpScrGross
+
+[Line: JpItemCreateScreenL17]
+    Field : JpScrStone
+
+[Line: JpItemCreateScreenL18]
+    Field : JpScrCarat
+
+[Line: JpItemCreateScreenL19]
+    Field : JpScrNet
+
+[Line: JpItemCreateScreenL20]
+    Field : JpItemCreateScreenL20F
+
+[Line: JpItemCreateScreenL21]
+    Field : JpScrMakeType
+
+[Line: JpItemCreateScreenL22]
+    Field : JpScrMakeAmt
+
+[Line: JpItemCreateScreenL23]
+    Field : JpScrWastage
+
+[Line: JpItemCreateScreenL24]
+    Field : JpScrStoneRate
+
+[Line: JpItemCreateScreenL25]
+    Field : JpScrDiaRate
+
+[Line: JpItemCreateScreenL26]
+    Field : JpScrMsp
+
+[Line: JpItemCreateScreenL27]
+    Field : JpScrMrp
+
+[Line: JpItemCreateScreenL28]
+    Field : JpItemCreateScreenL28F
+
+[Line: JpItemCreateScreenL29]
+    Field : JpScrMetalVal
+
+[Line: JpItemCreateScreenL30]
+    Field : JpScrFinalVal
+
+[Line: JpItemCreateScreenL31]
+    Field : JpScrMsg
+
+[Line: JpItemCreateScreenL32]
+    Field : JpItemCreateScreenL32F
+
+[Field: JpItemCreateScreenL1F]
     Set As : "           CREATE JEWELLERY ITEM  -  " + JpAppName()
     Style : JpTitle
 
-[Field: JpItemCreateScreenT2]
+[Field: JpItemCreateScreenL2F]
     Set As : "Rates today :  24K " + JpFmtAmt(JpCache24K) + "    22K " + JpFmtAmt(JpCache22K) + "    18K " + JpFmtAmt(JpCache18K) + "    14K " + JpFmtAmt(JpCache14K) + "    Silver " + JpFmtAmt(JpCacheSilver)
     Style : JpMuted
 
-[Field: JpItemCreateScreenT3]
+[Field: JpItemCreateScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpItemCreateScreenT4]
+[Field: JpScrItemName]
+    Label : "Item Name *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrBarcode]
+    Label : "Barcode *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrCategory]
+    Label : "Category *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpCatPick
+
+[Field: JpScrDesign]
+    Label : "Design Number *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrHuid]
+    Label : "HUID"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrCert]
+    Label : "Certificate No"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrCounter]
+    Label : "Counter / Location"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrSupplier]
+    Label : "Supplier / Karigar"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpItemCreateScreenL12F]
     Set As : " METAL  AND  PURETY"
     Style : JpSectionBox
 
-[Field: JpItemCreateScreenT5]
+[Field: JpScrMetal]
+    Label : "Metal Type *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpMetalPick
+
+[Field: JpScrPurity]
+    Label : "Purity *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPurityPick
+
+[Field: JpScrRate]
+    Label : "Rate / gm *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrGross]
+    Label : "Gross Weight *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrStone]
+    Label : "Stone Weight"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrCarat]
+    Label : "Diamond Carat"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrNet]
+    Label : "Net Metal Weight"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+
+[Field: JpItemCreateScreenL20F]
     Set As : " MAKING CHARGES  AND  STONES"
     Style : JpSectionBox
 
-[Field: JpItemCreateScreenT6]
+[Field: JpScrMakeType]
+    Label : "Making Charge Type *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpMakeTypePick
+
+[Field: JpScrMakeAmt]
+    Label : "Making Charge *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrWastage]
+    Label : "Wastage %"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrStoneRate]
+    Label : "Stone Rate / gm"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrDiaRate]
+    Label : "Diamond Rate / carat"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrMsp]
+    Label : "Minimum Selling Price"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpScrMrp]
+    Label : "MRP"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpItemCreateScreenL28F]
     Set As : " COMPUTED VALUE"
     Style : JpSectionBox
 
-[Field: JpItemCreateScreenT7]
+[Field: JpScrMetalVal]
+    Label : "Metal Value"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+
+[Field: JpScrFinalVal]
+    Label : "FINAL JEWELLERY VALUE"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+
+[Field: JpScrMsg]
+    Label : " "
+        Width: 100
+        Style: JpWarn
+
+[Field: JpItemCreateScreenL32F]
     Set As : "Net Weight = Gross Weight - Stone Weight      Value = Metal + Wastage + Making + Stone + Diamond"
     Style : JpMuted
 
@@ -1000,28 +1158,31 @@ Alter: Item, JpItemJewelPart
     Parts : JpItemAlterScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpItemAlterScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpItemAlterScreenL1, JpItemAlterScreenL2, JpItemAlterScreenL3, JpItemAlterScreenL4
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpItemAlterScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpItemAlterScreenT2
-    Lines: 1, 1
-    Field: <Field-Id: JpAlterTarget, Label: "Item Name">
-        Width: 300
-        Style: UseFormCtrl
-    Line: Spacing
-    Lines: 1
-    Field : JpItemAlterScreenT3
-    Line: Spacing
-    Lines: 1
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Open Alter Item, Key: F2, Action: JpOpenAlterItem>
     Button: <Quit, Key: Esc, Action: System: Quit>
 
@@ -1032,17 +1193,34 @@ Alter: Item, JpItemJewelPart
 ; Live recalculation on the create screen. The screen-level Set: reactions keep
 ; the four derived values in step with the inputs as they are typed.
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpItemAlterScreenT1]
+[Line: JpItemAlterScreenL1]
+    Field : JpItemAlterScreenL1F
+
+[Line: JpItemAlterScreenL2]
+    Field : JpItemAlterScreenL2F
+
+[Line: JpItemAlterScreenL3]
+    Field : JpAlterTarget
+
+[Line: JpItemAlterScreenL4]
+    Field : JpItemAlterScreenL4F
+
+[Field: JpItemAlterScreenL1F]
     Set As : "           ALTER JEWELLERY ITEM"
     Style : JpTitle
 
-[Field: JpItemAlterScreenT2]
+[Field: JpItemAlterScreenL2F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpItemAlterScreenT3]
+[Field: JpAlterTarget]
+    Label : "Item Name"
+        Width: 300
+        Style: UseFormCtrl
+
+[Field: JpItemAlterScreenL4F]
     Set As : "Opens Tally's standard Alter Item screen, which now carries the JadePro jewellery block."
     Style : JpMuted
 

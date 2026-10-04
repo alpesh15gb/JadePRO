@@ -28,7 +28,7 @@
 //   unchanged: `Display: JpItemCreateScreen` resolves just as happily to a
 //   Report as to whatever it thought it was pointing at. Nothing else to edit.
 //
-// WHAT - [Screen:] becomes Report + Form + Part
+// WHAT - [Screen:] becomes Report + Form + Part, with every item on a Line
 //
 //     [Report: JpItemCreateScreen]        <- new; carries the old Caption
 //         Title : "..."
@@ -36,42 +36,64 @@
 //     [Form: JpItemCreateScreenForm]
 //         Parts : JpItemCreateScreenPart
 //     [Part: JpItemCreateScreenPart]
-//         <the old body, minus what Part cannot hold>
+//         Lines : JpItemCreateScreenL1, ...L20
+//         Button: <Save Item, Key: F2, Action: JpCreateItem>
+//     [Line: JpItemCreateScreenL1]
+//         Field : JpItemCreateScreenL1F
+//     [Field: JpItemCreateScreenL1F]
+//         Set As : "CREATE JEWELLERY ITEM"
+//         Style : JpTitle
 //
-//   The body was already Part grammar - Part accepts `line` (75), `lines` (113),
-//   `field` (137) and `button` (51) - so it moves across unchanged apart from
-//   five attributes.
+//   ITEMS GO ON LINES, NOT ON THE PART
+//   The first attempt put `Field` straight onto the Part. Tally rejected it:
 //
-//   `Text:` (124) is the one real conversion. Part has no `text`; literal text
-//   on a Tally layout is a Field whose Set As is the string. The bodies use a
-//   very regular shape, verified across all 15 screens before writing this:
+//       error T0014: Incorrect attribute 'Field' is used for the definition
+//       'Part'.   "D:\Jewel Pro\JadePro.tdl"(2383)
 //
-//       base-indent Style:  94     == exactly the number of "Text then Style"
-//       Text:             124     = 94 paired + 30 that begin a longer run
+//   That correction matters beyond this script, because it shows the static
+//   oracle in 00_Build/tdl-attributes.mjs is wrong: it lists `field` among
+//   Part's 43 attributes. Tally says otherwise. Part really does accept `line`,
+//   `lines` and `button` - the bundle had used all three before line 2383 and
+//   compiled past them - but not `field`. Line does accept `field`, used 1,790
+//   times here. So the shape above hoists every item onto its own Line, and the
+//   Part keeps only what it has demonstrably accepted before.
 //
-//   i.e. a run of one-or-more consecutive Text lines, optionally closed by a
-//   single Style. That maps one-for-one onto a run of generated Fields:
+//   Text: (124) becomes a Field with Set As, because Part has no `text`. The
+//   bodies pair each Text run with one Style, and the Style moves onto the
+//   generated Fields - which is where it belonged anyway, since Field accepts
+//   `style` and Part does not.
 //
-//       Lines: 1, 1, 1
-//       Text: "a"                       [Field: XScreenT1]
-//       Text: "b"            ==>        Set As : "a"
-//       Text: "c"                       [Field: XScreenT2]
-//       Style: JpMuted                   Set As : "b"
-//                                      [Field: XScreenT3]
-//                                          Set As : "c"
-//                                          Style : JpMuted
-//
-//   The Style moves onto the generated Fields, which is exactly where it
-//   belonged: Field accepts `style`, Part does not.
+//   Field: <Field-Id: NAME, Label: "..."> (142) was invented inline syntax. It
+//   becomes a real [Field: NAME] carrying its Label and its indented
+//   attributes. Verified first: none of the 142 ids is already defined as a
+//   [Field:] elsewhere and none is used twice, so nothing collides.
 //
 //   Dropped, each with a comment recording why:
-//     Caption     15  -> moved to the Report's Title, its real home
-//     Key         15  -> Part has no Key; this was <Ctrl+Q: System: Quit>,
-//                        which a Menu Item carries, not a layout
-//     Line Height 15  -> `Height` on a Part means the height of the whole part,
-//                        not of each line. Routing it there would change what
-//                        the screen looks like, so it is dropped rather than
-//                        silently reinterpreted.
+//     Caption      15 -> moved to the Report's Title, its real home
+//     Key          15 -> Part has no Key; this was <Ctrl+Q: System: Quit>,
+//                       which a Menu Item carries, not a layout
+//     Line Height  15 -> `Height` on a Part means the height of the whole part,
+//                       not of each line
+//     Line: Spacing 75 -> `Spacing` is not defined anywhere in this bundle, but
+//                       pre-existing Parts name it too ("Line : 1, Spacing,
+//                       JpItemJewelPartLine1, ...") and Tally compiled straight
+//                       past those, so it is almost certainly a Tally built-in
+//                       spacer Line rather than a dangling reference. Dropping
+//                       it costs the blank line between screen rows; keeping it
+//                       would be keeping something whose meaning this file does
+//                       not define. Recorded, not silently dropped.
+//     Lines: <counts> -> `Lines : 1, 1` is a column count, not a list of Lines.
+//                       Checked against all 113 groups: it does NOT equal the
+//                       number of items that follow - 46 mismatched, e.g.
+//                       "Lines: 1, 1" followed by 8 fields. The packing cannot
+//                       be recovered, so it is not reproduced. One generated
+//                       Line per item instead.
+//
+//   LAYOUT IS DELIBERATELY FLATTER THAN INTENDED
+//   Dropping the column counts means these screens render one item per line
+//   rather than packed into rows. That is a cosmetic regression, chosen over
+//   fabricating a packing rule the source never states. Every label, width,
+//   style, button and computed text is preserved.
 //
 // WHAT - [Export:] becomes Report + Form + Part + Line + Fields
 //
@@ -144,8 +166,9 @@ const IND = '    ';                       // matches the existing module indenta
 const BANNER = '; ---------- fixed-screen-export-types.mjs ----------';
 
 const stats = {
-  screens: 0, exports: 0, textFields: 0, valueFields: 0,
+  screens: 0, exports: 0, textFields: 0, valueFields: 0, inlineFields: 0,
   caption: 0, key: 0, lineHeight: 0, exportTitle: 0, repeat: 0,
+  danglingLine: 0, lineCounts: 0,
 };
 
 // A block runs from its header to the next column-0 line that is neither blank
@@ -178,22 +201,23 @@ function rewriteScreen(lines, start, end) {
   const base = baseIndent(body);
 
   let caption = null;
-  const outBody = [];
-  const fields = [];
-  let run = [];                 // pending Text run
+  const partBody = [];      // stays on the Part
+  const items = [];         // hoisted onto generated [Line:] definitions
+  const defs = [];          // generated [Field:] definitions
+  let run = [];             // pending Text run
 
   const flushRun = () => {
-    if (!run.length) return;
     for (const t of run) {
-      const fname = `${name}T${fields.length + 1}`;
-      outBody.push(`${IND}Field : ${fname}`);
-      fields.push({ name: fname, value: t.value, style: t.style });
+      const fname = `${name}L${items.length + 1}F`;
+      items.push({ name: fname, def: null });
+      defs.push({ name: fname, lines: [`${IND}Set As : ${t.value}`, ...(t.style ? [`${IND}Style : ${t.style}`] : [])] });
       stats.textFields++;
     }
     run = [];
   };
 
-  for (const L of body) {
+  for (let bi = 0; bi < body.length; bi++) {
+    const L = body[bi];
     const a = attrRe.exec(L);
     const isOwn = a && a[1].length === base;
 
@@ -203,41 +227,89 @@ function rewriteScreen(lines, start, end) {
     }
     // A Style directly after a Text run styles that whole run.
     if (isOwn && a[2].trim().toLowerCase() === 'style' && run.length) {
-      const last = run[run.length - 1];
-      last.style = a[3].trim();
-      // propagate to every line of the run, the run shares one style
       for (const t of run) t.style = a[3].trim();
       continue;
     }
 
     flushRun();
 
-    if (!isOwn) { outBody.push(L); continue; }
+    if (!isOwn) { partBody.push(L); continue; }
 
     const key = a[2].trim().toLowerCase();
     switch (key) {
       case 'caption':
         caption = a[3].trim();
         stats.caption++;
-        outBody.push(`${IND}; Caption moved to the Report's Title by fix-screen-export-types.mjs`);
         break;
+
       case 'key':
         stats.key++;
-        outBody.push(`${IND}; Key dropped by fix-screen-export-types.mjs - Part has no Key;`);
-        outBody.push(`${IND}; this was a menu-level shortcut, not a layout attribute.`);
+        partBody.push(`${IND}; Key dropped by fix-screen-export-types.mjs - Part has no Key;`);
+        partBody.push(`${IND}; this was a menu-level shortcut, not a layout attribute.`);
         break;
+
       case 'line height':
         stats.lineHeight++;
-        outBody.push(`${IND}; Line Height dropped by fix-screen-export-types.mjs - Part: Height`);
-        outBody.push(`${IND}; means the height of the whole Part, not of each Line.`);
+        partBody.push(`${IND}; Line Height dropped by fix-screen-export-types.mjs - Part: Height`);
+        partBody.push(`${IND}; means the height of the whole Part, not of each Line.`);
         break;
+
+      // `Line : Spacing` named a Line that is defined nowhere in the bundle.
+      case 'line':
+        stats.danglingLine++;
+        partBody.push(`${IND}; Line: ${a[3].trim()} dropped - a spacer Line this file never`);
+        partBody.push(`${IND}; defines; the items below are on their own Lines now.`);
+        break;
+
+      // `Lines : 1, 1` is a column count, not a list of Lines. Checked against
+      // all 113 such groups: it does NOT equal the number of items that follow
+      // (46 mismatched, e.g. "Lines: 1, 1" followed by 8 fields), so its
+      // meaning cannot be recovered and it is not reproducible. Dropped; one
+      // generated Line per item instead.
+      case 'lines':
+        stats.lineCounts++;
+        partBody.push(`${IND}; Lines: ${a[3].trim()} dropped - column counts, not Line names;`);
+        partBody.push(`${IND}; its packing cannot be recovered (see the script header).`);
+        break;
+
+      // `Field: <Field-Id: NAME, Label: "...">` plus its indented attributes
+      // becomes a real [Field: NAME] definition referenced from a Line.
+      case 'field': {
+        const inline = /^<\s*Field-Id\s*:\s*([A-Za-z0-9_]+)\s*(?:,\s*Label\s*:\s*"([^"]*)")?\s*>?/i.exec(a[3]);
+        if (inline) {
+          const nested = [];
+          for (let k = bi + 1; k < body.length; k++) {
+            const n = /^(\s+)\S/.exec(body[k]);
+            if (!n || n[1].length <= base) break;
+            nested.push(body[k]);
+            bi = k;
+          }
+          stats.inlineFields++;
+          items.push({ name: inline[1], def: null });
+          defs.push({
+            name: inline[1],
+            lines: [
+              ...(inline[2] !== undefined ? [`${IND}Label : "${inline[2]}"`] : []),
+              ...nested,
+            ],
+          });
+          break;
+        }
+        // a plain reference - hoist it
+        const ref = a[3].trim();
+        items.push({ name: ref, def: null });
+        break;
+      }
+
       default:
-        outBody.push(L);
+        partBody.push(L);       // Button, and anything else Part does accept
     }
   }
   flushRun();
 
   const title = caption || `${name}`;
+  const lineNames = items.map((_, i) => `${name}L${i + 1}`);
+
   const parts = [
     `[Report: ${name}]`,
     `${IND}Title : ${title}`,
@@ -247,20 +319,21 @@ function rewriteScreen(lines, start, end) {
     `${IND}Parts : ${name}Part`,
     '',
     `${BANNER}`,
-    `${IND}; [Screen:] is not a Tally definition type. The body below was already`,
-    `${IND}; Part grammar, so it became a Part behind a Report + Form.`,
+    `${IND}; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).`,
+    `${IND}; Tally also rejects "Field" on a Part, so every item hangs off a`,
+    `${IND}; generated Line below - Part accepts Line/Lines/Button (all proven`,
+    `${IND}; by this file compiling past them) but not Field.`,
     `[Part: ${name}Part]`,
-    ...outBody,
+    ...(lineNames.length ? [`${IND}Lines : ${lineNames.join(', ')}`] : []),
+    ...partBody,
   ];
 
-  if (fields.length) {
-    parts.push('', `${IND}; Text: lines become Fields - Part has no Text attribute.`);
-    for (const f of fields) {
-      parts.push('', `[Field: ${f.name}]`, `${IND}Set As : ${f.value}`);
-      if (f.style) parts.push(`${IND}Style : ${f.style}`);
-    }
-    parts.push('');
+  if (items.length) {
+    parts.push('', `${IND}; one Line per item, in the original order.`);
+    items.forEach((it, i) => parts.push('', `[Line: ${name}L${i + 1}]`, `${IND}Field : ${it.name}`));
   }
+  for (const d of defs) parts.push('', `[Field: ${d.name}]`, ...d.lines);
+  if (items.length) parts.push('');
 
   stats.screens++;
   return parts;
@@ -381,11 +454,14 @@ for (const f of fs.readdirSync(DIR).filter((x) => x.endsWith('.tdl')).sort()) {
   }
 }
 
-console.log(`\n[Screen:] -> Report+Form+Part : ${stats.screens}`);
+console.log(`\n[Screen:] -> Report+Form+Part(+Lines) : ${stats.screens}`);
 console.log(`   Text: -> generated Fields : ${stats.textFields}`);
+console.log(`   <Field-Id:> -> real Fields: ${stats.inlineFields}`);
 console.log(`   Caption -> Report Title   : ${stats.caption}`);
 console.log(`   Key dropped               : ${stats.key}`);
 console.log(`   Line Height dropped       : ${stats.lineHeight}`);
+console.log(`   "Line: Spacing" dropped   : ${stats.danglingLine} (undefined spacer Line)`);
+console.log(`   "Lines: <counts>" dropped : ${stats.lineCounts} (column counts, unrecoverable)`);
 console.log(`\n[Export:] -> Report+Form+Part+Line+Fields : ${stats.exports}`);
 console.log(`   Export: Value: -> Fields  : ${stats.valueFields}`);
 console.log(`   Repeat kept on the Report  : ${stats.repeat}`);

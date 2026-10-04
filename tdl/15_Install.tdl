@@ -53,90 +53,75 @@
     Parts : JpInstallerScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpInstallerScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpInstallerScreenL1, JpInstallerScreenL2, JpInstallerScreenL3, JpInstallerScreenL4, JpInstallerScreenL5, JpInstallerScreenL6, JpInstallerScreenL7, JpInstallerScreenL8, JpInstallerScreenL9, JpInstallerScreenL10, JpInstallerScreenL11, JpInstallerScreenL12, JpInstallerScreenL13, JpInstallerScreenL14, JpInstallerScreenL15, JpInstallerScreenL16, JpInstallerScreenL17, JpInstallerScreenL18, JpInstallerScreenL19, JpInstallerScreenL20, JpInstallerScreenL21, JpInstallerScreenL22, JpInstallerScreenL23, JpInstallerScreenL24
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpInstallerScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpInstallerScreenT2
-    Field : JpInstallerScreenT3
 
-    Line: Spacing
-    Lines: 1
-    Field : JpInstallerScreenT4
-    Lines: 1, 1, 1, 1, 1
-    Field: <Field-Id: ##JwlShopName, Label: "Shop Name">
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
         Width: 250
         Style: UseFormCtrl
-    Field: <Field-Id: ##JwlShopAddress, Label: "Address">
         Width: 250
         Style: UseFormCtrl
-    Field: <Field-Id: ##JwlCompanyGSTIN, Label: "Company GSTIN">
         Width: 250
         Style: UseFormCtrl
-    Field: <Field-Id: ##JwlCompanyPhone, Label: "Phone">
         Width: 250
         Style: UseFormCtrl
-    Field: <Field-Id: ##JwlCompanyState, Label: "State">
         Width: 250
         Style: UseFormCtrl
 
-    Line: Spacing
-    Lines: 1
-    Field : JpInstallerScreenT5
-    Lines: 1, 1, 1, 1
-    Field: <Field-Id: ##JwlDefaultGstRate, Label: "Default GST Rate %">
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
         Width: 250
         Style: UseFormCtrl
-    Field: <Field-Id: ##JwlMaxDiscountPc, Label: "Discount Ceiling %">
         Width: 250
         Style: UseFormCtrl
-    Field: <Field-Id: ##JwlOldGoldDedPc, Label: "Old Gold Deduction %">
         Width: 250
         Style: UseFormCtrl
-    Field: <Field-Id: ##JwlInvoiceTerms, Label: "Invoice Terms">
-        Width: 250
-        Style: UseFormCtrl
-
-    Line: Spacing
-    Lines: 1
-    Field : JpInstallerScreenT6
-    Lines: 1, 1, 1, 1
-    Field: <Field-Id: JpInstGroup, Label: "Ledger Group to Create">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpInstLedger, Label: "Ledger to Create">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpInstParent, Label: "Parent Group">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpInstGodown, Label: "Godown to Create">
         Width: 250
         Style: UseFormCtrl
 
-    Line: Spacing
-    Lines: 1, 1
-    Field: <Field-Id: JpInstMsg, Label: " ">
-        Width: 100
-        Style: JpWarn
-    Field : JpInstallerScreenT7
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1, 1
-    Field : JpInstallerScreenT8
-    Field : JpInstallerScreenT9
-    Field : JpInstallerScreenT10
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Create Standard Set (F2), Key: F2, Action: JpInstStandard>
     Button: <Create What Is Typed (F4), Key: F4, Action: JpInstOne>
     Button: <Check Setup (F7), Key: F7, Action: JpInstCheck>
@@ -148,45 +133,142 @@
 
 ; Creates the whole standard master set in one pass.
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpInstallerScreenT1]
+[Line: JpInstallerScreenL1]
+    Field : JpInstallerScreenL1F
+
+[Line: JpInstallerScreenL2]
+    Field : JpInstallerScreenL2F
+
+[Line: JpInstallerScreenL3]
+    Field : JpInstallerScreenL3F
+
+[Line: JpInstallerScreenL4]
+    Field : JpInstallerScreenL4F
+
+[Line: JpInstallerScreenL5]
+    Field : <Field-Id: ##JwlShopName, Label: "Shop Name">
+
+[Line: JpInstallerScreenL6]
+    Field : <Field-Id: ##JwlShopAddress, Label: "Address">
+
+[Line: JpInstallerScreenL7]
+    Field : <Field-Id: ##JwlCompanyGSTIN, Label: "Company GSTIN">
+
+[Line: JpInstallerScreenL8]
+    Field : <Field-Id: ##JwlCompanyPhone, Label: "Phone">
+
+[Line: JpInstallerScreenL9]
+    Field : <Field-Id: ##JwlCompanyState, Label: "State">
+
+[Line: JpInstallerScreenL10]
+    Field : JpInstallerScreenL10F
+
+[Line: JpInstallerScreenL11]
+    Field : <Field-Id: ##JwlDefaultGstRate, Label: "Default GST Rate %">
+
+[Line: JpInstallerScreenL12]
+    Field : <Field-Id: ##JwlMaxDiscountPc, Label: "Discount Ceiling %">
+
+[Line: JpInstallerScreenL13]
+    Field : <Field-Id: ##JwlOldGoldDedPc, Label: "Old Gold Deduction %">
+
+[Line: JpInstallerScreenL14]
+    Field : <Field-Id: ##JwlInvoiceTerms, Label: "Invoice Terms">
+
+[Line: JpInstallerScreenL15]
+    Field : JpInstallerScreenL15F
+
+[Line: JpInstallerScreenL16]
+    Field : JpInstGroup
+
+[Line: JpInstallerScreenL17]
+    Field : JpInstLedger
+
+[Line: JpInstallerScreenL18]
+    Field : JpInstParent
+
+[Line: JpInstallerScreenL19]
+    Field : JpInstGodown
+
+[Line: JpInstallerScreenL20]
+    Field : JpInstMsg
+
+[Line: JpInstallerScreenL21]
+    Field : JpInstallerScreenL21F
+
+[Line: JpInstallerScreenL22]
+    Field : JpInstallerScreenL22F
+
+[Line: JpInstallerScreenL23]
+    Field : JpInstallerScreenL23F
+
+[Line: JpInstallerScreenL24]
+    Field : JpInstallerScreenL24F
+
+[Field: JpInstallerScreenL1F]
     Set As : "           JADEPRO JEWELLERY  -  SETUP"
     Style : JpTitle
 
-[Field: JpInstallerScreenT2]
+[Field: JpInstallerScreenL2F]
     Set As : "Nothing is created until you press F2. Run this once, in a new company or just before going live."
     Style : JpMuted
 
-[Field: JpInstallerScreenT3]
+[Field: JpInstallerScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpInstallerScreenT4]
+[Field: JpInstallerScreenL4F]
     Set As : " COMPANY DETAILS  (needed on the invoice)"
     Style : JpSectionBox
 
-[Field: JpInstallerScreenT5]
+[Field: JpInstallerScreenL10F]
     Set As : " BUSINESS RULES"
     Style : JpSectionBox
 
-[Field: JpInstallerScreenT6]
+[Field: JpInstallerScreenL15F]
     Set As : " CREATE MASTERS"
     Style : JpSectionBox
 
-[Field: JpInstallerScreenT7]
+[Field: JpInstGroup]
+    Label : "Ledger Group to Create"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpInstLedger]
+    Label : "Ledger to Create"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpInstParent]
+    Label : "Parent Group"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpInstGodown]
+    Label : "Godown to Create"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpInstMsg]
+    Label : " "
+        Width: 100
+        Style: JpWarn
+
+[Field: JpInstallerScreenL21F]
     Set As : "One click creates the FULL standard set below. Create individual masters from this screen only when you want something different."
     Style : JpMuted
 
-[Field: JpInstallerScreenT8]
+[Field: JpInstallerScreenL22F]
     Set As : "Groups : Jewellery Metal Stock  |  Old Gold  |  Karigar  |  Jewellers  |  Repair Income"
     Style : JpMuted
 
-[Field: JpInstallerScreenT9]
+[Field: JpInstallerScreenL23F]
     Set As : "Ledgers: Gold / Silver / Platinum / Diamond / Loose Stones / Old Gold Received / Karigar Payable / Karigar Metal Held / Customer Advance / Jewellery Purchase / Jewellery Sales / Repairs Income / Order Advance Received"
     Style : JpMuted
 
-[Field: JpInstallerScreenT10]
+[Field: JpInstallerScreenL24F]
     Set As : "Godowns: Main Counter  |  Store Room  |  Karigar Workshop"
     Style : JpMuted
 

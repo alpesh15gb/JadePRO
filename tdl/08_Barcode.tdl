@@ -204,63 +204,101 @@
     Parts : JpTagScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpTagScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpTagScreenL1, JpTagScreenL2, JpTagScreenL3, JpTagScreenL4, JpTagScreenL5, JpTagScreenL6, JpTagScreenL7, JpTagScreenL8
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpTagScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpTagScreenT2
-    Field : JpTagScreenT3
 
-    Line: Spacing
-    Lines: 1, 1, 1
-    Field: <Field-Id: JpTagItem, Label: "Item Name">
-        Width: 300
-        Style: UseFormCtrl
-    Field: <Field-Id: JpTagCount, Label: "Number of Tags">
-        Width: 200
-        Style: UseFormCtrl
-    Field: <Field-Id: JpTagSerial, Label: "Starting Serial">
-        Width: 200
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1, 1
-    Field: <Field-Id: JpTagMsg, Label: " ">
-        Width: 100
-        Style: JpWarn
-    Field : JpTagScreenT4
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Generate & Store Barcode (F7), Key: F7, Action: JpTagGenerate>
     Button: <Print Tag (F2), Key: F2, Action: JpTagPrint>
     Button: <Barcode Register (F8), Key: F8, Action: JpTagRegister>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
 
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpTagScreenT1]
+[Line: JpTagScreenL1]
+    Field : JpTagScreenL1F
+
+[Line: JpTagScreenL2]
+    Field : JpTagScreenL2F
+
+[Line: JpTagScreenL3]
+    Field : JpTagScreenL3F
+
+[Line: JpTagScreenL4]
+    Field : JpTagItem
+
+[Line: JpTagScreenL5]
+    Field : JpTagCount
+
+[Line: JpTagScreenL6]
+    Field : JpTagSerial
+
+[Line: JpTagScreenL7]
+    Field : JpTagMsg
+
+[Line: JpTagScreenL8]
+    Field : JpTagScreenL8F
+
+[Field: JpTagScreenL1F]
     Set As : "           JEWELLERY TAG  /  BARCODE"
     Style : JpTitle
 
-[Field: JpTagScreenT2]
+[Field: JpTagScreenL2F]
     Set As : "Tags carry shop details, barcode, design, purity, gross / net / stone weight and MRP."
     Style : JpMuted
 
-[Field: JpTagScreenT3]
+[Field: JpTagScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpTagScreenT4]
+[Field: JpTagItem]
+    Label : "Item Name"
+        Width: 300
+        Style: UseFormCtrl
+
+[Field: JpTagCount]
+    Label : "Number of Tags"
+        Width: 200
+        Style: UseFormCtrl
+
+[Field: JpTagSerial]
+    Label : "Starting Serial"
+        Width: 200
+        Style: UseFormCtrl
+
+[Field: JpTagMsg]
+    Label : " "
+        Width: 100
+        Style: JpWarn
+
+[Field: JpTagScreenL8F]
     Set As : "Scheme: " + JpBcPrefix() + "-CATEGORY-DESIGN-WEIGHT-SERIAL"
     Style : JpMuted
 

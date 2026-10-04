@@ -251,91 +251,47 @@ JwlOrdNote : String : 20190
     Parts : JpOrderScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpOrderScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpOrderScreenL1, JpOrderScreenL2, JpOrderScreenL3, JpOrderScreenL4, JpOrderScreenL5, JpOrderScreenL6, JpOrderScreenL7, JpOrderScreenL8, JpOrderScreenL9, JpOrderScreenL10, JpOrderScreenL11, JpOrderScreenL12, JpOrderScreenL13, JpOrderScreenL14, JpOrderScreenL15, JpOrderScreenL16, JpOrderScreenL17, JpOrderScreenL18, JpOrderScreenL19, JpOrderScreenL20, JpOrderScreenL21, JpOrderScreenL22
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpOrderScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpOrderScreenT2
-    Field : JpOrderScreenT3
 
-    Line: Spacing
-    Lines: 1
-    Field : JpOrderScreenT4
-    Lines: 1, 1, 1, 1, 1, 1
-    Field: <Field-Id: JpOrdNo, Label: "Order Number *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOrdCust, Label: "Customer *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOrdType, Label: "Jewellery Type *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpMetalPick
-    Field: <Field-Id: JpOrdDesign, Label: "Design Reference">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOrdPurity, Label: "Purity *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpPurityPick
-    Field: <Field-Id: JpOrdExpWt, Label: "Expected Weight *">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpOrderScreenT5
-    Lines: 1, 1, 1, 1, 1, 1
-    Field: <Field-Id: JpOrdExpPrice, Label: "Expected Price">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOrdAdvance, Label: "Advance Amount">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOrdAdvUsed, Label: "Advance Used">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOrdAdvBal, Label: "Advance Balance">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #A06000
-        Font: Bold
-    Field: <Field-Id: JpOrdDelivDt, Label: "Promised Delivery *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOrdKarigarNm, Label: "Assigned Karigar">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpOrderScreenT6
-    Lines: 1, 1, 1, 1
-    Field: <Field-Id: JpOrdStatusTx, Label: "Order Status *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpOrdStatusPick
-    Field: <Field-Id: JpOrdInvRefTx, Label: "Final Invoice Ref (for Delivered)">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOrdNoteTx, Label: "Note">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOrdMsg, Label: " ">
-        Width: 250
-        Style: JpWarn
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Estimate Price (F7), Key: F7, Action: JpOrdCalc>
     Button: <Advance Status (F8), Key: F8, Action: JpOrdNextStatusAction>
     Button: <Save Order (F2), Key: F2, Action: JpOrdSave>
@@ -343,31 +299,182 @@ JwlOrdNote : String : 20190
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
 
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpOrderScreenT1]
+[Line: JpOrderScreenL1]
+    Field : JpOrderScreenL1F
+
+[Line: JpOrderScreenL2]
+    Field : JpOrderScreenL2F
+
+[Line: JpOrderScreenL3]
+    Field : JpOrderScreenL3F
+
+[Line: JpOrderScreenL4]
+    Field : JpOrderScreenL4F
+
+[Line: JpOrderScreenL5]
+    Field : JpOrdNo
+
+[Line: JpOrderScreenL6]
+    Field : JpOrdCust
+
+[Line: JpOrderScreenL7]
+    Field : JpOrdType
+
+[Line: JpOrderScreenL8]
+    Field : JpOrdDesign
+
+[Line: JpOrderScreenL9]
+    Field : JpOrdPurity
+
+[Line: JpOrderScreenL10]
+    Field : JpOrdExpWt
+
+[Line: JpOrderScreenL11]
+    Field : JpOrderScreenL11F
+
+[Line: JpOrderScreenL12]
+    Field : JpOrdExpPrice
+
+[Line: JpOrderScreenL13]
+    Field : JpOrdAdvance
+
+[Line: JpOrderScreenL14]
+    Field : JpOrdAdvUsed
+
+[Line: JpOrderScreenL15]
+    Field : JpOrdAdvBal
+
+[Line: JpOrderScreenL16]
+    Field : JpOrdDelivDt
+
+[Line: JpOrderScreenL17]
+    Field : JpOrdKarigarNm
+
+[Line: JpOrderScreenL18]
+    Field : JpOrderScreenL18F
+
+[Line: JpOrderScreenL19]
+    Field : JpOrdStatusTx
+
+[Line: JpOrderScreenL20]
+    Field : JpOrdInvRefTx
+
+[Line: JpOrderScreenL21]
+    Field : JpOrdNoteTx
+
+[Line: JpOrderScreenL22]
+    Field : JpOrdMsg
+
+[Field: JpOrderScreenL1F]
     Set As : "           ADVANCE  /  CUSTOM ORDER"
     Style : JpTitle
 
-[Field: JpOrderScreenT2]
+[Field: JpOrderScreenL2F]
     Set As : "New  ->  Design Approved  ->  In Production  ->  Ready  ->  Delivered   (or Cancelled)"
     Style : JpMuted
 
-[Field: JpOrderScreenT3]
+[Field: JpOrderScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpOrderScreenT4]
+[Field: JpOrderScreenL4F]
     Set As : " ORDER DETAILS"
     Style : JpSectionBox
 
-[Field: JpOrderScreenT5]
+[Field: JpOrdNo]
+    Label : "Order Number *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrdCust]
+    Label : "Customer *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrdType]
+    Label : "Jewellery Type *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpMetalPick
+
+[Field: JpOrdDesign]
+    Label : "Design Reference"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrdPurity]
+    Label : "Purity *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPurityPick
+
+[Field: JpOrdExpWt]
+    Label : "Expected Weight *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrderScreenL11F]
     Set As : " MONEY"
     Style : JpSectionBox
 
-[Field: JpOrderScreenT6]
+[Field: JpOrdExpPrice]
+    Label : "Expected Price"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrdAdvance]
+    Label : "Advance Amount"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrdAdvUsed]
+    Label : "Advance Used"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrdAdvBal]
+    Label : "Advance Balance"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+        Font: Bold
+
+[Field: JpOrdDelivDt]
+    Label : "Promised Delivery *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrdKarigarNm]
+    Label : "Assigned Karigar"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrderScreenL18F]
     Set As : " STATUS"
     Style : JpSectionBox
+
+[Field: JpOrdStatusTx]
+    Label : "Order Status *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpOrdStatusPick
+
+[Field: JpOrdInvRefTx]
+    Label : "Final Invoice Ref (for Delivered)"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrdNoteTx]
+    Label : "Note"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOrdMsg]
+    Label : " "
+        Width: 250
+        Style: JpWarn
 
 [Collection: Source: JpOrdStatusPick]
     Data: JpOrdStatusPickRow

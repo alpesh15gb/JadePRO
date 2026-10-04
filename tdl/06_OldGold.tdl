@@ -237,103 +237,50 @@ JwlOgNote : String : 20152
     Parts : JpOldGoldScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpOldGoldScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpOldGoldScreenL1, JpOldGoldScreenL2, JpOldGoldScreenL3, JpOldGoldScreenL4, JpOldGoldScreenL5, JpOldGoldScreenL6, JpOldGoldScreenL7, JpOldGoldScreenL8, JpOldGoldScreenL9, JpOldGoldScreenL10, JpOldGoldScreenL11, JpOldGoldScreenL12, JpOldGoldScreenL13, JpOldGoldScreenL14, JpOldGoldScreenL15, JpOldGoldScreenL16, JpOldGoldScreenL17, JpOldGoldScreenL18, JpOldGoldScreenL19, JpOldGoldScreenL20, JpOldGoldScreenL21, JpOldGoldScreenL22, JpOldGoldScreenL23, JpOldGoldScreenL24
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpOldGoldScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpOldGoldScreenT2
-    Field : JpOldGoldScreenT3
 
-    Line: Spacing
-    Lines: 1, 1, 1, 1
-    Field: <Field-Id: JpOgCust, Label: "Customer *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOgHallmark, Label: "Hallmark Stamp / Old Tag No">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOgMetal, Label: "Metal Type *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpMetalPick
-    Field: <Field-Id: JpOgPurity, Label: "Purity *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpPurityPick
-    Field: <Field-Id: JpOgPurityPc, Label: "Purity Percentage *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOgDedPc, Label: "Deduction %">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpOldGoldScreenT4
-    Lines: 1, 1, 1, 1, 1, 1
-    Field: <Field-Id: JpOgGross, Label: "Gross Weight *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOgStone, Label: "Stone Weight">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOgNet, Label: "Net Weight">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #6B4E1E
-    Field: <Field-Id: JpOgFine, Label: "Fine Weight">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #6B4E1E
-    Field: <Field-Id: JpOgRate, Label: "Applicable Gold Rate *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOgGrossValue, Label: "Value Before Deduction">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOgValue, Label: "EXCHANGE VALUE (after deduction)">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #A06000
-        Font: Bold
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpOldGoldScreenT5
-    Lines: 1, 1, 1
-    Field: <Field-Id: JpOgAdjusted, Label: "Adjusted Against New Purchase">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpOgBalance, Label: "Balance Refundable">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #A06000
-        Font: Bold
-    Field: <Field-Id: JpOgPayMode, Label: "Payout Mode">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpPayModePick
-    Field: <Field-Id: JpOgNote, Label: "Note">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1, 1
-    Field: <Field-Id: JpOgMsg, Label: " ">
-        Width: 100
-        Style: JpWarn
-    Field : JpOldGoldScreenT6
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Recalculate (F7), Key: F7, Action: JpOgCalc>
     Button: <Fetch Today's Rate (F8), Key: F8, Action: JpOgFetchRate>
     Button: <Save Exchange (F2), Key: F2, Action: JpOgSave>
@@ -344,29 +291,200 @@ JwlOgNote : String : 20152
 ; =============================================================================
 
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpOldGoldScreenT1]
+[Line: JpOldGoldScreenL1]
+    Field : JpOldGoldScreenL1F
+
+[Line: JpOldGoldScreenL2]
+    Field : JpOldGoldScreenL2F
+
+[Line: JpOldGoldScreenL3]
+    Field : JpOldGoldScreenL3F
+
+[Line: JpOldGoldScreenL4]
+    Field : JpOgCust
+
+[Line: JpOldGoldScreenL5]
+    Field : JpOgHallmark
+
+[Line: JpOldGoldScreenL6]
+    Field : JpOgMetal
+
+[Line: JpOldGoldScreenL7]
+    Field : JpOgPurity
+
+[Line: JpOldGoldScreenL8]
+    Field : JpOgPurityPc
+
+[Line: JpOldGoldScreenL9]
+    Field : JpOgDedPc
+
+[Line: JpOldGoldScreenL10]
+    Field : JpOldGoldScreenL10F
+
+[Line: JpOldGoldScreenL11]
+    Field : JpOgGross
+
+[Line: JpOldGoldScreenL12]
+    Field : JpOgStone
+
+[Line: JpOldGoldScreenL13]
+    Field : JpOgNet
+
+[Line: JpOldGoldScreenL14]
+    Field : JpOgFine
+
+[Line: JpOldGoldScreenL15]
+    Field : JpOgRate
+
+[Line: JpOldGoldScreenL16]
+    Field : JpOgGrossValue
+
+[Line: JpOldGoldScreenL17]
+    Field : JpOgValue
+
+[Line: JpOldGoldScreenL18]
+    Field : JpOldGoldScreenL18F
+
+[Line: JpOldGoldScreenL19]
+    Field : JpOgAdjusted
+
+[Line: JpOldGoldScreenL20]
+    Field : JpOgBalance
+
+[Line: JpOldGoldScreenL21]
+    Field : JpOgPayMode
+
+[Line: JpOldGoldScreenL22]
+    Field : JpOgNote
+
+[Line: JpOldGoldScreenL23]
+    Field : JpOgMsg
+
+[Line: JpOldGoldScreenL24]
+    Field : JpOldGoldScreenL24F
+
+[Field: JpOldGoldScreenL1F]
     Set As : "           OLD GOLD  /  GOLD EXCHANGE"
     Style : JpTitle
 
-[Field: JpOldGoldScreenT2]
+[Field: JpOldGoldScreenL2F]
     Set As : "Fine Weight = Net Weight x Purity %      Exchange Value = Fine Weight x Today's Rate for that purity"
     Style : JpMuted
 
-[Field: JpOldGoldScreenT3]
+[Field: JpOldGoldScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpOldGoldScreenT4]
+[Field: JpOgCust]
+    Label : "Customer *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOgHallmark]
+    Label : "Hallmark Stamp / Old Tag No"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOgMetal]
+    Label : "Metal Type *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpMetalPick
+
+[Field: JpOgPurity]
+    Label : "Purity *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPurityPick
+
+[Field: JpOgPurityPc]
+    Label : "Purity Percentage *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOgDedPc]
+    Label : "Deduction %"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOldGoldScreenL10F]
     Set As : " WEIGHTS  AND  VALUATION"
     Style : JpSectionBox
 
-[Field: JpOldGoldScreenT5]
+[Field: JpOgGross]
+    Label : "Gross Weight *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOgStone]
+    Label : "Stone Weight"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOgNet]
+    Label : "Net Weight"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+
+[Field: JpOgFine]
+    Label : "Fine Weight"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+
+[Field: JpOgRate]
+    Label : "Applicable Gold Rate *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOgGrossValue]
+    Label : "Value Before Deduction"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOgValue]
+    Label : "EXCHANGE VALUE (after deduction)"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+        Font: Bold
+
+[Field: JpOldGoldScreenL18F]
     Set As : " SETTLEMENT"
     Style : JpSectionBox
 
-[Field: JpOldGoldScreenT6]
+[Field: JpOgAdjusted]
+    Label : "Adjusted Against New Purchase"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOgBalance]
+    Label : "Balance Refundable"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+        Font: Bold
+
+[Field: JpOgPayMode]
+    Label : "Payout Mode"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPayModePick
+
+[Field: JpOgNote]
+    Label : "Note"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpOgMsg]
+    Label : " "
+        Width: 100
+        Style: JpWarn
+
+[Field: JpOldGoldScreenL24F]
     Set As : "The exchange voucher can be printed on the sales invoice by entering its reference in JwlOldGoldRef on the Sales voucher."
     Style : JpMuted
 

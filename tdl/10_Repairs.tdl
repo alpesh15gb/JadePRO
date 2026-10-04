@@ -240,103 +240,54 @@ JwlRepRecvDate : Date : 20208
     Parts : JpRepairScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpRepairScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpRepairScreenL1, JpRepairScreenL2, JpRepairScreenL3, JpRepairScreenL4, JpRepairScreenL5, JpRepairScreenL6, JpRepairScreenL7, JpRepairScreenL8, JpRepairScreenL9, JpRepairScreenL10, JpRepairScreenL11, JpRepairScreenL12, JpRepairScreenL13, JpRepairScreenL14, JpRepairScreenL15, JpRepairScreenL16, JpRepairScreenL17, JpRepairScreenL18, JpRepairScreenL19, JpRepairScreenL20, JpRepairScreenL21, JpRepairScreenL22, JpRepairScreenL23, JpRepairScreenL24, JpRepairScreenL25
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRepairScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpRepairScreenT2
-    Field : JpRepairScreenT3
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRepairScreenT4
-    Lines: 1, 1, 1, 1, 1, 1
-    Field: <Field-Id: JpRepNo, Label: "Repair Number *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRepCustNm, Label: "Customer *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRepContactNm, Label: "Contact Number">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRepDescTx, Label: "Jewellery Description *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRepMetal, Label: "Metal Type">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpMetalPick
-    Field: <Field-Id: JpRepPurity, Label: "Purity *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpPurityPick
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRepairScreenT5
-    Lines: 1, 1, 1, 1, 1, 1
-    Field: <Field-Id: JpRepGrossWt, Label: "Gross Weight *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRepStoneWt, Label: "Stone Weight">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRepNetWt, Label: "Net Weight">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #6B4E1E
-    Field: <Field-Id: JpRepStoneDet, Label: "Stone Details">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRepairScreenT6
-    Lines: 1, 1, 1, 1, 1, 1
-    Field: <Field-Id: JpRepWorkTx, Label: "Repair Work *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRepKarigarNm, Label: "Sent To Karigar">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRepEstAmt, Label: "Estimated Amount *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRepAdvance, Label: "Advance">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpRepBalance, Label: "Balance Payable">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #A06000
-        Font: Bold
-    Field: <Field-Id: JpRepDelivDt, Label: "Expected Delivery *">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpRepairScreenT7
-    Lines: 1, 1
-    Field: <Field-Id: JpRepStatusTx, Label: "Repair Status *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpRepStatusPick
-    Field: <Field-Id: JpRepMsg, Label: " ">
-        Width: 250
-        Style: JpWarn
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Recalculate (F7), Key: F7, Action: JpRepCalc>
     Button: <Advance Status (F8), Key: F8, Action: JpRepNextStatusAction>
     Button: <Save Repair (F2), Key: F2, Action: JpRepSave>
@@ -344,35 +295,206 @@ JwlRepRecvDate : Date : 20208
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
 
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpRepairScreenT1]
+[Line: JpRepairScreenL1]
+    Field : JpRepairScreenL1F
+
+[Line: JpRepairScreenL2]
+    Field : JpRepairScreenL2F
+
+[Line: JpRepairScreenL3]
+    Field : JpRepairScreenL3F
+
+[Line: JpRepairScreenL4]
+    Field : JpRepairScreenL4F
+
+[Line: JpRepairScreenL5]
+    Field : JpRepNo
+
+[Line: JpRepairScreenL6]
+    Field : JpRepCustNm
+
+[Line: JpRepairScreenL7]
+    Field : JpRepContactNm
+
+[Line: JpRepairScreenL8]
+    Field : JpRepDescTx
+
+[Line: JpRepairScreenL9]
+    Field : JpRepMetal
+
+[Line: JpRepairScreenL10]
+    Field : JpRepPurity
+
+[Line: JpRepairScreenL11]
+    Field : JpRepairScreenL11F
+
+[Line: JpRepairScreenL12]
+    Field : JpRepGrossWt
+
+[Line: JpRepairScreenL13]
+    Field : JpRepStoneWt
+
+[Line: JpRepairScreenL14]
+    Field : JpRepNetWt
+
+[Line: JpRepairScreenL15]
+    Field : JpRepStoneDet
+
+[Line: JpRepairScreenL16]
+    Field : JpRepairScreenL16F
+
+[Line: JpRepairScreenL17]
+    Field : JpRepWorkTx
+
+[Line: JpRepairScreenL18]
+    Field : JpRepKarigarNm
+
+[Line: JpRepairScreenL19]
+    Field : JpRepEstAmt
+
+[Line: JpRepairScreenL20]
+    Field : JpRepAdvance
+
+[Line: JpRepairScreenL21]
+    Field : JpRepBalance
+
+[Line: JpRepairScreenL22]
+    Field : JpRepDelivDt
+
+[Line: JpRepairScreenL23]
+    Field : JpRepairScreenL23F
+
+[Line: JpRepairScreenL24]
+    Field : JpRepStatusTx
+
+[Line: JpRepairScreenL25]
+    Field : JpRepMsg
+
+[Field: JpRepairScreenL1F]
     Set As : "           JEWELLERY REPAIR"
     Style : JpTitle
 
-[Field: JpRepairScreenT2]
+[Field: JpRepairScreenL2F]
     Set As : "Received  ->  Sent to Karigar  ->  Repairing  ->  Ready  ->  Delivered"
     Style : JpMuted
 
-[Field: JpRepairScreenT3]
+[Field: JpRepairScreenL3F]
     Set As : "Repairs never change stock - only the karigar's metal accountability is affected."
     Style : JpMuted
 
-[Field: JpRepairScreenT4]
+[Field: JpRepairScreenL4F]
     Set As : " CUSTOMER  AND  PIECE"
     Style : JpSectionBox
 
-[Field: JpRepairScreenT5]
+[Field: JpRepNo]
+    Label : "Repair Number *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepCustNm]
+    Label : "Customer *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepContactNm]
+    Label : "Contact Number"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepDescTx]
+    Label : "Jewellery Description *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepMetal]
+    Label : "Metal Type"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpMetalPick
+
+[Field: JpRepPurity]
+    Label : "Purity *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPurityPick
+
+[Field: JpRepairScreenL11F]
     Set As : " WEIGHTS  AND  STONES"
     Style : JpSectionBox
 
-[Field: JpRepairScreenT6]
+[Field: JpRepGrossWt]
+    Label : "Gross Weight *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepStoneWt]
+    Label : "Stone Weight"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepNetWt]
+    Label : "Net Weight"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+
+[Field: JpRepStoneDet]
+    Label : "Stone Details"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepairScreenL16F]
     Set As : " WORK  AND  MONEY"
     Style : JpSectionBox
 
-[Field: JpRepairScreenT7]
+[Field: JpRepWorkTx]
+    Label : "Repair Work *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepKarigarNm]
+    Label : "Sent To Karigar"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepEstAmt]
+    Label : "Estimated Amount *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepAdvance]
+    Label : "Advance"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepBalance]
+    Label : "Balance Payable"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+        Font: Bold
+
+[Field: JpRepDelivDt]
+    Label : "Expected Delivery *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpRepairScreenL23F]
     Set As : " STATUS"
     Style : JpSectionBox
+
+[Field: JpRepStatusTx]
+    Label : "Repair Status *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpRepStatusPick
+
+[Field: JpRepMsg]
+    Label : " "
+        Width: 250
+        Style: JpWarn
 
 [Collection: Source: JpRepStatusPick]
     Data: JpRepStatusPickRow

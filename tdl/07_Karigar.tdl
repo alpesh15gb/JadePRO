@@ -242,138 +242,260 @@ Alter: Ledger
     Parts : JpKarigarScreenPart
 
 ; ---------- fixed-screen-export-types.mjs ----------
-    ; [Screen:] is not a Tally definition type. The body below was already
-    ; Part grammar, so it became a Part behind a Report + Form.
+    ; [Screen:] is not a Tally definition type. Tally: T0006 at (2366).
+    ; Tally also rejects "Field" on a Part, so every item hangs off a
+    ; generated Line below - Part accepts Line/Lines/Button (all proven
+    ; by this file compiling past them) but not Field.
 [Part: JpKarigarScreenPart]
-    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    Lines : JpKarigarScreenL1, JpKarigarScreenL2, JpKarigarScreenL3, JpKarigarScreenL4, JpKarigarScreenL5, JpKarigarScreenL6, JpKarigarScreenL7, JpKarigarScreenL8, JpKarigarScreenL9, JpKarigarScreenL10, JpKarigarScreenL11, JpKarigarScreenL12, JpKarigarScreenL13, JpKarigarScreenL14, JpKarigarScreenL15, JpKarigarScreenL16, JpKarigarScreenL17, JpKarigarScreenL18, JpKarigarScreenL19, JpKarigarScreenL20, JpKarigarScreenL21, JpKarigarScreenL22, JpKarigarScreenL23, JpKarigarScreenL24, JpKarigarScreenL25
     ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
     ; this was a menu-level shortcut, not a layout attribute.
 
-    Line: Spacing
-    Lines: 1
-    Field : JpKarigarScreenT1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
     ; means the height of the whole Part, not of each Line.
-    Field : JpKarigarScreenT2
-    Field : JpKarigarScreenT3
 
-    Line: Spacing
-    Lines: 1
-    Field : JpKarigarScreenT4
-    Lines: 1, 1, 1, 1, 1, 1
-    Field: <Field-Id: JpJobMode, Label: "Job Type *">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpJobModePick
-    Field: <Field-Id: JpJobRef, Label: "Job Reference *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpJobKarigarNm, Label: "Karigar *">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpJobDesignNm, Label: "Design Number">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpJobPurity, Label: "Purity">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpPurityPick
-    Field: <Field-Id: JpJobDescTxt, Label: "Job Description">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpKarigarScreenT5
-    Lines: 1, 1, 1
-    Field: <Field-Id: JpJobIssuedDt, Label: "Date Issued">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpJobIssued, Label: "Weight Issued (gm)">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpJobStatusTxt, Label: "Job Status">
-        Width: 250
-        Style: UseFormCtrl
-        Dynamic: Pick From: JpJobStatusPick
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpKarigarScreenT6
-    Lines: 1, 1, 1, 1, 1, 1, 1
-    Field: <Field-Id: JpJobRecvGross, Label: "Gross Received">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpJobRecvStone, Label: "Stone Weight">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpJobRecvNet, Label: "Net Received">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #6B4E1E
-    Field: <Field-Id: JpJobWastPc, Label: "Wastage %">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpJobWastWt, Label: "Wastage Weight">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpJobLabourAmt, Label: "Labour Charges">
-        Width: 250
-        Style: UseFormCtrl
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1, 1, 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
-    Field : JpKarigarScreenT7
-    Lines: 1, 1, 1
-    Field: <Field-Id: JpJobBalanceWt, Label: "METAL STILL WITH KARIGAR">
-        Width: 250
-        Style: UseFormCtrl
-        Color: #A06000
-        Font: Bold
-    Field: <Field-Id: JpJobBalAmt, Label: "Value of Metal With Karigar">
-        Width: 250
-        Style: UseFormCtrl
-    Field: <Field-Id: JpJobMsg, Label: " ">
-        Width: 250
-        Style: JpWarn
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
+    ; Lines: 1, 1, 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
 
-    Line: Spacing
-    Lines: 1
+    ; Line: Spacing dropped - a spacer Line this file never
+    ; defines; the items below are on their own Lines now.
+    ; Lines: 1 dropped - column counts, not Line names;
+    ; its packing cannot be recovered (see the script header).
     Button: <Recalculate (F7), Key: F7, Action: JpJobCalc>
     Button: <Save Job Entry (F2), Key: F2, Action: JpJobSave>
     Button: <Karigar Outstanding (F8), Key: F8, Action: JpJobOutstanding>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
 
 
-    ; Text: lines become Fields - Part has no Text attribute.
+    ; one Line per item, in the original order.
 
-[Field: JpKarigarScreenT1]
+[Line: JpKarigarScreenL1]
+    Field : JpKarigarScreenL1F
+
+[Line: JpKarigarScreenL2]
+    Field : JpKarigarScreenL2F
+
+[Line: JpKarigarScreenL3]
+    Field : JpKarigarScreenL3F
+
+[Line: JpKarigarScreenL4]
+    Field : JpKarigarScreenL4F
+
+[Line: JpKarigarScreenL5]
+    Field : JpJobMode
+
+[Line: JpKarigarScreenL6]
+    Field : JpJobRef
+
+[Line: JpKarigarScreenL7]
+    Field : JpJobKarigarNm
+
+[Line: JpKarigarScreenL8]
+    Field : JpJobDesignNm
+
+[Line: JpKarigarScreenL9]
+    Field : JpJobPurity
+
+[Line: JpKarigarScreenL10]
+    Field : JpJobDescTxt
+
+[Line: JpKarigarScreenL11]
+    Field : JpKarigarScreenL11F
+
+[Line: JpKarigarScreenL12]
+    Field : JpJobIssuedDt
+
+[Line: JpKarigarScreenL13]
+    Field : JpJobIssued
+
+[Line: JpKarigarScreenL14]
+    Field : JpJobStatusTxt
+
+[Line: JpKarigarScreenL15]
+    Field : JpKarigarScreenL15F
+
+[Line: JpKarigarScreenL16]
+    Field : JpJobRecvGross
+
+[Line: JpKarigarScreenL17]
+    Field : JpJobRecvStone
+
+[Line: JpKarigarScreenL18]
+    Field : JpJobRecvNet
+
+[Line: JpKarigarScreenL19]
+    Field : JpJobWastPc
+
+[Line: JpKarigarScreenL20]
+    Field : JpJobWastWt
+
+[Line: JpKarigarScreenL21]
+    Field : JpJobLabourAmt
+
+[Line: JpKarigarScreenL22]
+    Field : JpKarigarScreenL22F
+
+[Line: JpKarigarScreenL23]
+    Field : JpJobBalanceWt
+
+[Line: JpKarigarScreenL24]
+    Field : JpJobBalAmt
+
+[Line: JpKarigarScreenL25]
+    Field : JpJobMsg
+
+[Field: JpKarigarScreenL1F]
     Set As : "           KARIGAR  /  JOB WORK"
     Style : JpTitle
 
-[Field: JpKarigarScreenT2]
+[Field: JpKarigarScreenL2F]
     Set As : "Balance = Metal Issued - (Net Received + Wastage Given)      Labour is payable to the karigar."
     Style : JpMuted
 
-[Field: JpKarigarScreenT3]
+[Field: JpKarigarScreenL3F]
     Set As : " "
     Style : JpMuted
 
-[Field: JpKarigarScreenT4]
+[Field: JpKarigarScreenL4F]
     Set As : " JOB DETAILS"
     Style : JpSectionBox
 
-[Field: JpKarigarScreenT5]
+[Field: JpJobMode]
+    Label : "Job Type *"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpJobModePick
+
+[Field: JpJobRef]
+    Label : "Job Reference *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpJobKarigarNm]
+    Label : "Karigar *"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpJobDesignNm]
+    Label : "Design Number"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpJobPurity]
+    Label : "Purity"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpPurityPick
+
+[Field: JpJobDescTxt]
+    Label : "Job Description"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpKarigarScreenL11F]
     Set As : " METAL ISSUED"
     Style : JpSectionBox
 
-[Field: JpKarigarScreenT6]
+[Field: JpJobIssuedDt]
+    Label : "Date Issued"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpJobIssued]
+    Label : "Weight Issued (gm)"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpJobStatusTxt]
+    Label : "Job Status"
+        Width: 250
+        Style: UseFormCtrl
+        Dynamic: Pick From: JpJobStatusPick
+
+[Field: JpKarigarScreenL15F]
     Set As : " JEWELLERY RECEIVED BACK"
     Style : JpSectionBox
 
-[Field: JpKarigarScreenT7]
+[Field: JpJobRecvGross]
+    Label : "Gross Received"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpJobRecvStone]
+    Label : "Stone Weight"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpJobRecvNet]
+    Label : "Net Received"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #6B4E1E
+
+[Field: JpJobWastPc]
+    Label : "Wastage %"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpJobWastWt]
+    Label : "Wastage Weight"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpJobLabourAmt]
+    Label : "Labour Charges"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpKarigarScreenL22F]
     Set As : " RESULT"
     Style : JpSectionBox
+
+[Field: JpJobBalanceWt]
+    Label : "METAL STILL WITH KARIGAR"
+        Width: 250
+        Style: UseFormCtrl
+        Color: #A06000
+        Font: Bold
+
+[Field: JpJobBalAmt]
+    Label : "Value of Metal With Karigar"
+        Width: 250
+        Style: UseFormCtrl
+
+[Field: JpJobMsg]
+    Label : " "
+        Width: 250
+        Style: JpWarn
 
 [Collection: Source: JpJobModePick]
     Data: JpJobModePickRow
