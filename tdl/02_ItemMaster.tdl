@@ -803,19 +803,28 @@ Alter: Item, JpItemJewelPart
 [Variable: JpScrMsg        : String]
 [Variable: JpScrSeq        : Number]
 
-[Screen: JpItemCreateScreen]
-    Caption: "JadePro  ::  Create Jewellery Item"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpItemCreateScreen]
+    Title : "JadePro  ::  Create Jewellery Item"
+    Form : JpItemCreateScreenForm
+
+[Form: JpItemCreateScreenForm]
+    Parts : JpItemCreateScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpItemCreateScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           CREATE JEWELLERY ITEM  -  " + JpAppName()
-    Style: JpTitle
-    Line Height: 1
-    Text: "Rates today :  24K " + JpFmtAmt(JpCache24K) + "    22K " + JpFmtAmt(JpCache22K) + "    18K " + JpFmtAmt(JpCache18K) + "    14K " + JpFmtAmt(JpCache14K) + "    Silver " + JpFmtAmt(JpCacheSilver)
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpItemCreateScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpItemCreateScreenT2
+    Field : JpItemCreateScreenT3
 
     Line: Spacing
     Lines: 1, 1
@@ -847,8 +856,7 @@ Alter: Item, JpItemJewelPart
 
     Line: Spacing
     Lines: 1
-    Text: " METAL  AND  PURETY"
-    Style: JpSectionBox
+    Field : JpItemCreateScreenT4
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpScrMetal, Label: "Metal Type *">
         Width: 250
@@ -877,8 +885,7 @@ Alter: Item, JpItemJewelPart
 
     Line: Spacing
     Lines: 1
-    Text: " MAKING CHARGES  AND  STONES"
-    Style: JpSectionBox
+    Field : JpItemCreateScreenT5
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpScrMakeType, Label: "Making Charge Type *">
         Width: 250
@@ -905,8 +912,7 @@ Alter: Item, JpItemJewelPart
 
     Line: Spacing
     Lines: 1
-    Text: " COMPUTED VALUE"
-    Style: JpSectionBox
+    Field : JpItemCreateScreenT6
     Lines: 1, 1
     Field: <Field-Id: JpScrMetalVal, Label: "Metal Value">
         Width: 250
@@ -922,8 +928,7 @@ Alter: Item, JpItemJewelPart
     Field: <Field-Id: JpScrMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "Net Weight = Gross Weight - Stone Weight      Value = Metal + Wastage + Making + Stone + Diamond"
-    Style: JpMuted
+    Field : JpItemCreateScreenT7
 
     Line: Spacing
     Lines: 1
@@ -932,6 +937,37 @@ Alter: Item, JpItemJewelPart
     Button: <Quit, Key: Esc, Action: System: Quit>
 
 ; Category pick list - free text so a shop can invent its own taxonomy.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpItemCreateScreenT1]
+    Set As : "           CREATE JEWELLERY ITEM  -  " + JpAppName()
+    Style : JpTitle
+
+[Field: JpItemCreateScreenT2]
+    Set As : "Rates today :  24K " + JpFmtAmt(JpCache24K) + "    22K " + JpFmtAmt(JpCache22K) + "    18K " + JpFmtAmt(JpCache18K) + "    14K " + JpFmtAmt(JpCache14K) + "    Silver " + JpFmtAmt(JpCacheSilver)
+    Style : JpMuted
+
+[Field: JpItemCreateScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpItemCreateScreenT4]
+    Set As : " METAL  AND  PURETY"
+    Style : JpSectionBox
+
+[Field: JpItemCreateScreenT5]
+    Set As : " MAKING CHARGES  AND  STONES"
+    Style : JpSectionBox
+
+[Field: JpItemCreateScreenT6]
+    Set As : " COMPUTED VALUE"
+    Style : JpSectionBox
+
+[Field: JpItemCreateScreenT7]
+    Set As : "Net Weight = Gross Weight - Stone Weight      Value = Metal + Wastage + Making + Stone + Diamond"
+    Style : JpMuted
+
 [Collection: Source: JpCatPick]
     Data: JpCatPickRow
 
@@ -956,25 +992,34 @@ Alter: Item, JpItemJewelPart
 ; -----------------------------------------------------------------------------
 [Variable: JpAlterTarget : String]
 
-[Screen: JpItemAlterScreen]
-    Caption: "JadePro  ::  Alter Jewellery Item"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpItemAlterScreen]
+    Title : "JadePro  ::  Alter Jewellery Item"
+    Form : JpItemAlterScreenForm
+
+[Form: JpItemAlterScreenForm]
+    Parts : JpItemAlterScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpItemAlterScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           ALTER JEWELLERY ITEM"
-    Style: JpTitle
-    Line Height: 1
-    Text: " "
-    Style: JpMuted
+    Field : JpItemAlterScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpItemAlterScreenT2
     Lines: 1, 1
     Field: <Field-Id: JpAlterTarget, Label: "Item Name">
         Width: 300
         Style: UseFormCtrl
     Line: Spacing
     Lines: 1
-    Text: "Opens Tally's standard Alter Item screen, which now carries the JadePro jewellery block."
-    Style: JpMuted
+    Field : JpItemAlterScreenT3
     Line: Spacing
     Lines: 1
     Button: <Open Alter Item, Key: F2, Action: JpOpenAlterItem>
@@ -986,6 +1031,21 @@ Alter: Item, JpItemJewelPart
 
 ; Live recalculation on the create screen. The screen-level Set: reactions keep
 ; the four derived values in step with the inputs as they are typed.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpItemAlterScreenT1]
+    Set As : "           ALTER JEWELLERY ITEM"
+    Style : JpTitle
+
+[Field: JpItemAlterScreenT2]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpItemAlterScreenT3]
+    Set As : "Opens Tally's standard Alter Item screen, which now carries the JadePro jewellery block."
+    Style : JpMuted
+
 [Function: JpCreateCalc]
     Returns: Integer : Any
     JpCreateCalc = 1

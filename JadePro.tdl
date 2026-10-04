@@ -2363,19 +2363,28 @@ Alter: Item, JpItemJewelPart
 [Variable: JpScrMsg        : String]
 [Variable: JpScrSeq        : Number]
 
-[Screen: JpItemCreateScreen]
-    Caption: "JadePro  ::  Create Jewellery Item"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpItemCreateScreen]
+    Title : "JadePro  ::  Create Jewellery Item"
+    Form : JpItemCreateScreenForm
+
+[Form: JpItemCreateScreenForm]
+    Parts : JpItemCreateScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpItemCreateScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           CREATE JEWELLERY ITEM  -  " + JpAppName()
-    Style: JpTitle
-    Line Height: 1
-    Text: "Rates today :  24K " + JpFmtAmt(JpCache24K) + "    22K " + JpFmtAmt(JpCache22K) + "    18K " + JpFmtAmt(JpCache18K) + "    14K " + JpFmtAmt(JpCache14K) + "    Silver " + JpFmtAmt(JpCacheSilver)
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpItemCreateScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpItemCreateScreenT2
+    Field : JpItemCreateScreenT3
 
     Line: Spacing
     Lines: 1, 1
@@ -2407,8 +2416,7 @@ Alter: Item, JpItemJewelPart
 
     Line: Spacing
     Lines: 1
-    Text: " METAL  AND  PURETY"
-    Style: JpSectionBox
+    Field : JpItemCreateScreenT4
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpScrMetal, Label: "Metal Type *">
         Width: 250
@@ -2437,8 +2445,7 @@ Alter: Item, JpItemJewelPart
 
     Line: Spacing
     Lines: 1
-    Text: " MAKING CHARGES  AND  STONES"
-    Style: JpSectionBox
+    Field : JpItemCreateScreenT5
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpScrMakeType, Label: "Making Charge Type *">
         Width: 250
@@ -2465,8 +2472,7 @@ Alter: Item, JpItemJewelPart
 
     Line: Spacing
     Lines: 1
-    Text: " COMPUTED VALUE"
-    Style: JpSectionBox
+    Field : JpItemCreateScreenT6
     Lines: 1, 1
     Field: <Field-Id: JpScrMetalVal, Label: "Metal Value">
         Width: 250
@@ -2482,8 +2488,7 @@ Alter: Item, JpItemJewelPart
     Field: <Field-Id: JpScrMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "Net Weight = Gross Weight - Stone Weight      Value = Metal + Wastage + Making + Stone + Diamond"
-    Style: JpMuted
+    Field : JpItemCreateScreenT7
 
     Line: Spacing
     Lines: 1
@@ -2492,6 +2497,37 @@ Alter: Item, JpItemJewelPart
     Button: <Quit, Key: Esc, Action: System: Quit>
 
 ; Category pick list - free text so a shop can invent its own taxonomy.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpItemCreateScreenT1]
+    Set As : "           CREATE JEWELLERY ITEM  -  " + JpAppName()
+    Style : JpTitle
+
+[Field: JpItemCreateScreenT2]
+    Set As : "Rates today :  24K " + JpFmtAmt(JpCache24K) + "    22K " + JpFmtAmt(JpCache22K) + "    18K " + JpFmtAmt(JpCache18K) + "    14K " + JpFmtAmt(JpCache14K) + "    Silver " + JpFmtAmt(JpCacheSilver)
+    Style : JpMuted
+
+[Field: JpItemCreateScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpItemCreateScreenT4]
+    Set As : " METAL  AND  PURETY"
+    Style : JpSectionBox
+
+[Field: JpItemCreateScreenT5]
+    Set As : " MAKING CHARGES  AND  STONES"
+    Style : JpSectionBox
+
+[Field: JpItemCreateScreenT6]
+    Set As : " COMPUTED VALUE"
+    Style : JpSectionBox
+
+[Field: JpItemCreateScreenT7]
+    Set As : "Net Weight = Gross Weight - Stone Weight      Value = Metal + Wastage + Making + Stone + Diamond"
+    Style : JpMuted
+
 [Collection: Source: JpCatPick]
     Data: JpCatPickRow
 
@@ -2516,25 +2552,34 @@ Alter: Item, JpItemJewelPart
 ; -----------------------------------------------------------------------------
 [Variable: JpAlterTarget : String]
 
-[Screen: JpItemAlterScreen]
-    Caption: "JadePro  ::  Alter Jewellery Item"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpItemAlterScreen]
+    Title : "JadePro  ::  Alter Jewellery Item"
+    Form : JpItemAlterScreenForm
+
+[Form: JpItemAlterScreenForm]
+    Parts : JpItemAlterScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpItemAlterScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           ALTER JEWELLERY ITEM"
-    Style: JpTitle
-    Line Height: 1
-    Text: " "
-    Style: JpMuted
+    Field : JpItemAlterScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpItemAlterScreenT2
     Lines: 1, 1
     Field: <Field-Id: JpAlterTarget, Label: "Item Name">
         Width: 300
         Style: UseFormCtrl
     Line: Spacing
     Lines: 1
-    Text: "Opens Tally's standard Alter Item screen, which now carries the JadePro jewellery block."
-    Style: JpMuted
+    Field : JpItemAlterScreenT3
     Line: Spacing
     Lines: 1
     Button: <Open Alter Item, Key: F2, Action: JpOpenAlterItem>
@@ -2546,6 +2591,21 @@ Alter: Item, JpItemJewelPart
 
 ; Live recalculation on the create screen. The screen-level Set: reactions keep
 ; the four derived values in step with the inputs as they are typed.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpItemAlterScreenT1]
+    Set As : "           ALTER JEWELLERY ITEM"
+    Style : JpTitle
+
+[Field: JpItemAlterScreenT2]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpItemAlterScreenT3]
+    Set As : "Opens Tally's standard Alter Item screen, which now carries the JadePro jewellery block."
+    Style : JpMuted
+
 [Function: JpCreateCalc]
     Returns: Integer : Any
     JpCreateCalc = 1
@@ -2779,19 +2839,28 @@ JwlRateNote : String : 20053
 ; =============================================================================
 ;  RATE SCREEN
 ; =============================================================================
-[Screen: JpRateScreen]
-    Caption: "JadePro  ::  Daily Gold / Silver / Platinum Rate"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpRateScreen]
+    Title : "JadePro  ::  Daily Gold / Silver / Platinum Rate"
+    Form : JpRateScreenForm
+
+[Form: JpRateScreenForm]
+    Parts : JpRateScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpRateScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           DAILY RATE MASTER"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Rates entered here are used automatically on every sales, purchase and old-gold entry."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpRateScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpRateScreenT2
+    Field : JpRateScreenT3
     Lines: 1, 1
     Field: <Field-Id: JpRateDate, Label: "Rate Date">
         Width: 180
@@ -2799,8 +2868,7 @@ JwlRateNote : String : 20053
 
     Line: Spacing
     Lines: 1
-    Text: " GOLD  (rate per 10 grams is converted to per gram on save)"
-    Style: JpSectionBox
+    Field : JpRateScreenT4
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpRateIn24K, Label: "24K  (995)">
         Width: 250
@@ -2817,8 +2885,7 @@ JwlRateNote : String : 20053
 
     Line: Spacing
     Lines: 1
-    Text: " SILVER,  PLATINUM"
-    Style: JpSectionBox
+    Field : JpRateScreenT5
     Lines: 1, 1, 1
     Field: <Field-Id: JpRateInSilver, Label: "Silver 925">
         Width: 250
@@ -2832,8 +2899,7 @@ JwlRateNote : String : 20053
 
     Line: Spacing
     Lines: 1
-    Text: " APPROVAL"
-    Style: JpSectionBox
+    Field : JpRateScreenT6
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpRateApproved, Label: "Approved By">
         Width: 250
@@ -2854,8 +2920,7 @@ JwlRateNote : String : 20053
     Field: <Field-Id: JpRateMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "Enter rates PER GRAM. Saving requires the JADE_CHANGE_RATE permission (Owner / Manager)."
-    Style: JpMuted
+    Field : JpRateScreenT7
 
     Line: Spacing
     Lines: 1
@@ -2869,6 +2934,37 @@ JwlRateNote : String : 20053
 
 ; Consistency check between purities. If the shop types rates out of order
 ; (22K above 24K) almost always a digit was dropped, so we warn before saving.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpRateScreenT1]
+    Set As : "           DAILY RATE MASTER"
+    Style : JpTitle
+
+[Field: JpRateScreenT2]
+    Set As : "Rates entered here are used automatically on every sales, purchase and old-gold entry."
+    Style : JpMuted
+
+[Field: JpRateScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpRateScreenT4]
+    Set As : " GOLD  (rate per 10 grams is converted to per gram on save)"
+    Style : JpSectionBox
+
+[Field: JpRateScreenT5]
+    Set As : " SILVER,  PLATINUM"
+    Style : JpSectionBox
+
+[Field: JpRateScreenT6]
+    Set As : " APPROVAL"
+    Style : JpSectionBox
+
+[Field: JpRateScreenT7]
+    Set As : "Enter rates PER GRAM. Saving requires the JADE_CHANGE_RATE permission (Owner / Manager)."
+    Style : JpMuted
+
 [Function: JpRateConsistency]
     Returns: String : Any
     Var: m : String
@@ -3715,15 +3811,33 @@ Alter: Sales Voucher, Item Details
 [Variable: JpCommissionPc   : Number]
 [Variable: JpDefaultGstRate : Number]
 
-[Screen: JpSalesScreen]
-    Caption: "JadePro  ::  Jewellery Billing"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpSalesScreen]
+    Title : "JadePro  ::  Jewellery Billing"
+    Form : JpSalesScreenForm
+
+[Form: JpSalesScreenForm]
+    Parts : JpSalesScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpSalesScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JEWELLERY BILLING"
-    Style: JpTitle
-    Line Height: 1
+    Field : JpSalesScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpSalesScreenT1]
+    Set As : "           JEWELLERY BILLING"
+    Style : JpTitle
+
 [Part: JpSalesLineMsgPart]
     Button: <Start Jewellery Invoice (F2), Key: F2, Action: JpStartInvoice>
     Button: <Update Daily Rates (F8), Key: F8, Action: JpOpenRate>
@@ -4244,37 +4358,42 @@ Alter: Purchase Voucher, Item Details
 
 [Variable: JpPurchaseMsg : String]
 
-[Screen: JpPurchaseScreen]
-    Caption: "JadePro  ::  Jewellery Purchase"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpPurchaseScreen]
+    Title : "JadePro  ::  Jewellery Purchase"
+    Form : JpPurchaseScreenForm
+
+[Form: JpPurchaseScreenForm]
+    Parts : JpPurchaseScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpPurchaseScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JEWELLERY PURCHASE"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Purchase finished jewellery, loose metal, diamonds and stones, or jewellery received from a karigar."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpPurchaseScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpPurchaseScreenT2
+    Field : JpPurchaseScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " BUYING RATES TODAY (per gram)"
-    Style: JpSectionBox
+    Field : JpPurchaseScreenT4
     Lines: 1, 1
-    Text: "   24K " + JpFmtAmt(JpCache24K) + "      22K " + JpFmtAmt(JpCache22K) + "      18K " + JpFmtAmt(JpCache18K) + "      14K " + JpFmtAmt(JpCache14K)
-    Text: "   Silver " + JpFmtAmt(JpCacheSilver) + "      Platinum " + JpFmtAmt(JpCachePlatinum)
+    Field : JpPurchaseScreenT5
+    Field : JpPurchaseScreenT6
 
     Line: Spacing
     Lines: 1
-    Text: " STOCK IN BY PIECES AND WEIGHT"
-    Style: JpSectionBox
+    Field : JpPurchaseScreenT7
     Lines: 1, 1
-    Text: "   Every line posts weight as the Tally inventory quantity for the item's UOM."
-    Style: JpMuted
-    Text: "   Set each jewellery item's UOM to 'GMS' so stock reports are in grams automatically."
-    Style: JpMuted
+    Field : JpPurchaseScreenT8
+    Field : JpPurchaseScreenT9
 
     Line: Spacing
     Lines: 1, 1
@@ -4287,6 +4406,43 @@ Alter: Purchase Voucher, Item Details
     Button: <Start Purchase Voucher (F2), Key: F2, Action: JpOpenPurchase>
     Button: <Karigar Receipt (F8), Key: F8, Action: JpOpenKarigar>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpPurchaseScreenT1]
+    Set As : "           JEWELLERY PURCHASE"
+    Style : JpTitle
+
+[Field: JpPurchaseScreenT2]
+    Set As : "Purchase finished jewellery, loose metal, diamonds and stones, or jewellery received from a karigar."
+    Style : JpMuted
+
+[Field: JpPurchaseScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpPurchaseScreenT4]
+    Set As : " BUYING RATES TODAY (per gram)"
+    Style : JpSectionBox
+
+[Field: JpPurchaseScreenT5]
+    Set As : "   24K " + JpFmtAmt(JpCache24K) + "      22K " + JpFmtAmt(JpCache22K) + "      18K " + JpFmtAmt(JpCache18K) + "      14K " + JpFmtAmt(JpCache14K)
+
+[Field: JpPurchaseScreenT6]
+    Set As : "   Silver " + JpFmtAmt(JpCacheSilver) + "      Platinum " + JpFmtAmt(JpCachePlatinum)
+
+[Field: JpPurchaseScreenT7]
+    Set As : " STOCK IN BY PIECES AND WEIGHT"
+    Style : JpSectionBox
+
+[Field: JpPurchaseScreenT8]
+    Set As : "   Every line posts weight as the Tally inventory quantity for the item's UOM."
+    Style : JpMuted
+
+[Field: JpPurchaseScreenT9]
+    Set As : "   Set each jewellery item's UOM to 'GMS' so stock reports are in grams automatically."
+    Style : JpMuted
 
 [Function: JpOpenPurchase]
     Returns: Integer : Any
@@ -4538,19 +4694,28 @@ JwlOgNote : String : 20152
 [Variable: JpOgNote        : String]
 [Variable: JpOgMsg         : String]
 
-[Screen: JpOldGoldScreen]
-    Caption: "JadePro  ::  Old Gold Exchange"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpOldGoldScreen]
+    Title : "JadePro  ::  Old Gold Exchange"
+    Form : JpOldGoldScreenForm
+
+[Form: JpOldGoldScreenForm]
+    Parts : JpOldGoldScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpOldGoldScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           OLD GOLD  /  GOLD EXCHANGE"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Fine Weight = Net Weight x Purity %      Exchange Value = Fine Weight x Today's Rate for that purity"
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpOldGoldScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpOldGoldScreenT2
+    Field : JpOldGoldScreenT3
 
     Line: Spacing
     Lines: 1, 1, 1, 1
@@ -4577,8 +4742,7 @@ JwlOgNote : String : 20152
 
     Line: Spacing
     Lines: 1
-    Text: " WEIGHTS  AND  VALUATION"
-    Style: JpSectionBox
+    Field : JpOldGoldScreenT4
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpOgGross, Label: "Gross Weight *">
         Width: 250
@@ -4608,8 +4772,7 @@ JwlOgNote : String : 20152
 
     Line: Spacing
     Lines: 1
-    Text: " SETTLEMENT"
-    Style: JpSectionBox
+    Field : JpOldGoldScreenT5
     Lines: 1, 1, 1
     Field: <Field-Id: JpOgAdjusted, Label: "Adjusted Against New Purchase">
         Width: 250
@@ -4632,8 +4795,7 @@ JwlOgNote : String : 20152
     Field: <Field-Id: JpOgMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "The exchange voucher can be printed on the sales invoice by entering its reference in JwlOldGoldRef on the Sales voucher."
-    Style: JpMuted
+    Field : JpOldGoldScreenT6
 
     Line: Spacing
     Lines: 1
@@ -4645,6 +4807,33 @@ JwlOgNote : String : 20152
 ; =============================================================================
 ;  SECTION E - ACTIONS
 ; =============================================================================
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpOldGoldScreenT1]
+    Set As : "           OLD GOLD  /  GOLD EXCHANGE"
+    Style : JpTitle
+
+[Field: JpOldGoldScreenT2]
+    Set As : "Fine Weight = Net Weight x Purity %      Exchange Value = Fine Weight x Today's Rate for that purity"
+    Style : JpMuted
+
+[Field: JpOldGoldScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpOldGoldScreenT4]
+    Set As : " WEIGHTS  AND  VALUATION"
+    Style : JpSectionBox
+
+[Field: JpOldGoldScreenT5]
+    Set As : " SETTLEMENT"
+    Style : JpSectionBox
+
+[Field: JpOldGoldScreenT6]
+    Set As : "The exchange voucher can be printed on the sales invoice by entering its reference in JwlOldGoldRef on the Sales voucher."
+    Style : JpMuted
 
 [Function: JpOgCalc]
     Returns: Integer : Any
@@ -4980,24 +5169,32 @@ Alter: Ledger
 [Variable: JpJobStatusTxt  : String]
 [Variable: JpJobMsg        : String]
 
-[Screen: JpKarigarScreen]
-    Caption: "JadePro  ::  Karigar Job Work"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpKarigarScreen]
+    Title : "JadePro  ::  Karigar Job Work"
+    Form : JpKarigarScreenForm
+
+[Form: JpKarigarScreenForm]
+    Parts : JpKarigarScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpKarigarScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           KARIGAR  /  JOB WORK"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Balance = Metal Issued - (Net Received + Wastage Given)      Labour is payable to the karigar."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpKarigarScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpKarigarScreenT2
+    Field : JpKarigarScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " JOB DETAILS"
-    Style: JpSectionBox
+    Field : JpKarigarScreenT4
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpJobMode, Label: "Job Type *">
         Width: 250
@@ -5022,8 +5219,7 @@ Alter: Ledger
 
     Line: Spacing
     Lines: 1
-    Text: " METAL ISSUED"
-    Style: JpSectionBox
+    Field : JpKarigarScreenT5
     Lines: 1, 1, 1
     Field: <Field-Id: JpJobIssuedDt, Label: "Date Issued">
         Width: 250
@@ -5038,8 +5234,7 @@ Alter: Ledger
 
     Line: Spacing
     Lines: 1
-    Text: " JEWELLERY RECEIVED BACK"
-    Style: JpSectionBox
+    Field : JpKarigarScreenT6
     Lines: 1, 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpJobRecvGross, Label: "Gross Received">
         Width: 250
@@ -5063,8 +5258,7 @@ Alter: Ledger
 
     Line: Spacing
     Lines: 1
-    Text: " RESULT"
-    Style: JpSectionBox
+    Field : JpKarigarScreenT7
     Lines: 1, 1, 1
     Field: <Field-Id: JpJobBalanceWt, Label: "METAL STILL WITH KARIGAR">
         Width: 250
@@ -5084,6 +5278,37 @@ Alter: Ledger
     Button: <Save Job Entry (F2), Key: F2, Action: JpJobSave>
     Button: <Karigar Outstanding (F8), Key: F8, Action: JpJobOutstanding>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpKarigarScreenT1]
+    Set As : "           KARIGAR  /  JOB WORK"
+    Style : JpTitle
+
+[Field: JpKarigarScreenT2]
+    Set As : "Balance = Metal Issued - (Net Received + Wastage Given)      Labour is payable to the karigar."
+    Style : JpMuted
+
+[Field: JpKarigarScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpKarigarScreenT4]
+    Set As : " JOB DETAILS"
+    Style : JpSectionBox
+
+[Field: JpKarigarScreenT5]
+    Set As : " METAL ISSUED"
+    Style : JpSectionBox
+
+[Field: JpKarigarScreenT6]
+    Set As : " JEWELLERY RECEIVED BACK"
+    Style : JpSectionBox
+
+[Field: JpKarigarScreenT7]
+    Set As : " RESULT"
+    Style : JpSectionBox
 
 [Collection: Source: JpJobModePick]
     Data: JpJobModePickRow
@@ -5525,17 +5750,64 @@ Alter: Ledger
 
 [Field: JpKarigarOutstandingPrintLine46F1]
     Style : JpTotal
-[Export: JpKarigarOutstandingExport]
-    Title: <1000, "Karigar Outstanding">
+[Report: JpKarigarOutstandingExport]
+    Title : <1000, "Karigar Outstanding">
     Repeat: Over: JpKarigarOutstanding
-    Export Title: Detail
-    Export: Value: $JwlJobKarigar
-    Export: Value: $JwlJobNo
-    Export: Value: $JwlJobIssuedWt
-    Export: Value: $JwlJobRecvNet
-    Export: Value: $JwlJobWastageWt
-    Export: Value: $JwlJobBalWt
-    Export: Value: $JwlJobLabour
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpKarigarOutstandingExportForm
+
+[Form: JpKarigarOutstandingExportForm]
+    Parts : JpKarigarOutstandingExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpKarigarOutstandingExportPart]
+    XMLTag : "Row"
+    Lines : JpKarigarOutstandingExportLine
+
+[Line: JpKarigarOutstandingExportLine]
+    Field : JpKarigarOutstandingExportF1
+    Field : JpKarigarOutstandingExportF2
+    Field : JpKarigarOutstandingExportF3
+    Field : JpKarigarOutstandingExportF4
+    Field : JpKarigarOutstandingExportF5
+    Field : JpKarigarOutstandingExportF6
+    Field : JpKarigarOutstandingExportF7
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpKarigarOutstandingExportF1]
+    Set As : $JwlJobKarigar
+    XMLAttr : "JwlJobKarigar"
+
+[Field: JpKarigarOutstandingExportF2]
+    Set As : $JwlJobNo
+    XMLAttr : "JwlJobNo"
+
+[Field: JpKarigarOutstandingExportF3]
+    Set As : $JwlJobIssuedWt
+    XMLAttr : "JwlJobIssuedWt"
+
+[Field: JpKarigarOutstandingExportF4]
+    Set As : $JwlJobRecvNet
+    XMLAttr : "JwlJobRecvNet"
+
+[Field: JpKarigarOutstandingExportF5]
+    Set As : $JwlJobWastageWt
+    XMLAttr : "JwlJobWastageWt"
+
+[Field: JpKarigarOutstandingExportF6]
+    Set As : $JwlJobBalWt
+    XMLAttr : "JwlJobBalWt"
+
+[Field: JpKarigarOutstandingExportF7]
+    Set As : $JwlJobLabour
+    XMLAttr : "JwlJobLabour"
 
 ; -----------------------------------------------------------------------------
 ;; >>>>>>>>>>>>>>>>>>>>>>> BEGIN 08_Barcode.tdl <<<<<<<<<<<<<<<<<<<<<<
@@ -5737,19 +6009,28 @@ Alter: Ledger
 [Variable: JpTagSerial: Number]
 [Variable: JpTagMsg   : String]
 
-[Screen: JpTagScreen]
-    Caption: "JadePro  ::  Jewellery Tag Printing"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpTagScreen]
+    Title : "JadePro  ::  Jewellery Tag Printing"
+    Form : JpTagScreenForm
+
+[Form: JpTagScreenForm]
+    Parts : JpTagScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpTagScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JEWELLERY TAG  /  BARCODE"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Tags carry shop details, barcode, design, purity, gross / net / stone weight and MRP."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpTagScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpTagScreenT2
+    Field : JpTagScreenT3
 
     Line: Spacing
     Lines: 1, 1, 1
@@ -5768,8 +6049,7 @@ Alter: Ledger
     Field: <Field-Id: JpTagMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "Scheme: " + JpBcPrefix() + "-CATEGORY-DESIGN-WEIGHT-SERIAL"
-    Style: JpMuted
+    Field : JpTagScreenT4
 
     Line: Spacing
     Lines: 1
@@ -5777,6 +6057,25 @@ Alter: Ledger
     Button: <Print Tag (F2), Key: F2, Action: JpTagPrint>
     Button: <Barcode Register (F8), Key: F8, Action: JpTagRegister>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpTagScreenT1]
+    Set As : "           JEWELLERY TAG  /  BARCODE"
+    Style : JpTitle
+
+[Field: JpTagScreenT2]
+    Set As : "Tags carry shop details, barcode, design, purity, gross / net / stone weight and MRP."
+    Style : JpMuted
+
+[Field: JpTagScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpTagScreenT4]
+    Set As : "Scheme: " + JpBcPrefix() + "-CATEGORY-DESIGN-WEIGHT-SERIAL"
+    Style : JpMuted
 
 [Function: JpTagGenerate]
     Returns: Integer : Any
@@ -6245,19 +6544,74 @@ Alter: Ledger
 
 [Field: JpBarcodeRegPrintLine49F1]
     Style : JpTotal
-[Export: JpBarcodeRegExport]
-    Title: <1000, "Barcode Register">
+[Report: JpBarcodeRegExport]
+    Title : <1000, "Barcode Register">
     Repeat: Over: JpBarcodeReg
-    Export Title: Detail
-    Export: Value: $JwlBarcode
-    Export: Value: $$NAME
-    Export: Value: $JwlDesignNo
-    Export: Value: $JwlPurity
-    Export: Value: $JwlGrossWt
-    Export: Value: $JwlNetMetalWt
-    Export: Value: $JwlStoneWt
-    Export: Value: $JwlHuid
-    Export: Value: $JwlMRP
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpBarcodeRegExportForm
+
+[Form: JpBarcodeRegExportForm]
+    Parts : JpBarcodeRegExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpBarcodeRegExportPart]
+    XMLTag : "Row"
+    Lines : JpBarcodeRegExportLine
+
+[Line: JpBarcodeRegExportLine]
+    Field : JpBarcodeRegExportF1
+    Field : JpBarcodeRegExportF2
+    Field : JpBarcodeRegExportF3
+    Field : JpBarcodeRegExportF4
+    Field : JpBarcodeRegExportF5
+    Field : JpBarcodeRegExportF6
+    Field : JpBarcodeRegExportF7
+    Field : JpBarcodeRegExportF8
+    Field : JpBarcodeRegExportF9
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpBarcodeRegExportF1]
+    Set As : $JwlBarcode
+    XMLAttr : "JwlBarcode"
+
+[Field: JpBarcodeRegExportF2]
+    Set As : $$NAME
+    XMLAttr : "NAME"
+
+[Field: JpBarcodeRegExportF3]
+    Set As : $JwlDesignNo
+    XMLAttr : "JwlDesignNo"
+
+[Field: JpBarcodeRegExportF4]
+    Set As : $JwlPurity
+    XMLAttr : "JwlPurity"
+
+[Field: JpBarcodeRegExportF5]
+    Set As : $JwlGrossWt
+    XMLAttr : "JwlGrossWt"
+
+[Field: JpBarcodeRegExportF6]
+    Set As : $JwlNetMetalWt
+    XMLAttr : "JwlNetMetalWt"
+
+[Field: JpBarcodeRegExportF7]
+    Set As : $JwlStoneWt
+    XMLAttr : "JwlStoneWt"
+
+[Field: JpBarcodeRegExportF8]
+    Set As : $JwlHuid
+    XMLAttr : "JwlHuid"
+
+[Field: JpBarcodeRegExportF9]
+    Set As : $JwlMRP
+    XMLAttr : "JwlMRP"
 
 ; -----------------------------------------------------------------------------
 ;; >>>>>>>>>>>>>>>>>>>>>>> BEGIN 08a_BarcodeTally.tdl <<<<<<<<<<<<<<<<<<<<<<
@@ -6664,28 +7018,70 @@ Alter: Ledger
 [Field: JpTallyTagBulkPrintLine17F1]
     Set As : "Hallmarked metal must carry a valid BIS HUID."
     Style : JpBarcodeSub
-[Export: JpTallyTagBulkExport]
-    Title: <1000, "Bulk Tag Listing">
+[Report: JpTallyTagBulkExport]
+    Title : <1000, "Bulk Tag Listing">
     Repeat: Over: JpTallyTagBulk
-    Export Title: Detail
-    Export: Value: $JwlBarcode
-    Export: Value: $$JwlItemName
-    Export: Value: $JwlDesignNo
-    Export: Value: $JwlPurity
-    Export: Value: $JwlGrossWt
-    Export: Value: $JwlNetMetalWt
-    Export: Value: $JwlHuid
-    Export: Value: $JwlMRP
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpTallyTagBulkExportForm
 
+[Form: JpTallyTagBulkExportForm]
+    Parts : JpTallyTagBulkExportPart
 
-; =============================================================================
-;  SCANNER INTEGRATION
-;  A keyboard-wedge scanner types the barcode into the Item field and Tally
-;  resolves it by name. This screen mints a missing barcode for a named item
-;  and prints tags, and explains the scanner wiring to the operator.
-;  Printing only READS the stored value - minting is an explicit operator
-;  action, never a side effect of rendering a report.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpTallyTagBulkExportPart]
+    XMLTag : "Row"
+    Lines : JpTallyTagBulkExportLine
+
+[Line: JpTallyTagBulkExportLine]
+    Field : JpTallyTagBulkExportF1
+    Field : JpTallyTagBulkExportF2
+    Field : JpTallyTagBulkExportF3
+    Field : JpTallyTagBulkExportF4
+    Field : JpTallyTagBulkExportF5
+    Field : JpTallyTagBulkExportF6
+    Field : JpTallyTagBulkExportF7
+    Field : JpTallyTagBulkExportF8
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpTallyTagBulkExportF1]
+    Set As : $JwlBarcode
+    XMLAttr : "JwlBarcode"
+
+[Field: JpTallyTagBulkExportF2]
+    Set As : $$JwlItemName
+    XMLAttr : "JwlItemName"
+
+[Field: JpTallyTagBulkExportF3]
+    Set As : $JwlDesignNo
+    XMLAttr : "JwlDesignNo"
+
+[Field: JpTallyTagBulkExportF4]
+    Set As : $JwlPurity
+    XMLAttr : "JwlPurity"
+
+[Field: JpTallyTagBulkExportF5]
+    Set As : $JwlGrossWt
+    XMLAttr : "JwlGrossWt"
+
+[Field: JpTallyTagBulkExportF6]
+    Set As : $JwlNetMetalWt
+    XMLAttr : "JwlNetMetalWt"
+
+[Field: JpTallyTagBulkExportF7]
+    Set As : $JwlHuid
+    XMLAttr : "JwlHuid"
+
+[Field: JpTallyTagBulkExportF8]
+    Set As : $JwlMRP
+    XMLAttr : "JwlMRP"
+
 [Variable: JpTallyMsg     : String]
 [Variable: JpTallySymbTxt : String]
 [Variable: JpTallyMintItem : String]
@@ -6699,39 +7095,44 @@ Alter: Ledger
     }
     JpTallySymbologyText = "Code 128 font - install a Code 128 font and select it for this print style"
 
-[Screen: JpTallyBarcodeScreen]
-    Caption: "JadePro  ::  Barcode Printing (Tally-native)"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpTallyBarcodeScreen]
+    Title : "JadePro  ::  Barcode Printing (Tally-native)"
+    Form : JpTallyBarcodeScreenForm
+
+[Form: JpTallyBarcodeScreenForm]
+    Parts : JpTallyBarcodeScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpTallyBarcodeScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           BARCODE PRINTING  -  TALLY NATIVE"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Code 128 tags printed by Tally itself. No external software, no driver."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpTallyBarcodeScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpTallyBarcodeScreenT2
+    Field : JpTallyBarcodeScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " RENDERING PATH"
-    Style: JpSectionBox
+    Field : JpTallyBarcodeScreenT4
     Lines: 1, 1, 1
-    Text: "   Active path ........ " + JpTallySymbologyText()
-    Text: "   Barcode value ...... generated ONCE in 08_Barcode.tdl and shared with the Zebra module."
-    Text: "   Changing a path .... edit Constant JpUseTdlBarcode() at the top of 08a_BarcodeTally.tdl."
-    Style: JpMuted
+    Field : JpTallyBarcodeScreenT5
+    Field : JpTallyBarcodeScreenT6
+    Field : JpTallyBarcodeScreenT7
 
     Line: Spacing
     Lines: 1
-    Text: " SCANNER AT THE COUNTER"
-    Style: JpSectionBox
+    Field : JpTallyBarcodeScreenT8
     Lines: 1, 1, 1
-    Text: "   A USB barcode scanner is a keyboard. It types the barcode and presses Enter."
-    Text: "   Leave the Item field focused in the Sales voucher and simply scan."
-    Text: "   Every sales line already carries JwlLnBarcode, so the scanned piece is recorded on the invoice."
-    Style: JpMuted
+    Field : JpTallyBarcodeScreenT9
+    Field : JpTallyBarcodeScreenT10
+    Field : JpTallyBarcodeScreenT11
 
     Line: Spacing
     Lines: 1, 1
@@ -6741,12 +7142,10 @@ Alter: Ledger
 
     Line: Spacing
     Lines: 1
-    Text: " MINT A MISSING BARCODE"
-    Style: JpSectionBox
+    Field : JpTallyBarcodeScreenT12
     Lines: 1, 1, 1
-    Text: "   Tag printing only READS the stored barcode. If a piece has none, mint one here first"
-    Text: "   and it is written to the item - the Zebra module then prints the identical value."
-    Style: JpMuted
+    Field : JpTallyBarcodeScreenT13
+    Field : JpTallyBarcodeScreenT14
     Lines: 1, 1
     Field: <Field-Id: JpTallyMintItem, Label: "Item name">
         Width: 40
@@ -6762,6 +7161,65 @@ Alter: Ledger
 ; JpBarcodeEnsure is idempotent: an item that already has a valid barcode is
 ; returned unchanged, so pressing this repeatedly can never renumber a piece
 ; that is already on the shelf.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpTallyBarcodeScreenT1]
+    Set As : "           BARCODE PRINTING  -  TALLY NATIVE"
+    Style : JpTitle
+
+[Field: JpTallyBarcodeScreenT2]
+    Set As : "Code 128 tags printed by Tally itself. No external software, no driver."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT4]
+    Set As : " RENDERING PATH"
+    Style : JpSectionBox
+
+[Field: JpTallyBarcodeScreenT5]
+    Set As : "   Active path ........ " + JpTallySymbologyText()
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT6]
+    Set As : "   Barcode value ...... generated ONCE in 08_Barcode.tdl and shared with the Zebra module."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT7]
+    Set As : "   Changing a path .... edit Constant JpUseTdlBarcode() at the top of 08a_BarcodeTally.tdl."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT8]
+    Set As : " SCANNER AT THE COUNTER"
+    Style : JpSectionBox
+
+[Field: JpTallyBarcodeScreenT9]
+    Set As : "   A USB barcode scanner is a keyboard. It types the barcode and presses Enter."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT10]
+    Set As : "   Leave the Item field focused in the Sales voucher and simply scan."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT11]
+    Set As : "   Every sales line already carries JwlLnBarcode, so the scanned piece is recorded on the invoice."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT12]
+    Set As : " MINT A MISSING BARCODE"
+    Style : JpSectionBox
+
+[Field: JpTallyBarcodeScreenT13]
+    Set As : "   Tag printing only READS the stored barcode. If a piece has none, mint one here first"
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT14]
+    Set As : "   and it is written to the item - the Zebra module then prints the identical value."
+    Style : JpMuted
+
 [Function: JpTallyMintAction]
     Returns: Integer : Any
     Var: n : String, bc : String
@@ -7020,19 +7478,28 @@ JplZplSettings : String : 20176
 [Variable: JpZplMsg     : String]
 [Variable: JpZplMintItem : String]
 
-[Screen: JpZplConfigScreen]
-    Caption: "JadePro  ::  Zebra Label Setup"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpZplConfigScreen]
+    Title : "JadePro  ::  Zebra Label Setup"
+    Form : JpZplConfigScreenForm
+
+[Form: JpZplConfigScreenForm]
+    Parts : JpZplConfigScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpZplConfigScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           ZEBRA LABEL SETUP"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Profile format:  dpi=203;w=54;h=40;dark=12;speed=4;copies=1;bcY=200;bcH=64;..."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpZplConfigScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpZplConfigScreenT2
+    Field : JpZplConfigScreenT3
 
     Line: Spacing
     Lines: 1, 1, 1
@@ -7042,32 +7509,28 @@ JplZplSettings : String : 20176
 
     Line: Spacing
     Lines: 1
-    Text: " WHAT EACH SETTING MEANS"
-    Style: JpSectionBox
+    Field : JpZplConfigScreenT4
     Lines: 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-    Text: "   dpi ....... resolution. 203 -> 8 dots/mm. 300 -> 12 dots/mm. Default 203."
-    Text: "   w, h ...... label width and length in MILLIMETRES. Default 54 x 40."
-    Text: "   dark ...... ^MD darkness, 0 (lightest) to 30 (darkest). Default 12."
-    Text: "   speed ..... ^PR print speed in inches/second. Default 4."
-    Text: "   copies .... ^PQ copies per label. Default 1."
-    Text: "   bcY ....... vertical position of the barcode, in DOTS from the top."
-    Text: "   bcH ....... barcode height in DOTS. 64 dots = 8 mm at 203 dpi."
-    Text: "   shopY ..... vertical position of the shop name line, in DOTS."
-    Text: "   addrY ..... vertical position of the shop address line, in DOTS."
-    Text: "   itemY ..... vertical position of the item name line, in DOTS."
-    Text: "   desY ...... vertical position of the design number line, in DOTS."
-    Text: "   purY ...... vertical position of the purity line, in DOTS."
-    Text: "   wtY ....... vertical position of the weight line, in DOTS."
-    Text: "   huidY ..... vertical position of the HUID line, in DOTS."
-    Text: "   mrpY ...... vertical position of the MRP line, in DOTS."
-    Style: JpMuted
+    Field : JpZplConfigScreenT5
+    Field : JpZplConfigScreenT6
+    Field : JpZplConfigScreenT7
+    Field : JpZplConfigScreenT8
+    Field : JpZplConfigScreenT9
+    Field : JpZplConfigScreenT10
+    Field : JpZplConfigScreenT11
+    Field : JpZplConfigScreenT12
+    Field : JpZplConfigScreenT13
+    Field : JpZplConfigScreenT14
+    Field : JpZplConfigScreenT15
+    Field : JpZplConfigScreenT16
+    Field : JpZplConfigScreenT17
+    Field : JpZplConfigScreenT18
+    Field : JpZplConfigScreenT19
 
     Line: Spacing
     Lines: 1
-    Text: "   Save, then export from Zebra Label Print Queue and run:"
-    Style: JpMuted
-    Text: "   node 00_Build/zpl-emit.mjs labels.csv"
-    Style: JpMuted
+    Field : JpZplConfigScreenT20
+    Field : JpZplConfigScreenT21
 
     Line: Spacing
     Lines: 1, 1
@@ -7077,13 +7540,11 @@ JplZplSettings : String : 20176
 
     Line: Spacing
     Lines: 1
-    Text: " MINT A MISSING BARCODE"
-    Style: JpSectionBox
+    Field : JpZplConfigScreenT22
     Lines: 1, 1, 1
-    Text: "   The queue exports the item's stored barcode. A piece with none exports empty and"
-    Text: "   zpl-emit.mjs skips it, so mint one here first - the Tally tag module then prints"
-    Text: "   the identical value."
-    Style: JpMuted
+    Field : JpZplConfigScreenT23
+    Field : JpZplConfigScreenT24
+    Field : JpZplConfigScreenT25
     Lines: 1, 1
     Field: <Field-Id: JpZplMintItem, Label: "Item name">
         Width: 40
@@ -7095,6 +7556,109 @@ JplZplSettings : String : 20176
     Button: <Save Profile (F2), Key: F2, Action: JpZplSaveProfile>
     Button: <Print Queue (F4), Key: F4, Action: JpZplOpenQueue>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpZplConfigScreenT1]
+    Set As : "           ZEBRA LABEL SETUP"
+    Style : JpTitle
+
+[Field: JpZplConfigScreenT2]
+    Set As : "Profile format:  dpi=203;w=54;h=40;dark=12;speed=4;copies=1;bcY=200;bcH=64;..."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT4]
+    Set As : " WHAT EACH SETTING MEANS"
+    Style : JpSectionBox
+
+[Field: JpZplConfigScreenT5]
+    Set As : "   dpi ....... resolution. 203 -> 8 dots/mm. 300 -> 12 dots/mm. Default 203."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT6]
+    Set As : "   w, h ...... label width and length in MILLIMETRES. Default 54 x 40."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT7]
+    Set As : "   dark ...... ^MD darkness, 0 (lightest) to 30 (darkest). Default 12."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT8]
+    Set As : "   speed ..... ^PR print speed in inches/second. Default 4."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT9]
+    Set As : "   copies .... ^PQ copies per label. Default 1."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT10]
+    Set As : "   bcY ....... vertical position of the barcode, in DOTS from the top."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT11]
+    Set As : "   bcH ....... barcode height in DOTS. 64 dots = 8 mm at 203 dpi."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT12]
+    Set As : "   shopY ..... vertical position of the shop name line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT13]
+    Set As : "   addrY ..... vertical position of the shop address line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT14]
+    Set As : "   itemY ..... vertical position of the item name line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT15]
+    Set As : "   desY ...... vertical position of the design number line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT16]
+    Set As : "   purY ...... vertical position of the purity line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT17]
+    Set As : "   wtY ....... vertical position of the weight line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT18]
+    Set As : "   huidY ..... vertical position of the HUID line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT19]
+    Set As : "   mrpY ...... vertical position of the MRP line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT20]
+    Set As : "   Save, then export from Zebra Label Print Queue and run:"
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT21]
+    Set As : "   node 00_Build/zpl-emit.mjs labels.csv"
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT22]
+    Set As : " MINT A MISSING BARCODE"
+    Style : JpSectionBox
+
+[Field: JpZplConfigScreenT23]
+    Set As : "   The queue exports the item's stored barcode. A piece with none exports empty and"
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT24]
+    Set As : "   zpl-emit.mjs skips it, so mint one here first - the Tally tag module then prints"
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT25]
+    Set As : "   the identical value."
+    Style : JpMuted
 
 [Function: JpZplLoadDefaults]
     Returns: Integer : Any
@@ -7515,43 +8079,194 @@ JplZplSettings : String : 20176
 
 [Field: JpZplQueuePrintLine50F1]
     Style : JpTotal
-[Export: JpZplQueueExport]
-    Title: <1000, "Zebra Label Queue">
+[Report: JpZplQueueExport]
+    Title : <1000, "Zebra Label Queue">
     Repeat: Over: JpZplLabelQueue
-    Export Title: Detail
-    Export: Value: $$ZplBarcode
-    Export: Value: $$ZplItem
-    Export: Value: $$ZplDesign
-    Export: Value: $$ZplCategory
-    Export: Value: $$ZplMetal
-    Export: Value: $$ZplPurity
-    Export: Value: $$ZplGrossWt
-    Export: Value: $$ZplStoneWt
-    Export: Value: $$ZplNetWt
-    Export: Value: $$ZplCarat
-    Export: Value: $$ZplHuid
-    Export: Value: $$ZplMrp
-    Export: Value: JpZplShopLine()
-    Export: Value: JpZplAddrLine()
-    Export: Value: JpZplWeightLine()
-    Export: Value: JpZplPurityLine()
-    Export: Value: JpZplMrpLine()
-    Export: Value: JpZplDpi()
-    Export: Value: JpZplLabelW()
-    Export: Value: JpZplLabelH()
-    Export: Value: JpZplDarkness()
-    Export: Value: JpZplSpeed()
-    Export: Value: JpZplCopies()
-    Export: Value: JpZplBcY()
-    Export: Value: JpZplBcH()
-    Export: Value: JpZplNum("shopY", 2)
-    Export: Value: JpZplNum("addrY", 34)
-    Export: Value: JpZplNum("itemY", 56)
-    Export: Value: JpZplNum("desY", 82)
-    Export: Value: JpZplNum("purY", 104)
-    Export: Value: JpZplNum("wtY", 126)
-    Export: Value: JpZplNum("huidY", 148)
-    Export: Value: JpZplNum("mrpY", 170)
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpZplQueueExportForm
+
+[Form: JpZplQueueExportForm]
+    Parts : JpZplQueueExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpZplQueueExportPart]
+    XMLTag : "Row"
+    Lines : JpZplQueueExportLine
+
+[Line: JpZplQueueExportLine]
+    Field : JpZplQueueExportF1
+    Field : JpZplQueueExportF2
+    Field : JpZplQueueExportF3
+    Field : JpZplQueueExportF4
+    Field : JpZplQueueExportF5
+    Field : JpZplQueueExportF6
+    Field : JpZplQueueExportF7
+    Field : JpZplQueueExportF8
+    Field : JpZplQueueExportF9
+    Field : JpZplQueueExportF10
+    Field : JpZplQueueExportF11
+    Field : JpZplQueueExportF12
+    Field : JpZplQueueExportF13
+    Field : JpZplQueueExportF14
+    Field : JpZplQueueExportF15
+    Field : JpZplQueueExportF16
+    Field : JpZplQueueExportF17
+    Field : JpZplQueueExportF18
+    Field : JpZplQueueExportF19
+    Field : JpZplQueueExportF20
+    Field : JpZplQueueExportF21
+    Field : JpZplQueueExportF22
+    Field : JpZplQueueExportF23
+    Field : JpZplQueueExportF24
+    Field : JpZplQueueExportF25
+    Field : JpZplQueueExportF26
+    Field : JpZplQueueExportF27
+    Field : JpZplQueueExportF28
+    Field : JpZplQueueExportF29
+    Field : JpZplQueueExportF30
+    Field : JpZplQueueExportF31
+    Field : JpZplQueueExportF32
+    Field : JpZplQueueExportF33
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpZplQueueExportF1]
+    Set As : $$ZplBarcode
+    XMLAttr : "ZplBarcode"
+
+[Field: JpZplQueueExportF2]
+    Set As : $$ZplItem
+    XMLAttr : "ZplItem"
+
+[Field: JpZplQueueExportF3]
+    Set As : $$ZplDesign
+    XMLAttr : "ZplDesign"
+
+[Field: JpZplQueueExportF4]
+    Set As : $$ZplCategory
+    XMLAttr : "ZplCategory"
+
+[Field: JpZplQueueExportF5]
+    Set As : $$ZplMetal
+    XMLAttr : "ZplMetal"
+
+[Field: JpZplQueueExportF6]
+    Set As : $$ZplPurity
+    XMLAttr : "ZplPurity"
+
+[Field: JpZplQueueExportF7]
+    Set As : $$ZplGrossWt
+    XMLAttr : "ZplGrossWt"
+
+[Field: JpZplQueueExportF8]
+    Set As : $$ZplStoneWt
+    XMLAttr : "ZplStoneWt"
+
+[Field: JpZplQueueExportF9]
+    Set As : $$ZplNetWt
+    XMLAttr : "ZplNetWt"
+
+[Field: JpZplQueueExportF10]
+    Set As : $$ZplCarat
+    XMLAttr : "ZplCarat"
+
+[Field: JpZplQueueExportF11]
+    Set As : $$ZplHuid
+    XMLAttr : "ZplHuid"
+
+[Field: JpZplQueueExportF12]
+    Set As : $$ZplMrp
+    XMLAttr : "ZplMrp"
+
+[Field: JpZplQueueExportF13]
+    Set As : JpZplShopLine()
+    XMLAttr : "JpZplShopLine"
+
+[Field: JpZplQueueExportF14]
+    Set As : JpZplAddrLine()
+    XMLAttr : "JpZplAddrLine"
+
+[Field: JpZplQueueExportF15]
+    Set As : JpZplWeightLine()
+    XMLAttr : "JpZplWeightLine"
+
+[Field: JpZplQueueExportF16]
+    Set As : JpZplPurityLine()
+    XMLAttr : "JpZplPurityLine"
+
+[Field: JpZplQueueExportF17]
+    Set As : JpZplMrpLine()
+    XMLAttr : "JpZplMrpLine"
+
+[Field: JpZplQueueExportF18]
+    Set As : JpZplDpi()
+    XMLAttr : "JpZplDpi"
+
+[Field: JpZplQueueExportF19]
+    Set As : JpZplLabelW()
+    XMLAttr : "JpZplLabelW"
+
+[Field: JpZplQueueExportF20]
+    Set As : JpZplLabelH()
+    XMLAttr : "JpZplLabelH"
+
+[Field: JpZplQueueExportF21]
+    Set As : JpZplDarkness()
+    XMLAttr : "JpZplDarkness"
+
+[Field: JpZplQueueExportF22]
+    Set As : JpZplSpeed()
+    XMLAttr : "JpZplSpeed"
+
+[Field: JpZplQueueExportF23]
+    Set As : JpZplCopies()
+    XMLAttr : "JpZplCopies"
+
+[Field: JpZplQueueExportF24]
+    Set As : JpZplBcY()
+    XMLAttr : "JpZplBcY"
+
+[Field: JpZplQueueExportF25]
+    Set As : JpZplBcH()
+    XMLAttr : "JpZplBcH"
+
+[Field: JpZplQueueExportF26]
+    Set As : JpZplNum("shopY", 2)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF27]
+    Set As : JpZplNum("addrY", 34)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF28]
+    Set As : JpZplNum("itemY", 56)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF29]
+    Set As : JpZplNum("desY", 82)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF30]
+    Set As : JpZplNum("purY", 104)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF31]
+    Set As : JpZplNum("wtY", 126)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF32]
+    Set As : JpZplNum("huidY", 148)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF33]
+    Set As : JpZplNum("mrpY", 170)
+    XMLAttr : "JpZplNum"
 
 ; -----------------------------------------------------------------------------
 ;; >>>>>>>>>>>>>>>>>>>>>>> BEGIN 09_Orders.tdl <<<<<<<<<<<<<<<<<<<<<<
@@ -7800,24 +8515,32 @@ JwlOrdNote : String : 20190
 [Variable: JpOrdNoteTx    : String]
 [Variable: JpOrdMsg       : String]
 
-[Screen: JpOrderScreen]
-    Caption: "JadePro  ::  Advance / Custom Order"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpOrderScreen]
+    Title : "JadePro  ::  Advance / Custom Order"
+    Form : JpOrderScreenForm
+
+[Form: JpOrderScreenForm]
+    Parts : JpOrderScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpOrderScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           ADVANCE  /  CUSTOM ORDER"
-    Style: JpTitle
-    Line Height: 1
-    Text: "New  ->  Design Approved  ->  In Production  ->  Ready  ->  Delivered   (or Cancelled)"
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpOrderScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpOrderScreenT2
+    Field : JpOrderScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " ORDER DETAILS"
-    Style: JpSectionBox
+    Field : JpOrderScreenT4
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpOrdNo, Label: "Order Number *">
         Width: 250
@@ -7842,8 +8565,7 @@ JwlOrdNote : String : 20190
 
     Line: Spacing
     Lines: 1
-    Text: " MONEY"
-    Style: JpSectionBox
+    Field : JpOrderScreenT5
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpOrdExpPrice, Label: "Expected Price">
         Width: 250
@@ -7868,8 +8590,7 @@ JwlOrdNote : String : 20190
 
     Line: Spacing
     Lines: 1
-    Text: " STATUS"
-    Style: JpSectionBox
+    Field : JpOrderScreenT6
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpOrdStatusTx, Label: "Order Status *">
         Width: 250
@@ -7892,6 +8613,33 @@ JwlOrdNote : String : 20190
     Button: <Save Order (F2), Key: F2, Action: JpOrdSave>
     Button: <Custom Order Register (F4), Key: F4, Action: JpOrdRegister>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpOrderScreenT1]
+    Set As : "           ADVANCE  /  CUSTOM ORDER"
+    Style : JpTitle
+
+[Field: JpOrderScreenT2]
+    Set As : "New  ->  Design Approved  ->  In Production  ->  Ready  ->  Delivered   (or Cancelled)"
+    Style : JpMuted
+
+[Field: JpOrderScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpOrderScreenT4]
+    Set As : " ORDER DETAILS"
+    Style : JpSectionBox
+
+[Field: JpOrderScreenT5]
+    Set As : " MONEY"
+    Style : JpSectionBox
+
+[Field: JpOrderScreenT6]
+    Set As : " STATUS"
+    Style : JpSectionBox
 
 [Collection: Source: JpOrdStatusPick]
     Data: JpOrdStatusPickRow
@@ -8299,19 +9047,74 @@ JwlOrdNote : String : 20190
 
 [Field: JpOrderRegisterPrintLine55F1]
     Style : JpTotal
-[Export: JpOrderRegisterExport]
-    Title: <1000, "Custom Order Register">
+[Report: JpOrderRegisterExport]
+    Title : <1000, "Custom Order Register">
     Repeat: Over: JpOrderRegister
-    Export Title: Detail
-    Export: Value: $JwlOrdNo
-    Export: Value: $JwlOrdCust
-    Export: Value: $JwlOrdType
-    Export: Value: $JwlOrdExpWt
-    Export: Value: $JwlOrdExpPrice
-    Export: Value: $JwlOrdAdvance
-    Export: Value: $JwlOrdAdvBalance
-    Export: Value: $JwlOrdDelivDate
-    Export: Value: $JwlOrdStatus
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpOrderRegisterExportForm
+
+[Form: JpOrderRegisterExportForm]
+    Parts : JpOrderRegisterExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpOrderRegisterExportPart]
+    XMLTag : "Row"
+    Lines : JpOrderRegisterExportLine
+
+[Line: JpOrderRegisterExportLine]
+    Field : JpOrderRegisterExportF1
+    Field : JpOrderRegisterExportF2
+    Field : JpOrderRegisterExportF3
+    Field : JpOrderRegisterExportF4
+    Field : JpOrderRegisterExportF5
+    Field : JpOrderRegisterExportF6
+    Field : JpOrderRegisterExportF7
+    Field : JpOrderRegisterExportF8
+    Field : JpOrderRegisterExportF9
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpOrderRegisterExportF1]
+    Set As : $JwlOrdNo
+    XMLAttr : "JwlOrdNo"
+
+[Field: JpOrderRegisterExportF2]
+    Set As : $JwlOrdCust
+    XMLAttr : "JwlOrdCust"
+
+[Field: JpOrderRegisterExportF3]
+    Set As : $JwlOrdType
+    XMLAttr : "JwlOrdType"
+
+[Field: JpOrderRegisterExportF4]
+    Set As : $JwlOrdExpWt
+    XMLAttr : "JwlOrdExpWt"
+
+[Field: JpOrderRegisterExportF5]
+    Set As : $JwlOrdExpPrice
+    XMLAttr : "JwlOrdExpPrice"
+
+[Field: JpOrderRegisterExportF6]
+    Set As : $JwlOrdAdvance
+    XMLAttr : "JwlOrdAdvance"
+
+[Field: JpOrderRegisterExportF7]
+    Set As : $JwlOrdAdvBalance
+    XMLAttr : "JwlOrdAdvBalance"
+
+[Field: JpOrderRegisterExportF8]
+    Set As : $JwlOrdDelivDate
+    XMLAttr : "JwlOrdDelivDate"
+
+[Field: JpOrderRegisterExportF9]
+    Set As : $JwlOrdStatus
+    XMLAttr : "JwlOrdStatus"
 
 ; -----------------------------------------------------------------------------
 ;; >>>>>>>>>>>>>>>>>>>>>>> BEGIN 10_Repairs.tdl <<<<<<<<<<<<<<<<<<<<<<
@@ -8549,24 +9352,32 @@ JwlRepRecvDate : Date : 20208
 [Variable: JpRepStatusTx  : String]
 [Variable: JpRepMsg       : String]
 
-[Screen: JpRepairScreen]
-    Caption: "JadePro  ::  Jewellery Repair"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpRepairScreen]
+    Title : "JadePro  ::  Jewellery Repair"
+    Form : JpRepairScreenForm
+
+[Form: JpRepairScreenForm]
+    Parts : JpRepairScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpRepairScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JEWELLERY REPAIR"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Received  ->  Sent to Karigar  ->  Repairing  ->  Ready  ->  Delivered"
-    Style: JpSub
-    Text: "Repairs never change stock - only the karigar's metal accountability is affected."
-    Style: JpMuted
+    Field : JpRepairScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpRepairScreenT2
+    Field : JpRepairScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " CUSTOMER  AND  PIECE"
-    Style: JpSectionBox
+    Field : JpRepairScreenT4
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpRepNo, Label: "Repair Number *">
         Width: 250
@@ -8591,8 +9402,7 @@ JwlRepRecvDate : Date : 20208
 
     Line: Spacing
     Lines: 1
-    Text: " WEIGHTS  AND  STONES"
-    Style: JpSectionBox
+    Field : JpRepairScreenT5
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpRepGrossWt, Label: "Gross Weight *">
         Width: 250
@@ -8610,8 +9420,7 @@ JwlRepRecvDate : Date : 20208
 
     Line: Spacing
     Lines: 1
-    Text: " WORK  AND  MONEY"
-    Style: JpSectionBox
+    Field : JpRepairScreenT6
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpRepWorkTx, Label: "Repair Work *">
         Width: 250
@@ -8636,8 +9445,7 @@ JwlRepRecvDate : Date : 20208
 
     Line: Spacing
     Lines: 1
-    Text: " STATUS"
-    Style: JpSectionBox
+    Field : JpRepairScreenT7
     Lines: 1, 1
     Field: <Field-Id: JpRepStatusTx, Label: "Repair Status *">
         Width: 250
@@ -8654,6 +9462,37 @@ JwlRepRecvDate : Date : 20208
     Button: <Save Repair (F2), Key: F2, Action: JpRepSave>
     Button: <Repair Register (F4), Key: F4, Action: JpRepRegister>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpRepairScreenT1]
+    Set As : "           JEWELLERY REPAIR"
+    Style : JpTitle
+
+[Field: JpRepairScreenT2]
+    Set As : "Received  ->  Sent to Karigar  ->  Repairing  ->  Ready  ->  Delivered"
+    Style : JpMuted
+
+[Field: JpRepairScreenT3]
+    Set As : "Repairs never change stock - only the karigar's metal accountability is affected."
+    Style : JpMuted
+
+[Field: JpRepairScreenT4]
+    Set As : " CUSTOMER  AND  PIECE"
+    Style : JpSectionBox
+
+[Field: JpRepairScreenT5]
+    Set As : " WEIGHTS  AND  STONES"
+    Style : JpSectionBox
+
+[Field: JpRepairScreenT6]
+    Set As : " WORK  AND  MONEY"
+    Style : JpSectionBox
+
+[Field: JpRepairScreenT7]
+    Set As : " STATUS"
+    Style : JpSectionBox
 
 [Collection: Source: JpRepStatusPick]
     Data: JpRepStatusPickRow
@@ -9058,20 +9897,79 @@ JwlRepRecvDate : Date : 20208
 
 [Field: JpRepairRegisterPrintLine53F1]
     Style : JpTotal
-[Export: JpRepairRegisterExport]
-    Title: <1000, "Repair Register">
+[Report: JpRepairRegisterExport]
+    Title : <1000, "Repair Register">
     Repeat: Over: JpRepairRegister
-    Export Title: Detail
-    Export: Value: $JwlRepNo
-    Export: Value: $JwlRepCust
-    Export: Value: $JwlRepDesc
-    Export: Value: $JwlRepGrossWt
-    Export: Value: $JwlRepNetWt
-    Export: Value: $JwlRepEstAmt
-    Export: Value: $JwlRepAdvance
-    Export: Value: $JwlRepBalance
-    Export: Value: $JwlRepDelivDate
-    Export: Value: $JwlRepStatus
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpRepairRegisterExportForm
+
+[Form: JpRepairRegisterExportForm]
+    Parts : JpRepairRegisterExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpRepairRegisterExportPart]
+    XMLTag : "Row"
+    Lines : JpRepairRegisterExportLine
+
+[Line: JpRepairRegisterExportLine]
+    Field : JpRepairRegisterExportF1
+    Field : JpRepairRegisterExportF2
+    Field : JpRepairRegisterExportF3
+    Field : JpRepairRegisterExportF4
+    Field : JpRepairRegisterExportF5
+    Field : JpRepairRegisterExportF6
+    Field : JpRepairRegisterExportF7
+    Field : JpRepairRegisterExportF8
+    Field : JpRepairRegisterExportF9
+    Field : JpRepairRegisterExportF10
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpRepairRegisterExportF1]
+    Set As : $JwlRepNo
+    XMLAttr : "JwlRepNo"
+
+[Field: JpRepairRegisterExportF2]
+    Set As : $JwlRepCust
+    XMLAttr : "JwlRepCust"
+
+[Field: JpRepairRegisterExportF3]
+    Set As : $JwlRepDesc
+    XMLAttr : "JwlRepDesc"
+
+[Field: JpRepairRegisterExportF4]
+    Set As : $JwlRepGrossWt
+    XMLAttr : "JwlRepGrossWt"
+
+[Field: JpRepairRegisterExportF5]
+    Set As : $JwlRepNetWt
+    XMLAttr : "JwlRepNetWt"
+
+[Field: JpRepairRegisterExportF6]
+    Set As : $JwlRepEstAmt
+    XMLAttr : "JwlRepEstAmt"
+
+[Field: JpRepairRegisterExportF7]
+    Set As : $JwlRepAdvance
+    XMLAttr : "JwlRepAdvance"
+
+[Field: JpRepairRegisterExportF8]
+    Set As : $JwlRepBalance
+    XMLAttr : "JwlRepBalance"
+
+[Field: JpRepairRegisterExportF9]
+    Set As : $JwlRepDelivDate
+    XMLAttr : "JwlRepDelivDate"
+
+[Field: JpRepairRegisterExportF10]
+    Set As : $JwlRepStatus
+    XMLAttr : "JwlRepStatus"
 
 ; -----------------------------------------------------------------------------
 ;; >>>>>>>>>>>>>>>>>>>>>>> BEGIN 11_Reports.tdl <<<<<<<<<<<<<<<<<<<<<<
@@ -9611,28 +10509,90 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpDailySalesPrintLine69F1]
     Style : JpTotal
-[Export: JpDailySalesExport]
-    Title: <1000, "Daily Sales">
+[Report: JpDailySalesExport]
+    Title : <1000, "Daily Sales">
     Repeat: Over: JpDailySales
-    Export Title: Detail
-    Export: Value: $JwlInvNo
-    Export: Value: $$DATE
-    Export: Value: $$PARTYNAME
-    Export: Value: $JwlSalesperson
-    Export: Value: $JwlTaxableVal
-    Export: Value: $$GSTVALUE
-    Export: Value: $JwlGrandTotal
-    Export: Value: $JwlPayCash
-    Export: Value: $JwlPayCard
-    Export: Value: $JwlPayUpi
-    Export: Value: $JwlPayBank
-    Export: Value: $JwlPayOldGold
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpDailySalesExportForm
 
+[Form: JpDailySalesExportForm]
+    Parts : JpDailySalesExportPart
 
-; =============================================================================
-;  REPORT 2 - MONTHLY SALES
-;  Aggregated by month in SQL so a whole year returns twelve rows, not 3,000.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpDailySalesExportPart]
+    XMLTag : "Row"
+    Lines : JpDailySalesExportLine
+
+[Line: JpDailySalesExportLine]
+    Field : JpDailySalesExportF1
+    Field : JpDailySalesExportF2
+    Field : JpDailySalesExportF3
+    Field : JpDailySalesExportF4
+    Field : JpDailySalesExportF5
+    Field : JpDailySalesExportF6
+    Field : JpDailySalesExportF7
+    Field : JpDailySalesExportF8
+    Field : JpDailySalesExportF9
+    Field : JpDailySalesExportF10
+    Field : JpDailySalesExportF11
+    Field : JpDailySalesExportF12
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpDailySalesExportF1]
+    Set As : $JwlInvNo
+    XMLAttr : "JwlInvNo"
+
+[Field: JpDailySalesExportF2]
+    Set As : $$DATE
+    XMLAttr : "DATE"
+
+[Field: JpDailySalesExportF3]
+    Set As : $$PARTYNAME
+    XMLAttr : "PARTYNAME"
+
+[Field: JpDailySalesExportF4]
+    Set As : $JwlSalesperson
+    XMLAttr : "JwlSalesperson"
+
+[Field: JpDailySalesExportF5]
+    Set As : $JwlTaxableVal
+    XMLAttr : "JwlTaxableVal"
+
+[Field: JpDailySalesExportF6]
+    Set As : $$GSTVALUE
+    XMLAttr : "GSTVALUE"
+
+[Field: JpDailySalesExportF7]
+    Set As : $JwlGrandTotal
+    XMLAttr : "JwlGrandTotal"
+
+[Field: JpDailySalesExportF8]
+    Set As : $JwlPayCash
+    XMLAttr : "JwlPayCash"
+
+[Field: JpDailySalesExportF9]
+    Set As : $JwlPayCard
+    XMLAttr : "JwlPayCard"
+
+[Field: JpDailySalesExportF10]
+    Set As : $JwlPayUpi
+    XMLAttr : "JwlPayUpi"
+
+[Field: JpDailySalesExportF11]
+    Set As : $JwlPayBank
+    XMLAttr : "JwlPayBank"
+
+[Field: JpDailySalesExportF12]
+    Set As : $JwlPayOldGold
+    XMLAttr : "JwlPayOldGold"
+
 [Collection: Report: JpMonthlySales]
     Source: JpMonthlySalesSQL
     Var: JpFromDate, JpToDate
@@ -9861,20 +10821,55 @@ JwlTotalPurchases : Number : 20216
     }
     JpAvgBill = JpRound(s / b)
 
-[Export: JpMonthlySalesExport]
-    Title: <1000, "Monthly Sales">
+[Report: JpMonthlySalesExport]
+    Title : <1000, "Monthly Sales">
     Repeat: Over: JpMonthlySales
-    Export Title: Detail
-    Export: Value: $$JwlMonth
-    Export: Value: $$JwlBills
-    Export: Value: $$JwlTaxable
-    Export: Value: $$JwlGst
-    Export: Value: $$JwlSales
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpMonthlySalesExportForm
 
+[Form: JpMonthlySalesExportForm]
+    Parts : JpMonthlySalesExportPart
 
-; =============================================================================
-;  REPORT 3 - SALES REGISTER (drill-down per voucher, with gold weight sold)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpMonthlySalesExportPart]
+    XMLTag : "Row"
+    Lines : JpMonthlySalesExportLine
+
+[Line: JpMonthlySalesExportLine]
+    Field : JpMonthlySalesExportF1
+    Field : JpMonthlySalesExportF2
+    Field : JpMonthlySalesExportF3
+    Field : JpMonthlySalesExportF4
+    Field : JpMonthlySalesExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpMonthlySalesExportF1]
+    Set As : $$JwlMonth
+    XMLAttr : "JwlMonth"
+
+[Field: JpMonthlySalesExportF2]
+    Set As : $$JwlBills
+    XMLAttr : "JwlBills"
+
+[Field: JpMonthlySalesExportF3]
+    Set As : $$JwlTaxable
+    XMLAttr : "JwlTaxable"
+
+[Field: JpMonthlySalesExportF4]
+    Set As : $$JwlGst
+    XMLAttr : "JwlGst"
+
+[Field: JpMonthlySalesExportF5]
+    Set As : $$JwlSales
+    XMLAttr : "JwlSales"
+
 [Collection: Report: JpSalesRegister]
     Source: JpSalesRegisterSQL
     Var: JpFromDate, JpToDate, JpSalesRegParty, JpSalesRegMetal
@@ -10286,28 +11281,95 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpSalesRegisterPrintLine77F1]
     Style : JpTotal
-[Export: JpSalesRegisterExport]
-    Title: <1000, "Sales Register">
+[Report: JpSalesRegisterExport]
+    Title : <1000, "Sales Register">
     Repeat: Over: JpSalesRegister
-    Export Title: Detail
-    Export: Value: $JwlInvNo
-    Export: Value: $$DATE
-    Export: Value: $$ITEMNAME
-    Export: Value: $JwlLnBarcode
-    Export: Value: $JwlLnPurity
-    Export: Value: $JwlLnGross
-    Export: Value: $JwlLnStone
-    Export: Value: $JwlLnNet
-    Export: Value: $JwlLnRate
-    Export: Value: $JwlLnMetalVal
-    Export: Value: $JwlLnMakeAmt
-    Export: Value: $JwlLnBaseVal
-    Export: Value: $JwlLnTotal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpSalesRegisterExportForm
 
+[Form: JpSalesRegisterExportForm]
+    Parts : JpSalesRegisterExportPart
 
-; =============================================================================
-;  REPORT 4 - PURCHASE REGISTER
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpSalesRegisterExportPart]
+    XMLTag : "Row"
+    Lines : JpSalesRegisterExportLine
+
+[Line: JpSalesRegisterExportLine]
+    Field : JpSalesRegisterExportF1
+    Field : JpSalesRegisterExportF2
+    Field : JpSalesRegisterExportF3
+    Field : JpSalesRegisterExportF4
+    Field : JpSalesRegisterExportF5
+    Field : JpSalesRegisterExportF6
+    Field : JpSalesRegisterExportF7
+    Field : JpSalesRegisterExportF8
+    Field : JpSalesRegisterExportF9
+    Field : JpSalesRegisterExportF10
+    Field : JpSalesRegisterExportF11
+    Field : JpSalesRegisterExportF12
+    Field : JpSalesRegisterExportF13
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpSalesRegisterExportF1]
+    Set As : $JwlInvNo
+    XMLAttr : "JwlInvNo"
+
+[Field: JpSalesRegisterExportF2]
+    Set As : $$DATE
+    XMLAttr : "DATE"
+
+[Field: JpSalesRegisterExportF3]
+    Set As : $$ITEMNAME
+    XMLAttr : "ITEMNAME"
+
+[Field: JpSalesRegisterExportF4]
+    Set As : $JwlLnBarcode
+    XMLAttr : "JwlLnBarcode"
+
+[Field: JpSalesRegisterExportF5]
+    Set As : $JwlLnPurity
+    XMLAttr : "JwlLnPurity"
+
+[Field: JpSalesRegisterExportF6]
+    Set As : $JwlLnGross
+    XMLAttr : "JwlLnGross"
+
+[Field: JpSalesRegisterExportF7]
+    Set As : $JwlLnStone
+    XMLAttr : "JwlLnStone"
+
+[Field: JpSalesRegisterExportF8]
+    Set As : $JwlLnNet
+    XMLAttr : "JwlLnNet"
+
+[Field: JpSalesRegisterExportF9]
+    Set As : $JwlLnRate
+    XMLAttr : "JwlLnRate"
+
+[Field: JpSalesRegisterExportF10]
+    Set As : $JwlLnMetalVal
+    XMLAttr : "JwlLnMetalVal"
+
+[Field: JpSalesRegisterExportF11]
+    Set As : $JwlLnMakeAmt
+    XMLAttr : "JwlLnMakeAmt"
+
+[Field: JpSalesRegisterExportF12]
+    Set As : $JwlLnBaseVal
+    XMLAttr : "JwlLnBaseVal"
+
+[Field: JpSalesRegisterExportF13]
+    Set As : $JwlLnTotal
+    XMLAttr : "JwlLnTotal"
+
 [Collection: Report: JpPurchaseRegister]
     Source: JpPurchaseRegisterSQL
     Var: JpFromDate, JpToDate, JpPurKindFilter, JpPurPartyFilter
@@ -10669,27 +11731,80 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpPurchaseRegisterPrintLine67F1]
     Style : JpTotal
-[Export: JpPurchaseRegisterExport]
-    Title: <1000, "Purchase Register">
+[Report: JpPurchaseRegisterExport]
+    Title : <1000, "Purchase Register">
     Repeat: Over: JpPurchaseRegister
-    Export Title: Detail
-    Export: Value: $JwlSupInvNo
-    Export: Value: $$DATE
-    Export: Value: $$PARTYNAME
-    Export: Value: $JwlPurKind
-    Export: Value: $$ITEMNAME
-    Export: Value: $JwlPlPurity
-    Export: Value: $JwlPlGross
-    Export: Value: $JwlPlNet
-    Export: Value: $JwlPlRate
-    Export: Value: $JwlPlTotal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpPurchaseRegisterExportForm
 
+[Form: JpPurchaseRegisterExportForm]
+    Parts : JpPurchaseRegisterExportPart
 
-; =============================================================================
-;  REPORT 5 - GST SUMMARY
-;  Reads Tally's own GST ledgers. No tax rate is written anywhere in this
-;  module: the rates live in the shop's own tax masters.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpPurchaseRegisterExportPart]
+    XMLTag : "Row"
+    Lines : JpPurchaseRegisterExportLine
+
+[Line: JpPurchaseRegisterExportLine]
+    Field : JpPurchaseRegisterExportF1
+    Field : JpPurchaseRegisterExportF2
+    Field : JpPurchaseRegisterExportF3
+    Field : JpPurchaseRegisterExportF4
+    Field : JpPurchaseRegisterExportF5
+    Field : JpPurchaseRegisterExportF6
+    Field : JpPurchaseRegisterExportF7
+    Field : JpPurchaseRegisterExportF8
+    Field : JpPurchaseRegisterExportF9
+    Field : JpPurchaseRegisterExportF10
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpPurchaseRegisterExportF1]
+    Set As : $JwlSupInvNo
+    XMLAttr : "JwlSupInvNo"
+
+[Field: JpPurchaseRegisterExportF2]
+    Set As : $$DATE
+    XMLAttr : "DATE"
+
+[Field: JpPurchaseRegisterExportF3]
+    Set As : $$PARTYNAME
+    XMLAttr : "PARTYNAME"
+
+[Field: JpPurchaseRegisterExportF4]
+    Set As : $JwlPurKind
+    XMLAttr : "JwlPurKind"
+
+[Field: JpPurchaseRegisterExportF5]
+    Set As : $$ITEMNAME
+    XMLAttr : "ITEMNAME"
+
+[Field: JpPurchaseRegisterExportF6]
+    Set As : $JwlPlPurity
+    XMLAttr : "JwlPlPurity"
+
+[Field: JpPurchaseRegisterExportF7]
+    Set As : $JwlPlGross
+    XMLAttr : "JwlPlGross"
+
+[Field: JpPurchaseRegisterExportF8]
+    Set As : $JwlPlNet
+    XMLAttr : "JwlPlNet"
+
+[Field: JpPurchaseRegisterExportF9]
+    Set As : $JwlPlRate
+    XMLAttr : "JwlPlRate"
+
+[Field: JpPurchaseRegisterExportF10]
+    Set As : $JwlPlTotal
+    XMLAttr : "JwlPlTotal"
+
 [Collection: Report: JpGSTReport]
     Source: JpGSTReportSQL
     Var: JpFromDate, JpToDate
@@ -10791,18 +11906,40 @@ JwlTotalPurchases : Number : 20216
 [Field: JpGSTReportPrintLine14F1]
     Set As : "Reconciliation: compare this with Tally's own GST reports (Gateway > Display > Statutory Reports > GST). JadePro deliberately does not restate Tally's GST computation."
     Style : JpFontBold
-[Export: JpGSTReportExport]
-    Title: <1000, "GST Summary">
+[Report: JpGSTReportExport]
+    Title : <1000, "GST Summary">
     Repeat: Over: JpGSTReport
-    Export Title: Detail
-    Export: Value: $$LEDGERNAME
-    Export: Value: $$JwlTaxAmt
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpGSTReportExportForm
 
-;  REPORT 6 - JEWELLERY STOCK BY PIECES AND WEIGHT
-;  Hybrid valuation as agreed: metal valued at the live rate for the purity,
-;  stones and diamonds at the item's own rates. Stock value therefore moves
-;  with the market without needing a stock revaluation voucher.
-; =============================================================================
+[Form: JpGSTReportExportForm]
+    Parts : JpGSTReportExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpGSTReportExportPart]
+    XMLTag : "Row"
+    Lines : JpGSTReportExportLine
+
+[Line: JpGSTReportExportLine]
+    Field : JpGSTReportExportF1
+    Field : JpGSTReportExportF2
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpGSTReportExportF1]
+    Set As : $$LEDGERNAME
+    XMLAttr : "LEDGERNAME"
+
+[Field: JpGSTReportExportF2]
+    Set As : $$JwlTaxAmt
+    XMLAttr : "JwlTaxAmt"
+
 [Collection: Report: JpStockReport]
     Source: JpStockReportSQL
     Var: JpFromDate, JpToDate, JpStockCat, JpStockPurity, JpStockMetal
@@ -11078,26 +12215,80 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpStockReportPrintLine49F1]
     Style : JpTotal
-[Export: JpStockReportExport]
-    Title: <1000, "Jewellery Stock">
+[Report: JpStockReportExport]
+    Title : <1000, "Jewellery Stock">
     Repeat: Over: JpStockReport
-    Export Title: Detail
-    Export: Value: $$NAME
-    Export: Value: $JwlBarcode
-    Export: Value: $JwlCategory
-    Export: Value: $JwlMetalType
-    Export: Value: $JwlPurity
-    Export: Value: $JwlDesignNo
-    Export: Value: $JwlLocation
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpStockReportExportForm
 
+[Form: JpStockReportExportForm]
+    Parts : JpStockReportExportPart
 
-; =============================================================================
-;  REPORT 7 - METAL-WISE STOCK
-;  Valued live: every gram of a metal at today's rate for its purity.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpStockReportExportPart]
+    XMLTag : "Row"
+    Lines : JpStockReportExportLine
+
+[Line: JpStockReportExportLine]
+    Field : JpStockReportExportF1
+    Field : JpStockReportExportF2
+    Field : JpStockReportExportF3
+    Field : JpStockReportExportF4
+    Field : JpStockReportExportF5
+    Field : JpStockReportExportF6
+    Field : JpStockReportExportF7
+    Field : JpStockReportExportF8
+    Field : JpStockReportExportF9
+    Field : JpStockReportExportF10
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpStockReportExportF1]
+    Set As : $$NAME
+    XMLAttr : "NAME"
+
+[Field: JpStockReportExportF2]
+    Set As : $JwlBarcode
+    XMLAttr : "JwlBarcode"
+
+[Field: JpStockReportExportF3]
+    Set As : $JwlCategory
+    XMLAttr : "JwlCategory"
+
+[Field: JpStockReportExportF4]
+    Set As : $JwlMetalType
+    XMLAttr : "JwlMetalType"
+
+[Field: JpStockReportExportF5]
+    Set As : $JwlPurity
+    XMLAttr : "JwlPurity"
+
+[Field: JpStockReportExportF6]
+    Set As : $JwlDesignNo
+    XMLAttr : "JwlDesignNo"
+
+[Field: JpStockReportExportF7]
+    Set As : $JwlLocation
+    XMLAttr : "JwlLocation"
+
+[Field: JpStockReportExportF8]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpStockReportExportF9]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpStockReportExportF10]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpMetalStockReport]
     Source: JpMetalStockSQL
     Title: <1000,###,#a##"  METAL-WISE STOCK VALUATION">
@@ -11341,25 +12532,80 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpMetalStockPrintLine43F1]
     Style : JpTotal
-[Export: JpMetalStockExport]
-    Title: <1000, "Metal-wise Stock">
+[Report: JpMetalStockExport]
+    Title : <1000, "Metal-wise Stock">
     Repeat: Over: JpMetalStockReport
-    Export Title: Detail
-    Export: Value: $$JwlMetal
-    Export: Value: $$JwlPur
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlMetalVal
-    Export: Value: $$JwlStoneVal
-    Export: Value: $$JwlDiaVal
-    Export: Value: $$JwlMetalVal
-    Export: Value: $$JwlStoneVal
-    Export: Value: $$JwlDiaVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpMetalStockExportForm
 
+[Form: JpMetalStockExportForm]
+    Parts : JpMetalStockExportPart
 
-; =============================================================================
-;  REPORT 8 - PURITY-WISE STOCK
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpMetalStockExportPart]
+    XMLTag : "Row"
+    Lines : JpMetalStockExportLine
+
+[Line: JpMetalStockExportLine]
+    Field : JpMetalStockExportF1
+    Field : JpMetalStockExportF2
+    Field : JpMetalStockExportF3
+    Field : JpMetalStockExportF4
+    Field : JpMetalStockExportF5
+    Field : JpMetalStockExportF6
+    Field : JpMetalStockExportF7
+    Field : JpMetalStockExportF8
+    Field : JpMetalStockExportF9
+    Field : JpMetalStockExportF10
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpMetalStockExportF1]
+    Set As : $$JwlMetal
+    XMLAttr : "JwlMetal"
+
+[Field: JpMetalStockExportF2]
+    Set As : $$JwlPur
+    XMLAttr : "JwlPur"
+
+[Field: JpMetalStockExportF3]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpMetalStockExportF4]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpMetalStockExportF5]
+    Set As : $$JwlMetalVal
+    XMLAttr : "JwlMetalVal"
+
+[Field: JpMetalStockExportF6]
+    Set As : $$JwlStoneVal
+    XMLAttr : "JwlStoneVal"
+
+[Field: JpMetalStockExportF7]
+    Set As : $$JwlDiaVal
+    XMLAttr : "JwlDiaVal"
+
+[Field: JpMetalStockExportF8]
+    Set As : $$JwlMetalVal
+    XMLAttr : "JwlMetalVal"
+
+[Field: JpMetalStockExportF9]
+    Set As : $$JwlStoneVal
+    XMLAttr : "JwlStoneVal"
+
+[Field: JpMetalStockExportF10]
+    Set As : $$JwlDiaVal
+    XMLAttr : "JwlDiaVal"
+
 [Collection: Report: JpPurityStockReport]
     Source: JpPurityStockSQL
     Var: JpFromDate, JpToDate
@@ -11604,20 +12850,55 @@ JwlTotalPurchases : Number : 20216
     Returns: Quantity : Any
     JpFineTotal = Sum($$JwlNetWt) * JpFineness($$JwlPur)
 
-[Export: JpPurityStockExport]
-    Title: <1000, "Purity-wise Stock">
+[Report: JpPurityStockExport]
+    Title : <1000, "Purity-wise Stock">
     Repeat: Over: JpPurityStockReport
-    Export Title: Detail
-    Export: Value: $$JwlPur
-    Export: Value: $$JwlQty
-    Export: Value: $JwlGrossWt
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpPurityStockExportForm
 
+[Form: JpPurityStockExportForm]
+    Parts : JpPurityStockExportPart
 
-; =============================================================================
-;  REPORT 9 - CATEGORY-WISE STOCK
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpPurityStockExportPart]
+    XMLTag : "Row"
+    Lines : JpPurityStockExportLine
+
+[Line: JpPurityStockExportLine]
+    Field : JpPurityStockExportF1
+    Field : JpPurityStockExportF2
+    Field : JpPurityStockExportF3
+    Field : JpPurityStockExportF4
+    Field : JpPurityStockExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpPurityStockExportF1]
+    Set As : $$JwlPur
+    XMLAttr : "JwlPur"
+
+[Field: JpPurityStockExportF2]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpPurityStockExportF3]
+    Set As : $JwlGrossWt
+    XMLAttr : "JwlGrossWt"
+
+[Field: JpPurityStockExportF4]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpPurityStockExportF5]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpCategoryStockReport]
     Source: JpCategoryStockSQL
     Var: JpFromDate, JpToDate
@@ -11814,19 +13095,50 @@ JwlTotalPurchases : Number : 20216
     }
     JpPcOfVal = JpRound($$JwlStockVal * 100 / t)
 
-[Export: JpCategoryStockExport]
-    Title: <1000, "Category-wise Stock">
+[Report: JpCategoryStockExport]
+    Title : <1000, "Category-wise Stock">
     Repeat: Over: JpCategoryStockReport
-    Export Title: Detail
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpCategoryStockExportForm
 
+[Form: JpCategoryStockExportForm]
+    Parts : JpCategoryStockExportPart
 
-; =============================================================================
-;  REPORT 10 - DESIGN-WISE STOCK
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpCategoryStockExportPart]
+    XMLTag : "Row"
+    Lines : JpCategoryStockExportLine
+
+[Line: JpCategoryStockExportLine]
+    Field : JpCategoryStockExportF1
+    Field : JpCategoryStockExportF2
+    Field : JpCategoryStockExportF3
+    Field : JpCategoryStockExportF4
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpCategoryStockExportF1]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpCategoryStockExportF2]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpCategoryStockExportF3]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpCategoryStockExportF4]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpDesignStockReport]
     Source: JpDesignStockSQL
     Var: JpFromDate, JpToDate
@@ -12032,21 +13344,60 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpDesignStockPrintLine35F1]
     Style : JpTotal
-[Export: JpDesignStockExport]
-    Title: <1000, "Design-wise Stock">
+[Report: JpDesignStockExport]
+    Title : <1000, "Design-wise Stock">
     Repeat: Over: JpDesignStockReport
-    Export Title: Detail
-    Export: Value: $$JwlDes
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlDesCount
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpDesignStockExportForm
 
+[Form: JpDesignStockExportForm]
+    Parts : JpDesignStockExportPart
 
-; =============================================================================
-;  REPORT 11 - COUNTER-WISE STOCK
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpDesignStockExportPart]
+    XMLTag : "Row"
+    Lines : JpDesignStockExportLine
+
+[Line: JpDesignStockExportLine]
+    Field : JpDesignStockExportF1
+    Field : JpDesignStockExportF2
+    Field : JpDesignStockExportF3
+    Field : JpDesignStockExportF4
+    Field : JpDesignStockExportF5
+    Field : JpDesignStockExportF6
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpDesignStockExportF1]
+    Set As : $$JwlDes
+    XMLAttr : "JwlDes"
+
+[Field: JpDesignStockExportF2]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpDesignStockExportF3]
+    Set As : $$JwlDesCount
+    XMLAttr : "JwlDesCount"
+
+[Field: JpDesignStockExportF4]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpDesignStockExportF5]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpDesignStockExportF6]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpCounterStockReport]
     Source: JpCounterStockSQL
     Var: JpFromDate, JpToDate
@@ -12202,19 +13553,50 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpCounterStockPrintLine25F1]
     Style : JpTotal
-[Export: JpCounterStockExport]
-    Title: <1000, "Counter-wise Stock">
+[Report: JpCounterStockExport]
+    Title : <1000, "Counter-wise Stock">
     Repeat: Over: JpCounterStockReport
-    Export Title: Detail
-    Export: Value: $$JwlCounter
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpCounterStockExportForm
 
+[Form: JpCounterStockExportForm]
+    Parts : JpCounterStockExportPart
 
-; =============================================================================
-;  REPORT 12 - STOCK AGEING (bucketed by last purchase date)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpCounterStockExportPart]
+    XMLTag : "Row"
+    Lines : JpCounterStockExportLine
+
+[Line: JpCounterStockExportLine]
+    Field : JpCounterStockExportF1
+    Field : JpCounterStockExportF2
+    Field : JpCounterStockExportF3
+    Field : JpCounterStockExportF4
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpCounterStockExportF1]
+    Set As : $$JwlCounter
+    XMLAttr : "JwlCounter"
+
+[Field: JpCounterStockExportF2]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpCounterStockExportF3]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpCounterStockExportF4]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpAgeingReport]
     Source: JpAgeingSQL
     Title: <1000,###,#a##"  STOCK AGEING - FAST, SLOW AND DEAD STOCK">
@@ -12458,22 +13840,60 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpAgeingPrintLine39F1]
     Style : JpTotal
-[Export: JpAgeingExport]
-    Title: <1000, "Stock Ageing">
+[Report: JpAgeingExport]
+    Title : <1000, "Stock Ageing">
     Repeat: Over: JpAgeingReport
-    Export Title: Detail
-    Export: Value: $$JwlItem
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlLastBuy
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpAgeingExportForm
 
+[Form: JpAgeingExportForm]
+    Parts : JpAgeingExportPart
 
-; =============================================================================
-;  REPORT 13 - FAST / SLOW / DEAD MOVEMENT
-;  Based on how many times each item was sold in the period.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpAgeingExportPart]
+    XMLTag : "Row"
+    Lines : JpAgeingExportLine
+
+[Line: JpAgeingExportLine]
+    Field : JpAgeingExportF1
+    Field : JpAgeingExportF2
+    Field : JpAgeingExportF3
+    Field : JpAgeingExportF4
+    Field : JpAgeingExportF5
+    Field : JpAgeingExportF6
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpAgeingExportF1]
+    Set As : $$JwlItem
+    XMLAttr : "JwlItem"
+
+[Field: JpAgeingExportF2]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpAgeingExportF3]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpAgeingExportF4]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpAgeingExportF5]
+    Set As : $$JwlLastBuy
+    XMLAttr : "JwlLastBuy"
+
+[Field: JpAgeingExportF6]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpMovementReport]
     Source: JpMovementSQL
     Var: JpFromDate, JpToDate
@@ -12691,20 +14111,55 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpMovementPrintLine33F1]
     Style : JpTotal
-[Export: JpMovementExport]
-    Title: <1000, "Movement Analysis">
+[Report: JpMovementExport]
+    Title : <1000, "Movement Analysis">
     Repeat: Over: JpMovementReport
-    Export Title: Detail
-    Export: Value: $$JwlItem
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlSoldQty
-    Export: Value: $$JwlSoldWt
-    Export: Value: $$JwlSoldVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpMovementExportForm
 
-;  REPORT 14 - SALESPERSON PERFORMANCE
-;  Revenue, weight sold, discount given and gross profit against the monthly
-;  target held in the company master (see 13_Security.tdl).
-; =============================================================================
+[Form: JpMovementExportForm]
+    Parts : JpMovementExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpMovementExportPart]
+    XMLTag : "Row"
+    Lines : JpMovementExportLine
+
+[Line: JpMovementExportLine]
+    Field : JpMovementExportF1
+    Field : JpMovementExportF2
+    Field : JpMovementExportF3
+    Field : JpMovementExportF4
+    Field : JpMovementExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpMovementExportF1]
+    Set As : $$JwlItem
+    XMLAttr : "JwlItem"
+
+[Field: JpMovementExportF2]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpMovementExportF3]
+    Set As : $$JwlSoldQty
+    XMLAttr : "JwlSoldQty"
+
+[Field: JpMovementExportF4]
+    Set As : $$JwlSoldWt
+    XMLAttr : "JwlSoldWt"
+
+[Field: JpMovementExportF5]
+    Set As : $$JwlSoldVal
+    XMLAttr : "JwlSoldVal"
+
 [Collection: Report: JpSalespersonReport]
     Source: JpSalespersonSQL
     Var: JpFromDate, JpToDate
@@ -12993,22 +14448,65 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpSalespersonPrintLine47F1]
     Style : JpTotal
-[Export: JpSalespersonExport]
-    Title: <1000, "Salesperson Performance">
+[Report: JpSalespersonExport]
+    Title : <1000, "Salesperson Performance">
     Repeat: Over: JpSalespersonReport
-    Export Title: Detail
-    Export: Value: $$JwlSp
-    Export: Value: $$JwlBills
-    Export: Value: $JwlPiecesSold
-    Export: Value: $$JwlWeightSold
-    Export: Value: $$JwlRevenue
-    Export: Value: $$JwlDiscount
-    Export: Value: $$JwlCost
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpSalespersonExportForm
 
+[Form: JpSalespersonExportForm]
+    Parts : JpSalespersonExportPart
 
-; =============================================================================
-;  REPORT 15 - ITEM PROFITABILITY  (restricted to JADE_VIEW_PROFIT)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpSalespersonExportPart]
+    XMLTag : "Row"
+    Lines : JpSalespersonExportLine
+
+[Line: JpSalespersonExportLine]
+    Field : JpSalespersonExportF1
+    Field : JpSalespersonExportF2
+    Field : JpSalespersonExportF3
+    Field : JpSalespersonExportF4
+    Field : JpSalespersonExportF5
+    Field : JpSalespersonExportF6
+    Field : JpSalespersonExportF7
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpSalespersonExportF1]
+    Set As : $$JwlSp
+    XMLAttr : "JwlSp"
+
+[Field: JpSalespersonExportF2]
+    Set As : $$JwlBills
+    XMLAttr : "JwlBills"
+
+[Field: JpSalespersonExportF3]
+    Set As : $JwlPiecesSold
+    XMLAttr : "JwlPiecesSold"
+
+[Field: JpSalespersonExportF4]
+    Set As : $$JwlWeightSold
+    XMLAttr : "JwlWeightSold"
+
+[Field: JpSalespersonExportF5]
+    Set As : $$JwlRevenue
+    XMLAttr : "JwlRevenue"
+
+[Field: JpSalespersonExportF6]
+    Set As : $$JwlDiscount
+    XMLAttr : "JwlDiscount"
+
+[Field: JpSalespersonExportF7]
+    Set As : $$JwlCost
+    XMLAttr : "JwlCost"
+
 [Collection: Report: JpItemProfitReport]
     Source: JpItemProfitSQL
     Var: JpFromDate, JpToDate, JpProfitCat
@@ -13285,21 +14783,60 @@ JwlTotalPurchases : Number : 20216
     p = JpItemProfit()
     JpItemMargin = JpRound(p * 100 / r)
 
-[Export: JpItemProfitExport]
-    Title: <1000, "Item Profitability">
+[Report: JpItemProfitExport]
+    Title : <1000, "Item Profitability">
     Repeat: Over: JpItemProfitReport
-    Export Title: Detail
-    Export: Value: $$JwlItem
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlWt
-    Export: Value: $$JwlRevenue
-    Export: Value: $$JwlCost
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpItemProfitExportForm
 
+[Form: JpItemProfitExportForm]
+    Parts : JpItemProfitExportPart
 
-; =============================================================================
-;  REPORT 16 - CATEGORY PROFITABILITY
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpItemProfitExportPart]
+    XMLTag : "Row"
+    Lines : JpItemProfitExportLine
+
+[Line: JpItemProfitExportLine]
+    Field : JpItemProfitExportF1
+    Field : JpItemProfitExportF2
+    Field : JpItemProfitExportF3
+    Field : JpItemProfitExportF4
+    Field : JpItemProfitExportF5
+    Field : JpItemProfitExportF6
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpItemProfitExportF1]
+    Set As : $$JwlItem
+    XMLAttr : "JwlItem"
+
+[Field: JpItemProfitExportF2]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpItemProfitExportF3]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpItemProfitExportF4]
+    Set As : $$JwlWt
+    XMLAttr : "JwlWt"
+
+[Field: JpItemProfitExportF5]
+    Set As : $$JwlRevenue
+    XMLAttr : "JwlRevenue"
+
+[Field: JpItemProfitExportF6]
+    Set As : $$JwlCost
+    XMLAttr : "JwlCost"
+
 [Collection: Report: JpCategoryProfitReport]
     Source: JpCategoryProfitSQL
     Var: JpFromDate, JpToDate
@@ -13535,20 +15072,55 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpCategoryProfitPrintLine41F1]
     Style : JpTotal
-[Export: JpCategoryProfitExport]
-    Title: <1000, "Category Profitability">
+[Report: JpCategoryProfitExport]
+    Title : <1000, "Category Profitability">
     Repeat: Over: JpCategoryProfitReport
-    Export Title: Detail
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlWt
-    Export: Value: $$JwlRevenue
-    Export: Value: $$JwlCost
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpCategoryProfitExportForm
 
+[Form: JpCategoryProfitExportForm]
+    Parts : JpCategoryProfitExportPart
 
-; =============================================================================
-;  REPORT 17 - CUSTOMER PURCHASE HISTORY (drill-down per bill)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpCategoryProfitExportPart]
+    XMLTag : "Row"
+    Lines : JpCategoryProfitExportLine
+
+[Line: JpCategoryProfitExportLine]
+    Field : JpCategoryProfitExportF1
+    Field : JpCategoryProfitExportF2
+    Field : JpCategoryProfitExportF3
+    Field : JpCategoryProfitExportF4
+    Field : JpCategoryProfitExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpCategoryProfitExportF1]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpCategoryProfitExportF2]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpCategoryProfitExportF3]
+    Set As : $$JwlWt
+    XMLAttr : "JwlWt"
+
+[Field: JpCategoryProfitExportF4]
+    Set As : $$JwlRevenue
+    XMLAttr : "JwlRevenue"
+
+[Field: JpCategoryProfitExportF5]
+    Set As : $$JwlCost
+    XMLAttr : "JwlCost"
+
 [Collection: Report: JpCustomerHistory]
     Source: JpCustomerHistorySQL
     Var: JpFromDate, JpToDate, JpCustFilter
@@ -13790,22 +15362,65 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpCustomerHistoryPrintLine43F1]
     Style : JpTotal
-[Export: JpCustomerHistoryExport]
-    Title: <1000, "Customer Purchase History">
+[Report: JpCustomerHistoryExport]
+    Title : <1000, "Customer Purchase History">
     Repeat: Over: JpCustomerHistory
-    Export Title: Detail
-    Export: Value: $$DATE
-    Export: Value: $JwlInvNo
-    Export: Value: $$PARTYNAME
-    Export: Value: $JwlSalesperson
-    Export: Value: $JwlLnNet
-    Export: Value: $JwlLnTotal
-    Export: Value: $JwlPayBalance
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpCustomerHistoryExportForm
 
+[Form: JpCustomerHistoryExportForm]
+    Parts : JpCustomerHistoryExportPart
 
-; =============================================================================
-;  REPORT 18 - TOP AND REPEAT CUSTOMERS
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpCustomerHistoryExportPart]
+    XMLTag : "Row"
+    Lines : JpCustomerHistoryExportLine
+
+[Line: JpCustomerHistoryExportLine]
+    Field : JpCustomerHistoryExportF1
+    Field : JpCustomerHistoryExportF2
+    Field : JpCustomerHistoryExportF3
+    Field : JpCustomerHistoryExportF4
+    Field : JpCustomerHistoryExportF5
+    Field : JpCustomerHistoryExportF6
+    Field : JpCustomerHistoryExportF7
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpCustomerHistoryExportF1]
+    Set As : $$DATE
+    XMLAttr : "DATE"
+
+[Field: JpCustomerHistoryExportF2]
+    Set As : $JwlInvNo
+    XMLAttr : "JwlInvNo"
+
+[Field: JpCustomerHistoryExportF3]
+    Set As : $$PARTYNAME
+    XMLAttr : "PARTYNAME"
+
+[Field: JpCustomerHistoryExportF4]
+    Set As : $JwlSalesperson
+    XMLAttr : "JwlSalesperson"
+
+[Field: JpCustomerHistoryExportF5]
+    Set As : $JwlLnNet
+    XMLAttr : "JwlLnNet"
+
+[Field: JpCustomerHistoryExportF6]
+    Set As : $JwlLnTotal
+    XMLAttr : "JwlLnTotal"
+
+[Field: JpCustomerHistoryExportF7]
+    Set As : $JwlPayBalance
+    XMLAttr : "JwlPayBalance"
+
 [Collection: Report: JpTopCustomerReport]
     Source: JpTopCustomerSQL
     Var: JpFromDate, JpToDate
@@ -14018,22 +15633,55 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpTopCustomerPrintLine33F1]
     Style : JpTotal
-[Export: JpTopCustomerExport]
-    Title: <1000, "Top Customers">
+[Report: JpTopCustomerExport]
+    Title : <1000, "Top Customers">
     Repeat: Over: JpTopCustomerReport
-    Export Title: Detail
-    Export: Value: $$JwlCust
-    Export: Value: $$JwlVisits
-    Export: Value: $$JwlWt
-    Export: Value: $$JwlSpend
-    Export: Value: $$JwlLastBuy
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpTopCustomerExportForm
 
+[Form: JpTopCustomerExportForm]
+    Parts : JpTopCustomerExportPart
 
-; =============================================================================
-;  REPORT 19 - BIRTHDAY AND ANNIVERSARY CUSTOMERS
-;  CRM fields live on the Ledger master; a SQL month/day comparison means the
-;  report stays instant even with tens of thousands of customers.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpTopCustomerExportPart]
+    XMLTag : "Row"
+    Lines : JpTopCustomerExportLine
+
+[Line: JpTopCustomerExportLine]
+    Field : JpTopCustomerExportF1
+    Field : JpTopCustomerExportF2
+    Field : JpTopCustomerExportF3
+    Field : JpTopCustomerExportF4
+    Field : JpTopCustomerExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpTopCustomerExportF1]
+    Set As : $$JwlCust
+    XMLAttr : "JwlCust"
+
+[Field: JpTopCustomerExportF2]
+    Set As : $$JwlVisits
+    XMLAttr : "JwlVisits"
+
+[Field: JpTopCustomerExportF3]
+    Set As : $$JwlWt
+    XMLAttr : "JwlWt"
+
+[Field: JpTopCustomerExportF4]
+    Set As : $$JwlSpend
+    XMLAttr : "JwlSpend"
+
+[Field: JpTopCustomerExportF5]
+    Set As : $$JwlLastBuy
+    XMLAttr : "JwlLastBuy"
+
 [Collection: Report: JpBirthdayReport]
     Source: JpBirthdaySQL
     Var: JpFromDate, JpToDate, JpCrmEvent
@@ -14227,21 +15875,60 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpBirthdayPrintLine29F1]
     Style : JpTotal
-[Export: JpBirthdayExport]
-    Title: <1000, "Birthday and Anniversary Customers">
+[Report: JpBirthdayExport]
+    Title : <1000, "Birthday and Anniversary Customers">
     Repeat: Over: JpBirthdayReport
-    Export Title: Detail
-    Export: Value: $$JwlCust
-    Export: Value: $$MOBILE
-    Export: Value: $$JwlDob
-    Export: Value: $$JwlAnniv
-    Export: Value: $$JwlSpend
-    Export: Value: $$JwlPts
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpBirthdayExportForm
 
+[Form: JpBirthdayExportForm]
+    Parts : JpBirthdayExportPart
 
-; =============================================================================
-;  REPORT 20 - OLD GOLD EXCHANGE REGISTER
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpBirthdayExportPart]
+    XMLTag : "Row"
+    Lines : JpBirthdayExportLine
+
+[Line: JpBirthdayExportLine]
+    Field : JpBirthdayExportF1
+    Field : JpBirthdayExportF2
+    Field : JpBirthdayExportF3
+    Field : JpBirthdayExportF4
+    Field : JpBirthdayExportF5
+    Field : JpBirthdayExportF6
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpBirthdayExportF1]
+    Set As : $$JwlCust
+    XMLAttr : "JwlCust"
+
+[Field: JpBirthdayExportF2]
+    Set As : $$MOBILE
+    XMLAttr : "MOBILE"
+
+[Field: JpBirthdayExportF3]
+    Set As : $$JwlDob
+    XMLAttr : "JwlDob"
+
+[Field: JpBirthdayExportF4]
+    Set As : $$JwlAnniv
+    XMLAttr : "JwlAnniv"
+
+[Field: JpBirthdayExportF5]
+    Set As : $$JwlSpend
+    XMLAttr : "JwlSpend"
+
+[Field: JpBirthdayExportF6]
+    Set As : $$JwlPts
+    XMLAttr : "JwlPts"
+
 [Collection: Report: JpOldGoldRegister]
     Source: JpOldGoldSQL
     Var: JpFromDate, JpToDate, JpOgMetalFilter
@@ -14617,24 +16304,99 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpOldGoldPrintLine69F1]
     Style : JpTotal
-[Export: JpOldGoldExport]
-    Title: <1000, "Old Gold Exchange Register">
+[Report: JpOldGoldExport]
+    Title : <1000, "Old Gold Exchange Register">
     Repeat: Over: JpOldGoldRegister
-    Export Title: Detail
-    Export: Value: $$JwlOgRef
-    Export: Value: $$JwlOgDate
-    Export: Value: $$JwlOgCust
-    Export: Value: $JwlOgMetal
-    Export: Value: $$JwlOgPur
-    Export: Value: $$JwlOgGross
-    Export: Value: $$JwlOgStone
-    Export: Value: $$JwlOgNet
-    Export: Value: $$JwlOgFine
-    Export: Value: $JwlOgRate
-    Export: Value: $$JwlOgDed
-    Export: Value: $JwlOgValue
-    Export: Value: $$JwlOgAdj
-    Export: Value: $$JwlOgBal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpOldGoldExportForm
+
+[Form: JpOldGoldExportForm]
+    Parts : JpOldGoldExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpOldGoldExportPart]
+    XMLTag : "Row"
+    Lines : JpOldGoldExportLine
+
+[Line: JpOldGoldExportLine]
+    Field : JpOldGoldExportF1
+    Field : JpOldGoldExportF2
+    Field : JpOldGoldExportF3
+    Field : JpOldGoldExportF4
+    Field : JpOldGoldExportF5
+    Field : JpOldGoldExportF6
+    Field : JpOldGoldExportF7
+    Field : JpOldGoldExportF8
+    Field : JpOldGoldExportF9
+    Field : JpOldGoldExportF10
+    Field : JpOldGoldExportF11
+    Field : JpOldGoldExportF12
+    Field : JpOldGoldExportF13
+    Field : JpOldGoldExportF14
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpOldGoldExportF1]
+    Set As : $$JwlOgRef
+    XMLAttr : "JwlOgRef"
+
+[Field: JpOldGoldExportF2]
+    Set As : $$JwlOgDate
+    XMLAttr : "JwlOgDate"
+
+[Field: JpOldGoldExportF3]
+    Set As : $$JwlOgCust
+    XMLAttr : "JwlOgCust"
+
+[Field: JpOldGoldExportF4]
+    Set As : $JwlOgMetal
+    XMLAttr : "JwlOgMetal"
+
+[Field: JpOldGoldExportF5]
+    Set As : $$JwlOgPur
+    XMLAttr : "JwlOgPur"
+
+[Field: JpOldGoldExportF6]
+    Set As : $$JwlOgGross
+    XMLAttr : "JwlOgGross"
+
+[Field: JpOldGoldExportF7]
+    Set As : $$JwlOgStone
+    XMLAttr : "JwlOgStone"
+
+[Field: JpOldGoldExportF8]
+    Set As : $$JwlOgNet
+    XMLAttr : "JwlOgNet"
+
+[Field: JpOldGoldExportF9]
+    Set As : $$JwlOgFine
+    XMLAttr : "JwlOgFine"
+
+[Field: JpOldGoldExportF10]
+    Set As : $JwlOgRate
+    XMLAttr : "JwlOgRate"
+
+[Field: JpOldGoldExportF11]
+    Set As : $$JwlOgDed
+    XMLAttr : "JwlOgDed"
+
+[Field: JpOldGoldExportF12]
+    Set As : $JwlOgValue
+    XMLAttr : "JwlOgValue"
+
+[Field: JpOldGoldExportF13]
+    Set As : $$JwlOgAdj
+    XMLAttr : "JwlOgAdj"
+
+[Field: JpOldGoldExportF14]
+    Set As : $$JwlOgBal
+    XMLAttr : "JwlOgBal"
 
 ; -----------------------------------------------------------------------------
 ;; >>>>>>>>>>>>>>>>>>>>>>> BEGIN 12_Dashboard.tdl <<<<<<<<<<<<<<<<<<<<<<
@@ -14837,23 +16599,70 @@ JwlTotalPurchases : Number : 20216
 [Field: JpDashboardPrintLine21F1]
     Set As : "  Silver " + JpFmtAmt(JpCacheSilver) + "      Platinum " + JpFmtAmt(JpCachePlatinum)
     Style : JpFontBold
-[Export: JpDashboardExport]
-    Title: <1000, "Dashboard - Sales and Collections">
+[Report: JpDashboardExport]
+    Title : <1000, "Dashboard - Sales and Collections">
     Repeat: Over: JpDashboard
-    Export Title: Detail
-    Export: Value: $$JwlVchType
-    Export: Value: $$JwlSales
-    Export: Value: $$JwlPurch
-    Export: Value: $$JwlCash
-    Export: Value: $$JwlCard
-    Export: Value: $$JwlUpi
-    Export: Value: $$JwlBank
-    Export: Value: $$JwlBills
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpDashboardExportForm
 
+[Form: JpDashboardExportForm]
+    Parts : JpDashboardExportPart
 
-; =============================================================================
-;  CARD 2 - WEIGHT AND RANKING  (line level)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpDashboardExportPart]
+    XMLTag : "Row"
+    Lines : JpDashboardExportLine
+
+[Line: JpDashboardExportLine]
+    Field : JpDashboardExportF1
+    Field : JpDashboardExportF2
+    Field : JpDashboardExportF3
+    Field : JpDashboardExportF4
+    Field : JpDashboardExportF5
+    Field : JpDashboardExportF6
+    Field : JpDashboardExportF7
+    Field : JpDashboardExportF8
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpDashboardExportF1]
+    Set As : $$JwlVchType
+    XMLAttr : "JwlVchType"
+
+[Field: JpDashboardExportF2]
+    Set As : $$JwlSales
+    XMLAttr : "JwlSales"
+
+[Field: JpDashboardExportF3]
+    Set As : $$JwlPurch
+    XMLAttr : "JwlPurch"
+
+[Field: JpDashboardExportF4]
+    Set As : $$JwlCash
+    XMLAttr : "JwlCash"
+
+[Field: JpDashboardExportF5]
+    Set As : $$JwlCard
+    XMLAttr : "JwlCard"
+
+[Field: JpDashboardExportF6]
+    Set As : $$JwlUpi
+    XMLAttr : "JwlUpi"
+
+[Field: JpDashboardExportF7]
+    Set As : $$JwlBank
+    XMLAttr : "JwlBank"
+
+[Field: JpDashboardExportF8]
+    Set As : $$JwlBills
+    XMLAttr : "JwlBills"
+
 [Collection: Report: JpWeightDashboard]
     Source: JpWeightDashboardSQL
     Var: JpDashFrom, JpDashTo
@@ -15081,20 +16890,55 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpWeightDashboardPrintLine38F1]
     Style : JpTotal
-[Export: JpWeightDashboardExport]
-    Title: <1000, "Dashboard - Gold Sold and Top Performers">
+[Report: JpWeightDashboardExport]
+    Title : <1000, "Dashboard - Gold Sold and Top Performers">
     Repeat: Over: JpWeightDashboard
-    Export Title: Detail
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlSp
-    Export: Value: $$JwlPcs
-    Export: Value: $$JwlWtSold
-    Export: Value: $$JwlRev
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpWeightDashboardExportForm
 
+[Form: JpWeightDashboardExportForm]
+    Parts : JpWeightDashboardExportPart
 
-; =============================================================================
-;  CARD 3 - ALERTS  (journal level: orders, repairs, karigar metal)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpWeightDashboardExportPart]
+    XMLTag : "Row"
+    Lines : JpWeightDashboardExportLine
+
+[Line: JpWeightDashboardExportLine]
+    Field : JpWeightDashboardExportF1
+    Field : JpWeightDashboardExportF2
+    Field : JpWeightDashboardExportF3
+    Field : JpWeightDashboardExportF4
+    Field : JpWeightDashboardExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpWeightDashboardExportF1]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpWeightDashboardExportF2]
+    Set As : $$JwlSp
+    XMLAttr : "JwlSp"
+
+[Field: JpWeightDashboardExportF3]
+    Set As : $$JwlPcs
+    XMLAttr : "JwlPcs"
+
+[Field: JpWeightDashboardExportF4]
+    Set As : $$JwlWtSold
+    XMLAttr : "JwlWtSold"
+
+[Field: JpWeightDashboardExportF5]
+    Set As : $$JwlRev
+    XMLAttr : "JwlRev"
+
 [Collection: Report: JpAlertDashboard]
     Source: JpAlertDashboardSQL
     Title: <1000,###,#a##"  DASHBOARD 3 of 4  -  PENDING WORK AND ATTENTION">
@@ -15404,22 +17248,65 @@ JwlTotalPurchases : Number : 20216
     Returns: Number : Any
     JpCountKind = Count($$JwlRef)
 
-[Export: JpAlertDashboardExport]
-    Title: <1000, "Dashboard - Pending Work">
+[Report: JpAlertDashboardExport]
+    Title : <1000, "Dashboard - Pending Work">
     Repeat: Over: JpAlertDashboard
-    Export Title: Detail
-    Export: Value: $$JwlKind
-    Export: Value: $$JwlRef
-    Export: Value: $$JwlRepRef
-    Export: Value: $$JwlJobRef
-    Export: Value: $JwlOrdStatus
-    Export: Value: $JwlRepStatus
-    Export: Value: $JwlJobBalWt
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpAlertDashboardExportForm
 
+[Form: JpAlertDashboardExportForm]
+    Parts : JpAlertDashboardExportPart
 
-; =============================================================================
-;  CARD 4 - INVENTORY  (item level)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpAlertDashboardExportPart]
+    XMLTag : "Row"
+    Lines : JpAlertDashboardExportLine
+
+[Line: JpAlertDashboardExportLine]
+    Field : JpAlertDashboardExportF1
+    Field : JpAlertDashboardExportF2
+    Field : JpAlertDashboardExportF3
+    Field : JpAlertDashboardExportF4
+    Field : JpAlertDashboardExportF5
+    Field : JpAlertDashboardExportF6
+    Field : JpAlertDashboardExportF7
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpAlertDashboardExportF1]
+    Set As : $$JwlKind
+    XMLAttr : "JwlKind"
+
+[Field: JpAlertDashboardExportF2]
+    Set As : $$JwlRef
+    XMLAttr : "JwlRef"
+
+[Field: JpAlertDashboardExportF3]
+    Set As : $$JwlRepRef
+    XMLAttr : "JwlRepRef"
+
+[Field: JpAlertDashboardExportF4]
+    Set As : $$JwlJobRef
+    XMLAttr : "JwlJobRef"
+
+[Field: JpAlertDashboardExportF5]
+    Set As : $JwlOrdStatus
+    XMLAttr : "JwlOrdStatus"
+
+[Field: JpAlertDashboardExportF6]
+    Set As : $JwlRepStatus
+    XMLAttr : "JwlRepStatus"
+
+[Field: JpAlertDashboardExportF7]
+    Set As : $JwlJobBalWt
+    XMLAttr : "JwlJobBalWt"
+
 [Collection: Report: JpInvDashboard]
     Source: JpInvDashboardSQL
     Title: <1000,###,#a##"  DASHBOARD 4 of 4  -  INVENTORY AND STOCK VALUE">
@@ -15694,16 +17581,59 @@ JwlTotalPurchases : Number : 20216
 [Field: JpInvDashboardPrintLine48F1]
     Set As : "Gold, Silver and Platinum weights individually: see the Metal / Purity rows above, or Gateway > Jewellery > Inventory Reports > Metal-wise Stock."
     Style : JpFontBold
-[Export: JpInvDashboardExport]
-    Title: <1000, "Dashboard - Inventory">
+[Report: JpInvDashboardExport]
+    Title : <1000, "Dashboard - Inventory">
     Repeat: Over: JpInvDashboard
-    Export Title: Detail
-    Export: Value: $$JwlMetal
-    Export: Value: $$JwlPur
-    Export: Value: $$JwlPcs
-    Export: Value: $$JwlWt
-    Export: Value: $$JwlCarat
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpInvDashboardExportForm
+
+[Form: JpInvDashboardExportForm]
+    Parts : JpInvDashboardExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpInvDashboardExportPart]
+    XMLTag : "Row"
+    Lines : JpInvDashboardExportLine
+
+[Line: JpInvDashboardExportLine]
+    Field : JpInvDashboardExportF1
+    Field : JpInvDashboardExportF2
+    Field : JpInvDashboardExportF3
+    Field : JpInvDashboardExportF4
+    Field : JpInvDashboardExportF5
+    Field : JpInvDashboardExportF6
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpInvDashboardExportF1]
+    Set As : $$JwlMetal
+    XMLAttr : "JwlMetal"
+
+[Field: JpInvDashboardExportF2]
+    Set As : $$JwlPur
+    XMLAttr : "JwlPur"
+
+[Field: JpInvDashboardExportF3]
+    Set As : $$JwlPcs
+    XMLAttr : "JwlPcs"
+
+[Field: JpInvDashboardExportF4]
+    Set As : $$JwlWt
+    XMLAttr : "JwlWt"
+
+[Field: JpInvDashboardExportF5]
+    Set As : $$JwlCarat
+    XMLAttr : "JwlCarat"
+
+[Field: JpInvDashboardExportF6]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
 
 ; -----------------------------------------------------------------------------
 ;; >>>>>>>>>>>>>>>>>>>>>>> BEGIN 13_Security.tdl <<<<<<<<<<<<<<<<<<<<<<
@@ -16061,40 +17991,46 @@ JwlRoleSetupDone : Logical : 20218
 [Variable: JpRoleMsg     : String]
 [Variable: JpRoleSelf    : String]
 
-[Screen: JpRoleSetupScreen]
-    Caption: "JadePro  ::  Role Setup"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpRoleSetupScreen]
+    Title : "JadePro  ::  Role Setup"
+    Form : JpRoleSetupScreenForm
+
+[Form: JpRoleSetupScreenForm]
+    Parts : JpRoleSetupScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpRoleSetupScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JADEPRO ROLE SETUP"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Map each Tally user name to a role:  TallyUserName|Role|TallyUserName|Role"
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpRoleSetupScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpRoleSetupScreenT2
+    Field : JpRoleSetupScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " CURRENT SESSION"
-    Style: JpSectionBox
+    Field : JpRoleSetupScreenT4
     Lines: 1, 1, 1
-    Text: "   Detected Tally user : " + JpBlankIfNull(JpUserName)
-    Text: "   Assigned role ...... : " + JpRoleSummary(JpBlankIfNull(JpUserRole))
-    Text: "   Detection source ... : " + JpRoleSource
-    Style: JpWarn
+    Field : JpRoleSetupScreenT5
+    Field : JpRoleSetupScreenT6
+    Field : JpRoleSetupScreenT7
 
     Line: Spacing
     Lines: 1
-    Text: " ROLE DEFINITIONS"
-    Style: JpSectionBox
+    Field : JpRoleSetupScreenT8
     Lines: 1, 1, 1, 1, 1
-    Text: "   Owner        - everything"
-    Text: "   Manager      - change rate, override rate, high discount, delete, view profit, barcode"
-    Text: "   Accountant   - purchase, karigar, reports, change rate, delete, barcode"
-    Text: "   Salesperson  - sell and close counter only. No cost, no profit, no rates."
-    Text: "   Cashier      - billing and collections only."
+    Field : JpRoleSetupScreenT9
+    Field : JpRoleSetupScreenT10
+    Field : JpRoleSetupScreenT11
+    Field : JpRoleSetupScreenT12
+    Field : JpRoleSetupScreenT13
 
     Line: Spacing
     Lines: 1, 1
@@ -16107,12 +18043,65 @@ JwlRoleSetupDone : Logical : 20218
 
     Line: Spacing
     Lines: 1
-    Text: "Example:  Owner,Owner|Meera,Manager|Ravi,Salesperson|Priya,Cashier"
-    Style: JpMuted
+    Field : JpRoleSetupScreenT14
     Lines: 1
     Button: <Save Mapping (F2), Key: F2, Action: JpRoleSave>
     Button: <Reload My Role (F7), Key: F7, Action: JpRoleReload>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpRoleSetupScreenT1]
+    Set As : "           JADEPRO ROLE SETUP"
+    Style : JpTitle
+
+[Field: JpRoleSetupScreenT2]
+    Set As : "Map each Tally user name to a role:  TallyUserName|Role|TallyUserName|Role"
+    Style : JpMuted
+
+[Field: JpRoleSetupScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpRoleSetupScreenT4]
+    Set As : " CURRENT SESSION"
+    Style : JpSectionBox
+
+[Field: JpRoleSetupScreenT5]
+    Set As : "   Detected Tally user : " + JpBlankIfNull(JpUserName)
+    Style : JpWarn
+
+[Field: JpRoleSetupScreenT6]
+    Set As : "   Assigned role ...... : " + JpRoleSummary(JpBlankIfNull(JpUserRole))
+    Style : JpWarn
+
+[Field: JpRoleSetupScreenT7]
+    Set As : "   Detection source ... : " + JpRoleSource
+    Style : JpWarn
+
+[Field: JpRoleSetupScreenT8]
+    Set As : " ROLE DEFINITIONS"
+    Style : JpSectionBox
+
+[Field: JpRoleSetupScreenT9]
+    Set As : "   Owner        - everything"
+
+[Field: JpRoleSetupScreenT10]
+    Set As : "   Manager      - change rate, override rate, high discount, delete, view profit, barcode"
+
+[Field: JpRoleSetupScreenT11]
+    Set As : "   Accountant   - purchase, karigar, reports, change rate, delete, barcode"
+
+[Field: JpRoleSetupScreenT12]
+    Set As : "   Salesperson  - sell and close counter only. No cost, no profit, no rates."
+
+[Field: JpRoleSetupScreenT13]
+    Set As : "   Cashier      - billing and collections only."
+
+[Field: JpRoleSetupScreenT14]
+    Set As : "Example:  Owner,Owner|Meera,Manager|Ravi,Salesperson|Priya,Cashier"
+    Style : JpMuted
 
 [Function: JpRoleSave]
     Returns: Integer : Any
@@ -16175,19 +18164,28 @@ JwlSalesTargets : String : 20219
 [Variable: JpTargetMapEdit : String]
 [Variable: JpTargetMsg     : String]
 
-[Screen: JpTargetScreen]
-    Caption: "JadePro  ::  Salesperson Monthly Targets"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpTargetScreen]
+    Title : "JadePro  ::  Salesperson Monthly Targets"
+    Form : JpTargetScreenForm
+
+[Form: JpTargetScreenForm]
+    Parts : JpTargetScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpTargetScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           SALESPERSON MONTHLY TARGETS"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Format:  SalespersonName,Target|SalespersonName,Target"
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpTargetScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpTargetScreenT2
+    Field : JpTargetScreenT3
     Lines: 1, 1, 1
     Field: <Field-Id: JpTargetMapEdit, Label: "Target Map">
         Width: 100
@@ -16195,11 +18193,29 @@ JwlSalesTargets : String : 20219
     Field: <Field-Id: JpTargetMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "Example:  Ravi,250000|Priya,180000"
-    Style: JpMuted
+    Field : JpTargetScreenT4
     Lines: 1
     Button: <Save Targets (F2), Key: F2, Action: JpTargetSave>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpTargetScreenT1]
+    Set As : "           SALESPERSON MONTHLY TARGETS"
+    Style : JpTitle
+
+[Field: JpTargetScreenT2]
+    Set As : "Format:  SalespersonName,Target|SalespersonName,Target"
+    Style : JpMuted
+
+[Field: JpTargetScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpTargetScreenT4]
+    Set As : "Example:  Ravi,250000|Priya,180000"
+    Style : JpMuted
 
 [Function: JpTargetSave]
     Returns: Integer : Any
@@ -16978,24 +18994,32 @@ JwlSalesTargets : String : 20219
     }
     JpInstAppend = l + "\n" + Param(1)
 
-[Screen: JpInstallerScreen]
-    Caption: "JadePro  ::  Setup"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpInstallerScreen]
+    Title : "JadePro  ::  Setup"
+    Form : JpInstallerScreenForm
+
+[Form: JpInstallerScreenForm]
+    Parts : JpInstallerScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpInstallerScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JADEPRO JEWELLERY  -  SETUP"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Nothing is created until you press F2. Run this once, in a new company or just before going live."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpInstallerScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpInstallerScreenT2
+    Field : JpInstallerScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " COMPANY DETAILS  (needed on the invoice)"
-    Style: JpSectionBox
+    Field : JpInstallerScreenT4
     Lines: 1, 1, 1, 1, 1
     Field: <Field-Id: ##JwlShopName, Label: "Shop Name">
         Width: 250
@@ -17015,8 +19039,7 @@ JwlSalesTargets : String : 20219
 
     Line: Spacing
     Lines: 1
-    Text: " BUSINESS RULES"
-    Style: JpSectionBox
+    Field : JpInstallerScreenT5
     Lines: 1, 1, 1, 1
     Field: <Field-Id: ##JwlDefaultGstRate, Label: "Default GST Rate %">
         Width: 250
@@ -17033,8 +19056,7 @@ JwlSalesTargets : String : 20219
 
     Line: Spacing
     Lines: 1
-    Text: " CREATE MASTERS"
-    Style: JpSectionBox
+    Field : JpInstallerScreenT6
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpInstGroup, Label: "Ledger Group to Create">
         Width: 250
@@ -17054,17 +19076,13 @@ JwlSalesTargets : String : 20219
     Field: <Field-Id: JpInstMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "One click creates the FULL standard set below. Create individual masters from this screen only when you want something different."
-    Style: JpMuted
+    Field : JpInstallerScreenT7
 
     Line: Spacing
     Lines: 1, 1
-    Text: "Groups : Jewellery Metal Stock  |  Old Gold  |  Karigar  |  Jewellers  |  Repair Income"
-    Style: JpMuted
-    Text: "Ledgers: Gold / Silver / Platinum / Diamond / Loose Stones / Old Gold Received / Karigar Payable / Karigar Metal Held / Customer Advance / Jewellery Purchase / Jewellery Sales / Repairs Income / Order Advance Received"
-    Style: JpMuted
-    Text: "Godowns: Main Counter  |  Store Room  |  Karigar Workshop"
-    Style: JpMuted
+    Field : JpInstallerScreenT8
+    Field : JpInstallerScreenT9
+    Field : JpInstallerScreenT10
 
     Line: Spacing
     Lines: 1
@@ -17078,6 +19096,49 @@ JwlSalesTargets : String : 20219
 ; =============================================================================
 
 ; Creates the whole standard master set in one pass.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpInstallerScreenT1]
+    Set As : "           JADEPRO JEWELLERY  -  SETUP"
+    Style : JpTitle
+
+[Field: JpInstallerScreenT2]
+    Set As : "Nothing is created until you press F2. Run this once, in a new company or just before going live."
+    Style : JpMuted
+
+[Field: JpInstallerScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpInstallerScreenT4]
+    Set As : " COMPANY DETAILS  (needed on the invoice)"
+    Style : JpSectionBox
+
+[Field: JpInstallerScreenT5]
+    Set As : " BUSINESS RULES"
+    Style : JpSectionBox
+
+[Field: JpInstallerScreenT6]
+    Set As : " CREATE MASTERS"
+    Style : JpSectionBox
+
+[Field: JpInstallerScreenT7]
+    Set As : "One click creates the FULL standard set below. Create individual masters from this screen only when you want something different."
+    Style : JpMuted
+
+[Field: JpInstallerScreenT8]
+    Set As : "Groups : Jewellery Metal Stock  |  Old Gold  |  Karigar  |  Jewellers  |  Repair Income"
+    Style : JpMuted
+
+[Field: JpInstallerScreenT9]
+    Set As : "Ledgers: Gold / Silver / Platinum / Diamond / Loose Stones / Old Gold Received / Karigar Payable / Karigar Metal Held / Customer Advance / Jewellery Purchase / Jewellery Sales / Repairs Income / Order Advance Received"
+    Style : JpMuted
+
+[Field: JpInstallerScreenT10]
+    Set As : "Godowns: Main Counter  |  Store Room  |  Karigar Workshop"
+    Style : JpMuted
+
 [Function: JpInstStandard]
     Returns: Integer : Any
     Var: log : String

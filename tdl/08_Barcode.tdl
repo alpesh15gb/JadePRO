@@ -196,19 +196,28 @@
 [Variable: JpTagSerial: Number]
 [Variable: JpTagMsg   : String]
 
-[Screen: JpTagScreen]
-    Caption: "JadePro  ::  Jewellery Tag Printing"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpTagScreen]
+    Title : "JadePro  ::  Jewellery Tag Printing"
+    Form : JpTagScreenForm
+
+[Form: JpTagScreenForm]
+    Parts : JpTagScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpTagScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JEWELLERY TAG  /  BARCODE"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Tags carry shop details, barcode, design, purity, gross / net / stone weight and MRP."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpTagScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpTagScreenT2
+    Field : JpTagScreenT3
 
     Line: Spacing
     Lines: 1, 1, 1
@@ -227,8 +236,7 @@
     Field: <Field-Id: JpTagMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "Scheme: " + JpBcPrefix() + "-CATEGORY-DESIGN-WEIGHT-SERIAL"
-    Style: JpMuted
+    Field : JpTagScreenT4
 
     Line: Spacing
     Lines: 1
@@ -236,6 +244,25 @@
     Button: <Print Tag (F2), Key: F2, Action: JpTagPrint>
     Button: <Barcode Register (F8), Key: F8, Action: JpTagRegister>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpTagScreenT1]
+    Set As : "           JEWELLERY TAG  /  BARCODE"
+    Style : JpTitle
+
+[Field: JpTagScreenT2]
+    Set As : "Tags carry shop details, barcode, design, purity, gross / net / stone weight and MRP."
+    Style : JpMuted
+
+[Field: JpTagScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpTagScreenT4]
+    Set As : "Scheme: " + JpBcPrefix() + "-CATEGORY-DESIGN-WEIGHT-SERIAL"
+    Style : JpMuted
 
 [Function: JpTagGenerate]
     Returns: Integer : Any
@@ -704,16 +731,71 @@
 
 [Field: JpBarcodeRegPrintLine49F1]
     Style : JpTotal
-[Export: JpBarcodeRegExport]
-    Title: <1000, "Barcode Register">
+[Report: JpBarcodeRegExport]
+    Title : <1000, "Barcode Register">
     Repeat: Over: JpBarcodeReg
-    Export Title: Detail
-    Export: Value: $JwlBarcode
-    Export: Value: $$NAME
-    Export: Value: $JwlDesignNo
-    Export: Value: $JwlPurity
-    Export: Value: $JwlGrossWt
-    Export: Value: $JwlNetMetalWt
-    Export: Value: $JwlStoneWt
-    Export: Value: $JwlHuid
-    Export: Value: $JwlMRP
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpBarcodeRegExportForm
+
+[Form: JpBarcodeRegExportForm]
+    Parts : JpBarcodeRegExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpBarcodeRegExportPart]
+    XMLTag : "Row"
+    Lines : JpBarcodeRegExportLine
+
+[Line: JpBarcodeRegExportLine]
+    Field : JpBarcodeRegExportF1
+    Field : JpBarcodeRegExportF2
+    Field : JpBarcodeRegExportF3
+    Field : JpBarcodeRegExportF4
+    Field : JpBarcodeRegExportF5
+    Field : JpBarcodeRegExportF6
+    Field : JpBarcodeRegExportF7
+    Field : JpBarcodeRegExportF8
+    Field : JpBarcodeRegExportF9
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpBarcodeRegExportF1]
+    Set As : $JwlBarcode
+    XMLAttr : "JwlBarcode"
+
+[Field: JpBarcodeRegExportF2]
+    Set As : $$NAME
+    XMLAttr : "NAME"
+
+[Field: JpBarcodeRegExportF3]
+    Set As : $JwlDesignNo
+    XMLAttr : "JwlDesignNo"
+
+[Field: JpBarcodeRegExportF4]
+    Set As : $JwlPurity
+    XMLAttr : "JwlPurity"
+
+[Field: JpBarcodeRegExportF5]
+    Set As : $JwlGrossWt
+    XMLAttr : "JwlGrossWt"
+
+[Field: JpBarcodeRegExportF6]
+    Set As : $JwlNetMetalWt
+    XMLAttr : "JwlNetMetalWt"
+
+[Field: JpBarcodeRegExportF7]
+    Set As : $JwlStoneWt
+    XMLAttr : "JwlStoneWt"
+
+[Field: JpBarcodeRegExportF8]
+    Set As : $JwlHuid
+    XMLAttr : "JwlHuid"
+
+[Field: JpBarcodeRegExportF9]
+    Set As : $JwlMRP
+    XMLAttr : "JwlMRP"

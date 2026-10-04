@@ -401,28 +401,70 @@
 [Field: JpTallyTagBulkPrintLine17F1]
     Set As : "Hallmarked metal must carry a valid BIS HUID."
     Style : JpBarcodeSub
-[Export: JpTallyTagBulkExport]
-    Title: <1000, "Bulk Tag Listing">
+[Report: JpTallyTagBulkExport]
+    Title : <1000, "Bulk Tag Listing">
     Repeat: Over: JpTallyTagBulk
-    Export Title: Detail
-    Export: Value: $JwlBarcode
-    Export: Value: $$JwlItemName
-    Export: Value: $JwlDesignNo
-    Export: Value: $JwlPurity
-    Export: Value: $JwlGrossWt
-    Export: Value: $JwlNetMetalWt
-    Export: Value: $JwlHuid
-    Export: Value: $JwlMRP
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpTallyTagBulkExportForm
 
+[Form: JpTallyTagBulkExportForm]
+    Parts : JpTallyTagBulkExportPart
 
-; =============================================================================
-;  SCANNER INTEGRATION
-;  A keyboard-wedge scanner types the barcode into the Item field and Tally
-;  resolves it by name. This screen mints a missing barcode for a named item
-;  and prints tags, and explains the scanner wiring to the operator.
-;  Printing only READS the stored value - minting is an explicit operator
-;  action, never a side effect of rendering a report.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpTallyTagBulkExportPart]
+    XMLTag : "Row"
+    Lines : JpTallyTagBulkExportLine
+
+[Line: JpTallyTagBulkExportLine]
+    Field : JpTallyTagBulkExportF1
+    Field : JpTallyTagBulkExportF2
+    Field : JpTallyTagBulkExportF3
+    Field : JpTallyTagBulkExportF4
+    Field : JpTallyTagBulkExportF5
+    Field : JpTallyTagBulkExportF6
+    Field : JpTallyTagBulkExportF7
+    Field : JpTallyTagBulkExportF8
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpTallyTagBulkExportF1]
+    Set As : $JwlBarcode
+    XMLAttr : "JwlBarcode"
+
+[Field: JpTallyTagBulkExportF2]
+    Set As : $$JwlItemName
+    XMLAttr : "JwlItemName"
+
+[Field: JpTallyTagBulkExportF3]
+    Set As : $JwlDesignNo
+    XMLAttr : "JwlDesignNo"
+
+[Field: JpTallyTagBulkExportF4]
+    Set As : $JwlPurity
+    XMLAttr : "JwlPurity"
+
+[Field: JpTallyTagBulkExportF5]
+    Set As : $JwlGrossWt
+    XMLAttr : "JwlGrossWt"
+
+[Field: JpTallyTagBulkExportF6]
+    Set As : $JwlNetMetalWt
+    XMLAttr : "JwlNetMetalWt"
+
+[Field: JpTallyTagBulkExportF7]
+    Set As : $JwlHuid
+    XMLAttr : "JwlHuid"
+
+[Field: JpTallyTagBulkExportF8]
+    Set As : $JwlMRP
+    XMLAttr : "JwlMRP"
+
 [Variable: JpTallyMsg     : String]
 [Variable: JpTallySymbTxt : String]
 [Variable: JpTallyMintItem : String]
@@ -436,39 +478,44 @@
     }
     JpTallySymbologyText = "Code 128 font - install a Code 128 font and select it for this print style"
 
-[Screen: JpTallyBarcodeScreen]
-    Caption: "JadePro  ::  Barcode Printing (Tally-native)"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpTallyBarcodeScreen]
+    Title : "JadePro  ::  Barcode Printing (Tally-native)"
+    Form : JpTallyBarcodeScreenForm
+
+[Form: JpTallyBarcodeScreenForm]
+    Parts : JpTallyBarcodeScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpTallyBarcodeScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           BARCODE PRINTING  -  TALLY NATIVE"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Code 128 tags printed by Tally itself. No external software, no driver."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpTallyBarcodeScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpTallyBarcodeScreenT2
+    Field : JpTallyBarcodeScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " RENDERING PATH"
-    Style: JpSectionBox
+    Field : JpTallyBarcodeScreenT4
     Lines: 1, 1, 1
-    Text: "   Active path ........ " + JpTallySymbologyText()
-    Text: "   Barcode value ...... generated ONCE in 08_Barcode.tdl and shared with the Zebra module."
-    Text: "   Changing a path .... edit Constant JpUseTdlBarcode() at the top of 08a_BarcodeTally.tdl."
-    Style: JpMuted
+    Field : JpTallyBarcodeScreenT5
+    Field : JpTallyBarcodeScreenT6
+    Field : JpTallyBarcodeScreenT7
 
     Line: Spacing
     Lines: 1
-    Text: " SCANNER AT THE COUNTER"
-    Style: JpSectionBox
+    Field : JpTallyBarcodeScreenT8
     Lines: 1, 1, 1
-    Text: "   A USB barcode scanner is a keyboard. It types the barcode and presses Enter."
-    Text: "   Leave the Item field focused in the Sales voucher and simply scan."
-    Text: "   Every sales line already carries JwlLnBarcode, so the scanned piece is recorded on the invoice."
-    Style: JpMuted
+    Field : JpTallyBarcodeScreenT9
+    Field : JpTallyBarcodeScreenT10
+    Field : JpTallyBarcodeScreenT11
 
     Line: Spacing
     Lines: 1, 1
@@ -478,12 +525,10 @@
 
     Line: Spacing
     Lines: 1
-    Text: " MINT A MISSING BARCODE"
-    Style: JpSectionBox
+    Field : JpTallyBarcodeScreenT12
     Lines: 1, 1, 1
-    Text: "   Tag printing only READS the stored barcode. If a piece has none, mint one here first"
-    Text: "   and it is written to the item - the Zebra module then prints the identical value."
-    Style: JpMuted
+    Field : JpTallyBarcodeScreenT13
+    Field : JpTallyBarcodeScreenT14
     Lines: 1, 1
     Field: <Field-Id: JpTallyMintItem, Label: "Item name">
         Width: 40
@@ -499,6 +544,65 @@
 ; JpBarcodeEnsure is idempotent: an item that already has a valid barcode is
 ; returned unchanged, so pressing this repeatedly can never renumber a piece
 ; that is already on the shelf.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpTallyBarcodeScreenT1]
+    Set As : "           BARCODE PRINTING  -  TALLY NATIVE"
+    Style : JpTitle
+
+[Field: JpTallyBarcodeScreenT2]
+    Set As : "Code 128 tags printed by Tally itself. No external software, no driver."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT4]
+    Set As : " RENDERING PATH"
+    Style : JpSectionBox
+
+[Field: JpTallyBarcodeScreenT5]
+    Set As : "   Active path ........ " + JpTallySymbologyText()
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT6]
+    Set As : "   Barcode value ...... generated ONCE in 08_Barcode.tdl and shared with the Zebra module."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT7]
+    Set As : "   Changing a path .... edit Constant JpUseTdlBarcode() at the top of 08a_BarcodeTally.tdl."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT8]
+    Set As : " SCANNER AT THE COUNTER"
+    Style : JpSectionBox
+
+[Field: JpTallyBarcodeScreenT9]
+    Set As : "   A USB barcode scanner is a keyboard. It types the barcode and presses Enter."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT10]
+    Set As : "   Leave the Item field focused in the Sales voucher and simply scan."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT11]
+    Set As : "   Every sales line already carries JwlLnBarcode, so the scanned piece is recorded on the invoice."
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT12]
+    Set As : " MINT A MISSING BARCODE"
+    Style : JpSectionBox
+
+[Field: JpTallyBarcodeScreenT13]
+    Set As : "   Tag printing only READS the stored barcode. If a piece has none, mint one here first"
+    Style : JpMuted
+
+[Field: JpTallyBarcodeScreenT14]
+    Set As : "   and it is written to the item - the Zebra module then prints the identical value."
+    Style : JpMuted
+
 [Function: JpTallyMintAction]
     Returns: Integer : Any
     Var: n : String, bc : String

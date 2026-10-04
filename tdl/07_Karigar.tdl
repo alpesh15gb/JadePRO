@@ -234,24 +234,32 @@ Alter: Ledger
 [Variable: JpJobStatusTxt  : String]
 [Variable: JpJobMsg        : String]
 
-[Screen: JpKarigarScreen]
-    Caption: "JadePro  ::  Karigar Job Work"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpKarigarScreen]
+    Title : "JadePro  ::  Karigar Job Work"
+    Form : JpKarigarScreenForm
+
+[Form: JpKarigarScreenForm]
+    Parts : JpKarigarScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpKarigarScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           KARIGAR  /  JOB WORK"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Balance = Metal Issued - (Net Received + Wastage Given)      Labour is payable to the karigar."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpKarigarScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpKarigarScreenT2
+    Field : JpKarigarScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " JOB DETAILS"
-    Style: JpSectionBox
+    Field : JpKarigarScreenT4
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpJobMode, Label: "Job Type *">
         Width: 250
@@ -276,8 +284,7 @@ Alter: Ledger
 
     Line: Spacing
     Lines: 1
-    Text: " METAL ISSUED"
-    Style: JpSectionBox
+    Field : JpKarigarScreenT5
     Lines: 1, 1, 1
     Field: <Field-Id: JpJobIssuedDt, Label: "Date Issued">
         Width: 250
@@ -292,8 +299,7 @@ Alter: Ledger
 
     Line: Spacing
     Lines: 1
-    Text: " JEWELLERY RECEIVED BACK"
-    Style: JpSectionBox
+    Field : JpKarigarScreenT6
     Lines: 1, 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpJobRecvGross, Label: "Gross Received">
         Width: 250
@@ -317,8 +323,7 @@ Alter: Ledger
 
     Line: Spacing
     Lines: 1
-    Text: " RESULT"
-    Style: JpSectionBox
+    Field : JpKarigarScreenT7
     Lines: 1, 1, 1
     Field: <Field-Id: JpJobBalanceWt, Label: "METAL STILL WITH KARIGAR">
         Width: 250
@@ -338,6 +343,37 @@ Alter: Ledger
     Button: <Save Job Entry (F2), Key: F2, Action: JpJobSave>
     Button: <Karigar Outstanding (F8), Key: F8, Action: JpJobOutstanding>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpKarigarScreenT1]
+    Set As : "           KARIGAR  /  JOB WORK"
+    Style : JpTitle
+
+[Field: JpKarigarScreenT2]
+    Set As : "Balance = Metal Issued - (Net Received + Wastage Given)      Labour is payable to the karigar."
+    Style : JpMuted
+
+[Field: JpKarigarScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpKarigarScreenT4]
+    Set As : " JOB DETAILS"
+    Style : JpSectionBox
+
+[Field: JpKarigarScreenT5]
+    Set As : " METAL ISSUED"
+    Style : JpSectionBox
+
+[Field: JpKarigarScreenT6]
+    Set As : " JEWELLERY RECEIVED BACK"
+    Style : JpSectionBox
+
+[Field: JpKarigarScreenT7]
+    Set As : " RESULT"
+    Style : JpSectionBox
 
 [Collection: Source: JpJobModePick]
     Data: JpJobModePickRow
@@ -779,14 +815,61 @@ Alter: Ledger
 
 [Field: JpKarigarOutstandingPrintLine46F1]
     Style : JpTotal
-[Export: JpKarigarOutstandingExport]
-    Title: <1000, "Karigar Outstanding">
+[Report: JpKarigarOutstandingExport]
+    Title : <1000, "Karigar Outstanding">
     Repeat: Over: JpKarigarOutstanding
-    Export Title: Detail
-    Export: Value: $JwlJobKarigar
-    Export: Value: $JwlJobNo
-    Export: Value: $JwlJobIssuedWt
-    Export: Value: $JwlJobRecvNet
-    Export: Value: $JwlJobWastageWt
-    Export: Value: $JwlJobBalWt
-    Export: Value: $JwlJobLabour
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpKarigarOutstandingExportForm
+
+[Form: JpKarigarOutstandingExportForm]
+    Parts : JpKarigarOutstandingExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpKarigarOutstandingExportPart]
+    XMLTag : "Row"
+    Lines : JpKarigarOutstandingExportLine
+
+[Line: JpKarigarOutstandingExportLine]
+    Field : JpKarigarOutstandingExportF1
+    Field : JpKarigarOutstandingExportF2
+    Field : JpKarigarOutstandingExportF3
+    Field : JpKarigarOutstandingExportF4
+    Field : JpKarigarOutstandingExportF5
+    Field : JpKarigarOutstandingExportF6
+    Field : JpKarigarOutstandingExportF7
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpKarigarOutstandingExportF1]
+    Set As : $JwlJobKarigar
+    XMLAttr : "JwlJobKarigar"
+
+[Field: JpKarigarOutstandingExportF2]
+    Set As : $JwlJobNo
+    XMLAttr : "JwlJobNo"
+
+[Field: JpKarigarOutstandingExportF3]
+    Set As : $JwlJobIssuedWt
+    XMLAttr : "JwlJobIssuedWt"
+
+[Field: JpKarigarOutstandingExportF4]
+    Set As : $JwlJobRecvNet
+    XMLAttr : "JwlJobRecvNet"
+
+[Field: JpKarigarOutstandingExportF5]
+    Set As : $JwlJobWastageWt
+    XMLAttr : "JwlJobWastageWt"
+
+[Field: JpKarigarOutstandingExportF6]
+    Set As : $JwlJobBalWt
+    XMLAttr : "JwlJobBalWt"
+
+[Field: JpKarigarOutstandingExportF7]
+    Set As : $JwlJobLabour
+    XMLAttr : "JwlJobLabour"

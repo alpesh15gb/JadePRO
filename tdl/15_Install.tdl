@@ -45,24 +45,32 @@
     }
     JpInstAppend = l + "\n" + Param(1)
 
-[Screen: JpInstallerScreen]
-    Caption: "JadePro  ::  Setup"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpInstallerScreen]
+    Title : "JadePro  ::  Setup"
+    Form : JpInstallerScreenForm
+
+[Form: JpInstallerScreenForm]
+    Parts : JpInstallerScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpInstallerScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JADEPRO JEWELLERY  -  SETUP"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Nothing is created until you press F2. Run this once, in a new company or just before going live."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpInstallerScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpInstallerScreenT2
+    Field : JpInstallerScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " COMPANY DETAILS  (needed on the invoice)"
-    Style: JpSectionBox
+    Field : JpInstallerScreenT4
     Lines: 1, 1, 1, 1, 1
     Field: <Field-Id: ##JwlShopName, Label: "Shop Name">
         Width: 250
@@ -82,8 +90,7 @@
 
     Line: Spacing
     Lines: 1
-    Text: " BUSINESS RULES"
-    Style: JpSectionBox
+    Field : JpInstallerScreenT5
     Lines: 1, 1, 1, 1
     Field: <Field-Id: ##JwlDefaultGstRate, Label: "Default GST Rate %">
         Width: 250
@@ -100,8 +107,7 @@
 
     Line: Spacing
     Lines: 1
-    Text: " CREATE MASTERS"
-    Style: JpSectionBox
+    Field : JpInstallerScreenT6
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpInstGroup, Label: "Ledger Group to Create">
         Width: 250
@@ -121,17 +127,13 @@
     Field: <Field-Id: JpInstMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "One click creates the FULL standard set below. Create individual masters from this screen only when you want something different."
-    Style: JpMuted
+    Field : JpInstallerScreenT7
 
     Line: Spacing
     Lines: 1, 1
-    Text: "Groups : Jewellery Metal Stock  |  Old Gold  |  Karigar  |  Jewellers  |  Repair Income"
-    Style: JpMuted
-    Text: "Ledgers: Gold / Silver / Platinum / Diamond / Loose Stones / Old Gold Received / Karigar Payable / Karigar Metal Held / Customer Advance / Jewellery Purchase / Jewellery Sales / Repairs Income / Order Advance Received"
-    Style: JpMuted
-    Text: "Godowns: Main Counter  |  Store Room  |  Karigar Workshop"
-    Style: JpMuted
+    Field : JpInstallerScreenT8
+    Field : JpInstallerScreenT9
+    Field : JpInstallerScreenT10
 
     Line: Spacing
     Lines: 1
@@ -145,6 +147,49 @@
 ; =============================================================================
 
 ; Creates the whole standard master set in one pass.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpInstallerScreenT1]
+    Set As : "           JADEPRO JEWELLERY  -  SETUP"
+    Style : JpTitle
+
+[Field: JpInstallerScreenT2]
+    Set As : "Nothing is created until you press F2. Run this once, in a new company or just before going live."
+    Style : JpMuted
+
+[Field: JpInstallerScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpInstallerScreenT4]
+    Set As : " COMPANY DETAILS  (needed on the invoice)"
+    Style : JpSectionBox
+
+[Field: JpInstallerScreenT5]
+    Set As : " BUSINESS RULES"
+    Style : JpSectionBox
+
+[Field: JpInstallerScreenT6]
+    Set As : " CREATE MASTERS"
+    Style : JpSectionBox
+
+[Field: JpInstallerScreenT7]
+    Set As : "One click creates the FULL standard set below. Create individual masters from this screen only when you want something different."
+    Style : JpMuted
+
+[Field: JpInstallerScreenT8]
+    Set As : "Groups : Jewellery Metal Stock  |  Old Gold  |  Karigar  |  Jewellers  |  Repair Income"
+    Style : JpMuted
+
+[Field: JpInstallerScreenT9]
+    Set As : "Ledgers: Gold / Silver / Platinum / Diamond / Loose Stones / Old Gold Received / Karigar Payable / Karigar Metal Held / Customer Advance / Jewellery Purchase / Jewellery Sales / Repairs Income / Order Advance Received"
+    Style : JpMuted
+
+[Field: JpInstallerScreenT10]
+    Set As : "Godowns: Main Counter  |  Store Room  |  Karigar Workshop"
+    Style : JpMuted
+
 [Function: JpInstStandard]
     Returns: Integer : Any
     Var: log : String

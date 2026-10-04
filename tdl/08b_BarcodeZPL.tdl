@@ -204,19 +204,28 @@ JplZplSettings : String : 20176
 [Variable: JpZplMsg     : String]
 [Variable: JpZplMintItem : String]
 
-[Screen: JpZplConfigScreen]
-    Caption: "JadePro  ::  Zebra Label Setup"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpZplConfigScreen]
+    Title : "JadePro  ::  Zebra Label Setup"
+    Form : JpZplConfigScreenForm
+
+[Form: JpZplConfigScreenForm]
+    Parts : JpZplConfigScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpZplConfigScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           ZEBRA LABEL SETUP"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Profile format:  dpi=203;w=54;h=40;dark=12;speed=4;copies=1;bcY=200;bcH=64;..."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpZplConfigScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpZplConfigScreenT2
+    Field : JpZplConfigScreenT3
 
     Line: Spacing
     Lines: 1, 1, 1
@@ -226,32 +235,28 @@ JplZplSettings : String : 20176
 
     Line: Spacing
     Lines: 1
-    Text: " WHAT EACH SETTING MEANS"
-    Style: JpSectionBox
+    Field : JpZplConfigScreenT4
     Lines: 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-    Text: "   dpi ....... resolution. 203 -> 8 dots/mm. 300 -> 12 dots/mm. Default 203."
-    Text: "   w, h ...... label width and length in MILLIMETRES. Default 54 x 40."
-    Text: "   dark ...... ^MD darkness, 0 (lightest) to 30 (darkest). Default 12."
-    Text: "   speed ..... ^PR print speed in inches/second. Default 4."
-    Text: "   copies .... ^PQ copies per label. Default 1."
-    Text: "   bcY ....... vertical position of the barcode, in DOTS from the top."
-    Text: "   bcH ....... barcode height in DOTS. 64 dots = 8 mm at 203 dpi."
-    Text: "   shopY ..... vertical position of the shop name line, in DOTS."
-    Text: "   addrY ..... vertical position of the shop address line, in DOTS."
-    Text: "   itemY ..... vertical position of the item name line, in DOTS."
-    Text: "   desY ...... vertical position of the design number line, in DOTS."
-    Text: "   purY ...... vertical position of the purity line, in DOTS."
-    Text: "   wtY ....... vertical position of the weight line, in DOTS."
-    Text: "   huidY ..... vertical position of the HUID line, in DOTS."
-    Text: "   mrpY ...... vertical position of the MRP line, in DOTS."
-    Style: JpMuted
+    Field : JpZplConfigScreenT5
+    Field : JpZplConfigScreenT6
+    Field : JpZplConfigScreenT7
+    Field : JpZplConfigScreenT8
+    Field : JpZplConfigScreenT9
+    Field : JpZplConfigScreenT10
+    Field : JpZplConfigScreenT11
+    Field : JpZplConfigScreenT12
+    Field : JpZplConfigScreenT13
+    Field : JpZplConfigScreenT14
+    Field : JpZplConfigScreenT15
+    Field : JpZplConfigScreenT16
+    Field : JpZplConfigScreenT17
+    Field : JpZplConfigScreenT18
+    Field : JpZplConfigScreenT19
 
     Line: Spacing
     Lines: 1
-    Text: "   Save, then export from Zebra Label Print Queue and run:"
-    Style: JpMuted
-    Text: "   node 00_Build/zpl-emit.mjs labels.csv"
-    Style: JpMuted
+    Field : JpZplConfigScreenT20
+    Field : JpZplConfigScreenT21
 
     Line: Spacing
     Lines: 1, 1
@@ -261,13 +266,11 @@ JplZplSettings : String : 20176
 
     Line: Spacing
     Lines: 1
-    Text: " MINT A MISSING BARCODE"
-    Style: JpSectionBox
+    Field : JpZplConfigScreenT22
     Lines: 1, 1, 1
-    Text: "   The queue exports the item's stored barcode. A piece with none exports empty and"
-    Text: "   zpl-emit.mjs skips it, so mint one here first - the Tally tag module then prints"
-    Text: "   the identical value."
-    Style: JpMuted
+    Field : JpZplConfigScreenT23
+    Field : JpZplConfigScreenT24
+    Field : JpZplConfigScreenT25
     Lines: 1, 1
     Field: <Field-Id: JpZplMintItem, Label: "Item name">
         Width: 40
@@ -279,6 +282,109 @@ JplZplSettings : String : 20176
     Button: <Save Profile (F2), Key: F2, Action: JpZplSaveProfile>
     Button: <Print Queue (F4), Key: F4, Action: JpZplOpenQueue>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpZplConfigScreenT1]
+    Set As : "           ZEBRA LABEL SETUP"
+    Style : JpTitle
+
+[Field: JpZplConfigScreenT2]
+    Set As : "Profile format:  dpi=203;w=54;h=40;dark=12;speed=4;copies=1;bcY=200;bcH=64;..."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT4]
+    Set As : " WHAT EACH SETTING MEANS"
+    Style : JpSectionBox
+
+[Field: JpZplConfigScreenT5]
+    Set As : "   dpi ....... resolution. 203 -> 8 dots/mm. 300 -> 12 dots/mm. Default 203."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT6]
+    Set As : "   w, h ...... label width and length in MILLIMETRES. Default 54 x 40."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT7]
+    Set As : "   dark ...... ^MD darkness, 0 (lightest) to 30 (darkest). Default 12."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT8]
+    Set As : "   speed ..... ^PR print speed in inches/second. Default 4."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT9]
+    Set As : "   copies .... ^PQ copies per label. Default 1."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT10]
+    Set As : "   bcY ....... vertical position of the barcode, in DOTS from the top."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT11]
+    Set As : "   bcH ....... barcode height in DOTS. 64 dots = 8 mm at 203 dpi."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT12]
+    Set As : "   shopY ..... vertical position of the shop name line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT13]
+    Set As : "   addrY ..... vertical position of the shop address line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT14]
+    Set As : "   itemY ..... vertical position of the item name line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT15]
+    Set As : "   desY ...... vertical position of the design number line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT16]
+    Set As : "   purY ...... vertical position of the purity line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT17]
+    Set As : "   wtY ....... vertical position of the weight line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT18]
+    Set As : "   huidY ..... vertical position of the HUID line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT19]
+    Set As : "   mrpY ...... vertical position of the MRP line, in DOTS."
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT20]
+    Set As : "   Save, then export from Zebra Label Print Queue and run:"
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT21]
+    Set As : "   node 00_Build/zpl-emit.mjs labels.csv"
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT22]
+    Set As : " MINT A MISSING BARCODE"
+    Style : JpSectionBox
+
+[Field: JpZplConfigScreenT23]
+    Set As : "   The queue exports the item's stored barcode. A piece with none exports empty and"
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT24]
+    Set As : "   zpl-emit.mjs skips it, so mint one here first - the Tally tag module then prints"
+    Style : JpMuted
+
+[Field: JpZplConfigScreenT25]
+    Set As : "   the identical value."
+    Style : JpMuted
 
 [Function: JpZplLoadDefaults]
     Returns: Integer : Any
@@ -699,40 +805,191 @@ JplZplSettings : String : 20176
 
 [Field: JpZplQueuePrintLine50F1]
     Style : JpTotal
-[Export: JpZplQueueExport]
-    Title: <1000, "Zebra Label Queue">
+[Report: JpZplQueueExport]
+    Title : <1000, "Zebra Label Queue">
     Repeat: Over: JpZplLabelQueue
-    Export Title: Detail
-    Export: Value: $$ZplBarcode
-    Export: Value: $$ZplItem
-    Export: Value: $$ZplDesign
-    Export: Value: $$ZplCategory
-    Export: Value: $$ZplMetal
-    Export: Value: $$ZplPurity
-    Export: Value: $$ZplGrossWt
-    Export: Value: $$ZplStoneWt
-    Export: Value: $$ZplNetWt
-    Export: Value: $$ZplCarat
-    Export: Value: $$ZplHuid
-    Export: Value: $$ZplMrp
-    Export: Value: JpZplShopLine()
-    Export: Value: JpZplAddrLine()
-    Export: Value: JpZplWeightLine()
-    Export: Value: JpZplPurityLine()
-    Export: Value: JpZplMrpLine()
-    Export: Value: JpZplDpi()
-    Export: Value: JpZplLabelW()
-    Export: Value: JpZplLabelH()
-    Export: Value: JpZplDarkness()
-    Export: Value: JpZplSpeed()
-    Export: Value: JpZplCopies()
-    Export: Value: JpZplBcY()
-    Export: Value: JpZplBcH()
-    Export: Value: JpZplNum("shopY", 2)
-    Export: Value: JpZplNum("addrY", 34)
-    Export: Value: JpZplNum("itemY", 56)
-    Export: Value: JpZplNum("desY", 82)
-    Export: Value: JpZplNum("purY", 104)
-    Export: Value: JpZplNum("wtY", 126)
-    Export: Value: JpZplNum("huidY", 148)
-    Export: Value: JpZplNum("mrpY", 170)
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpZplQueueExportForm
+
+[Form: JpZplQueueExportForm]
+    Parts : JpZplQueueExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpZplQueueExportPart]
+    XMLTag : "Row"
+    Lines : JpZplQueueExportLine
+
+[Line: JpZplQueueExportLine]
+    Field : JpZplQueueExportF1
+    Field : JpZplQueueExportF2
+    Field : JpZplQueueExportF3
+    Field : JpZplQueueExportF4
+    Field : JpZplQueueExportF5
+    Field : JpZplQueueExportF6
+    Field : JpZplQueueExportF7
+    Field : JpZplQueueExportF8
+    Field : JpZplQueueExportF9
+    Field : JpZplQueueExportF10
+    Field : JpZplQueueExportF11
+    Field : JpZplQueueExportF12
+    Field : JpZplQueueExportF13
+    Field : JpZplQueueExportF14
+    Field : JpZplQueueExportF15
+    Field : JpZplQueueExportF16
+    Field : JpZplQueueExportF17
+    Field : JpZplQueueExportF18
+    Field : JpZplQueueExportF19
+    Field : JpZplQueueExportF20
+    Field : JpZplQueueExportF21
+    Field : JpZplQueueExportF22
+    Field : JpZplQueueExportF23
+    Field : JpZplQueueExportF24
+    Field : JpZplQueueExportF25
+    Field : JpZplQueueExportF26
+    Field : JpZplQueueExportF27
+    Field : JpZplQueueExportF28
+    Field : JpZplQueueExportF29
+    Field : JpZplQueueExportF30
+    Field : JpZplQueueExportF31
+    Field : JpZplQueueExportF32
+    Field : JpZplQueueExportF33
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpZplQueueExportF1]
+    Set As : $$ZplBarcode
+    XMLAttr : "ZplBarcode"
+
+[Field: JpZplQueueExportF2]
+    Set As : $$ZplItem
+    XMLAttr : "ZplItem"
+
+[Field: JpZplQueueExportF3]
+    Set As : $$ZplDesign
+    XMLAttr : "ZplDesign"
+
+[Field: JpZplQueueExportF4]
+    Set As : $$ZplCategory
+    XMLAttr : "ZplCategory"
+
+[Field: JpZplQueueExportF5]
+    Set As : $$ZplMetal
+    XMLAttr : "ZplMetal"
+
+[Field: JpZplQueueExportF6]
+    Set As : $$ZplPurity
+    XMLAttr : "ZplPurity"
+
+[Field: JpZplQueueExportF7]
+    Set As : $$ZplGrossWt
+    XMLAttr : "ZplGrossWt"
+
+[Field: JpZplQueueExportF8]
+    Set As : $$ZplStoneWt
+    XMLAttr : "ZplStoneWt"
+
+[Field: JpZplQueueExportF9]
+    Set As : $$ZplNetWt
+    XMLAttr : "ZplNetWt"
+
+[Field: JpZplQueueExportF10]
+    Set As : $$ZplCarat
+    XMLAttr : "ZplCarat"
+
+[Field: JpZplQueueExportF11]
+    Set As : $$ZplHuid
+    XMLAttr : "ZplHuid"
+
+[Field: JpZplQueueExportF12]
+    Set As : $$ZplMrp
+    XMLAttr : "ZplMrp"
+
+[Field: JpZplQueueExportF13]
+    Set As : JpZplShopLine()
+    XMLAttr : "JpZplShopLine"
+
+[Field: JpZplQueueExportF14]
+    Set As : JpZplAddrLine()
+    XMLAttr : "JpZplAddrLine"
+
+[Field: JpZplQueueExportF15]
+    Set As : JpZplWeightLine()
+    XMLAttr : "JpZplWeightLine"
+
+[Field: JpZplQueueExportF16]
+    Set As : JpZplPurityLine()
+    XMLAttr : "JpZplPurityLine"
+
+[Field: JpZplQueueExportF17]
+    Set As : JpZplMrpLine()
+    XMLAttr : "JpZplMrpLine"
+
+[Field: JpZplQueueExportF18]
+    Set As : JpZplDpi()
+    XMLAttr : "JpZplDpi"
+
+[Field: JpZplQueueExportF19]
+    Set As : JpZplLabelW()
+    XMLAttr : "JpZplLabelW"
+
+[Field: JpZplQueueExportF20]
+    Set As : JpZplLabelH()
+    XMLAttr : "JpZplLabelH"
+
+[Field: JpZplQueueExportF21]
+    Set As : JpZplDarkness()
+    XMLAttr : "JpZplDarkness"
+
+[Field: JpZplQueueExportF22]
+    Set As : JpZplSpeed()
+    XMLAttr : "JpZplSpeed"
+
+[Field: JpZplQueueExportF23]
+    Set As : JpZplCopies()
+    XMLAttr : "JpZplCopies"
+
+[Field: JpZplQueueExportF24]
+    Set As : JpZplBcY()
+    XMLAttr : "JpZplBcY"
+
+[Field: JpZplQueueExportF25]
+    Set As : JpZplBcH()
+    XMLAttr : "JpZplBcH"
+
+[Field: JpZplQueueExportF26]
+    Set As : JpZplNum("shopY", 2)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF27]
+    Set As : JpZplNum("addrY", 34)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF28]
+    Set As : JpZplNum("itemY", 56)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF29]
+    Set As : JpZplNum("desY", 82)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF30]
+    Set As : JpZplNum("purY", 104)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF31]
+    Set As : JpZplNum("wtY", 126)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF32]
+    Set As : JpZplNum("huidY", 148)
+    XMLAttr : "JpZplNum"
+
+[Field: JpZplQueueExportF33]
+    Set As : JpZplNum("mrpY", 170)
+    XMLAttr : "JpZplNum"

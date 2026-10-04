@@ -669,15 +669,33 @@ Alter: Sales Voucher, Item Details
 [Variable: JpCommissionPc   : Number]
 [Variable: JpDefaultGstRate : Number]
 
-[Screen: JpSalesScreen]
-    Caption: "JadePro  ::  Jewellery Billing"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpSalesScreen]
+    Title : "JadePro  ::  Jewellery Billing"
+    Form : JpSalesScreenForm
+
+[Form: JpSalesScreenForm]
+    Parts : JpSalesScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpSalesScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JEWELLERY BILLING"
-    Style: JpTitle
-    Line Height: 1
+    Field : JpSalesScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpSalesScreenT1]
+    Set As : "           JEWELLERY BILLING"
+    Style : JpTitle
+
 [Part: JpSalesLineMsgPart]
     Button: <Start Jewellery Invoice (F2), Key: F2, Action: JpStartInvoice>
     Button: <Update Daily Rates (F8), Key: F8, Action: JpOpenRate>

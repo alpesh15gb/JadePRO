@@ -534,28 +534,90 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpDailySalesPrintLine69F1]
     Style : JpTotal
-[Export: JpDailySalesExport]
-    Title: <1000, "Daily Sales">
+[Report: JpDailySalesExport]
+    Title : <1000, "Daily Sales">
     Repeat: Over: JpDailySales
-    Export Title: Detail
-    Export: Value: $JwlInvNo
-    Export: Value: $$DATE
-    Export: Value: $$PARTYNAME
-    Export: Value: $JwlSalesperson
-    Export: Value: $JwlTaxableVal
-    Export: Value: $$GSTVALUE
-    Export: Value: $JwlGrandTotal
-    Export: Value: $JwlPayCash
-    Export: Value: $JwlPayCard
-    Export: Value: $JwlPayUpi
-    Export: Value: $JwlPayBank
-    Export: Value: $JwlPayOldGold
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpDailySalesExportForm
 
+[Form: JpDailySalesExportForm]
+    Parts : JpDailySalesExportPart
 
-; =============================================================================
-;  REPORT 2 - MONTHLY SALES
-;  Aggregated by month in SQL so a whole year returns twelve rows, not 3,000.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpDailySalesExportPart]
+    XMLTag : "Row"
+    Lines : JpDailySalesExportLine
+
+[Line: JpDailySalesExportLine]
+    Field : JpDailySalesExportF1
+    Field : JpDailySalesExportF2
+    Field : JpDailySalesExportF3
+    Field : JpDailySalesExportF4
+    Field : JpDailySalesExportF5
+    Field : JpDailySalesExportF6
+    Field : JpDailySalesExportF7
+    Field : JpDailySalesExportF8
+    Field : JpDailySalesExportF9
+    Field : JpDailySalesExportF10
+    Field : JpDailySalesExportF11
+    Field : JpDailySalesExportF12
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpDailySalesExportF1]
+    Set As : $JwlInvNo
+    XMLAttr : "JwlInvNo"
+
+[Field: JpDailySalesExportF2]
+    Set As : $$DATE
+    XMLAttr : "DATE"
+
+[Field: JpDailySalesExportF3]
+    Set As : $$PARTYNAME
+    XMLAttr : "PARTYNAME"
+
+[Field: JpDailySalesExportF4]
+    Set As : $JwlSalesperson
+    XMLAttr : "JwlSalesperson"
+
+[Field: JpDailySalesExportF5]
+    Set As : $JwlTaxableVal
+    XMLAttr : "JwlTaxableVal"
+
+[Field: JpDailySalesExportF6]
+    Set As : $$GSTVALUE
+    XMLAttr : "GSTVALUE"
+
+[Field: JpDailySalesExportF7]
+    Set As : $JwlGrandTotal
+    XMLAttr : "JwlGrandTotal"
+
+[Field: JpDailySalesExportF8]
+    Set As : $JwlPayCash
+    XMLAttr : "JwlPayCash"
+
+[Field: JpDailySalesExportF9]
+    Set As : $JwlPayCard
+    XMLAttr : "JwlPayCard"
+
+[Field: JpDailySalesExportF10]
+    Set As : $JwlPayUpi
+    XMLAttr : "JwlPayUpi"
+
+[Field: JpDailySalesExportF11]
+    Set As : $JwlPayBank
+    XMLAttr : "JwlPayBank"
+
+[Field: JpDailySalesExportF12]
+    Set As : $JwlPayOldGold
+    XMLAttr : "JwlPayOldGold"
+
 [Collection: Report: JpMonthlySales]
     Source: JpMonthlySalesSQL
     Var: JpFromDate, JpToDate
@@ -784,20 +846,55 @@ JwlTotalPurchases : Number : 20216
     }
     JpAvgBill = JpRound(s / b)
 
-[Export: JpMonthlySalesExport]
-    Title: <1000, "Monthly Sales">
+[Report: JpMonthlySalesExport]
+    Title : <1000, "Monthly Sales">
     Repeat: Over: JpMonthlySales
-    Export Title: Detail
-    Export: Value: $$JwlMonth
-    Export: Value: $$JwlBills
-    Export: Value: $$JwlTaxable
-    Export: Value: $$JwlGst
-    Export: Value: $$JwlSales
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpMonthlySalesExportForm
 
+[Form: JpMonthlySalesExportForm]
+    Parts : JpMonthlySalesExportPart
 
-; =============================================================================
-;  REPORT 3 - SALES REGISTER (drill-down per voucher, with gold weight sold)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpMonthlySalesExportPart]
+    XMLTag : "Row"
+    Lines : JpMonthlySalesExportLine
+
+[Line: JpMonthlySalesExportLine]
+    Field : JpMonthlySalesExportF1
+    Field : JpMonthlySalesExportF2
+    Field : JpMonthlySalesExportF3
+    Field : JpMonthlySalesExportF4
+    Field : JpMonthlySalesExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpMonthlySalesExportF1]
+    Set As : $$JwlMonth
+    XMLAttr : "JwlMonth"
+
+[Field: JpMonthlySalesExportF2]
+    Set As : $$JwlBills
+    XMLAttr : "JwlBills"
+
+[Field: JpMonthlySalesExportF3]
+    Set As : $$JwlTaxable
+    XMLAttr : "JwlTaxable"
+
+[Field: JpMonthlySalesExportF4]
+    Set As : $$JwlGst
+    XMLAttr : "JwlGst"
+
+[Field: JpMonthlySalesExportF5]
+    Set As : $$JwlSales
+    XMLAttr : "JwlSales"
+
 [Collection: Report: JpSalesRegister]
     Source: JpSalesRegisterSQL
     Var: JpFromDate, JpToDate, JpSalesRegParty, JpSalesRegMetal
@@ -1209,28 +1306,95 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpSalesRegisterPrintLine77F1]
     Style : JpTotal
-[Export: JpSalesRegisterExport]
-    Title: <1000, "Sales Register">
+[Report: JpSalesRegisterExport]
+    Title : <1000, "Sales Register">
     Repeat: Over: JpSalesRegister
-    Export Title: Detail
-    Export: Value: $JwlInvNo
-    Export: Value: $$DATE
-    Export: Value: $$ITEMNAME
-    Export: Value: $JwlLnBarcode
-    Export: Value: $JwlLnPurity
-    Export: Value: $JwlLnGross
-    Export: Value: $JwlLnStone
-    Export: Value: $JwlLnNet
-    Export: Value: $JwlLnRate
-    Export: Value: $JwlLnMetalVal
-    Export: Value: $JwlLnMakeAmt
-    Export: Value: $JwlLnBaseVal
-    Export: Value: $JwlLnTotal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpSalesRegisterExportForm
 
+[Form: JpSalesRegisterExportForm]
+    Parts : JpSalesRegisterExportPart
 
-; =============================================================================
-;  REPORT 4 - PURCHASE REGISTER
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpSalesRegisterExportPart]
+    XMLTag : "Row"
+    Lines : JpSalesRegisterExportLine
+
+[Line: JpSalesRegisterExportLine]
+    Field : JpSalesRegisterExportF1
+    Field : JpSalesRegisterExportF2
+    Field : JpSalesRegisterExportF3
+    Field : JpSalesRegisterExportF4
+    Field : JpSalesRegisterExportF5
+    Field : JpSalesRegisterExportF6
+    Field : JpSalesRegisterExportF7
+    Field : JpSalesRegisterExportF8
+    Field : JpSalesRegisterExportF9
+    Field : JpSalesRegisterExportF10
+    Field : JpSalesRegisterExportF11
+    Field : JpSalesRegisterExportF12
+    Field : JpSalesRegisterExportF13
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpSalesRegisterExportF1]
+    Set As : $JwlInvNo
+    XMLAttr : "JwlInvNo"
+
+[Field: JpSalesRegisterExportF2]
+    Set As : $$DATE
+    XMLAttr : "DATE"
+
+[Field: JpSalesRegisterExportF3]
+    Set As : $$ITEMNAME
+    XMLAttr : "ITEMNAME"
+
+[Field: JpSalesRegisterExportF4]
+    Set As : $JwlLnBarcode
+    XMLAttr : "JwlLnBarcode"
+
+[Field: JpSalesRegisterExportF5]
+    Set As : $JwlLnPurity
+    XMLAttr : "JwlLnPurity"
+
+[Field: JpSalesRegisterExportF6]
+    Set As : $JwlLnGross
+    XMLAttr : "JwlLnGross"
+
+[Field: JpSalesRegisterExportF7]
+    Set As : $JwlLnStone
+    XMLAttr : "JwlLnStone"
+
+[Field: JpSalesRegisterExportF8]
+    Set As : $JwlLnNet
+    XMLAttr : "JwlLnNet"
+
+[Field: JpSalesRegisterExportF9]
+    Set As : $JwlLnRate
+    XMLAttr : "JwlLnRate"
+
+[Field: JpSalesRegisterExportF10]
+    Set As : $JwlLnMetalVal
+    XMLAttr : "JwlLnMetalVal"
+
+[Field: JpSalesRegisterExportF11]
+    Set As : $JwlLnMakeAmt
+    XMLAttr : "JwlLnMakeAmt"
+
+[Field: JpSalesRegisterExportF12]
+    Set As : $JwlLnBaseVal
+    XMLAttr : "JwlLnBaseVal"
+
+[Field: JpSalesRegisterExportF13]
+    Set As : $JwlLnTotal
+    XMLAttr : "JwlLnTotal"
+
 [Collection: Report: JpPurchaseRegister]
     Source: JpPurchaseRegisterSQL
     Var: JpFromDate, JpToDate, JpPurKindFilter, JpPurPartyFilter
@@ -1592,27 +1756,80 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpPurchaseRegisterPrintLine67F1]
     Style : JpTotal
-[Export: JpPurchaseRegisterExport]
-    Title: <1000, "Purchase Register">
+[Report: JpPurchaseRegisterExport]
+    Title : <1000, "Purchase Register">
     Repeat: Over: JpPurchaseRegister
-    Export Title: Detail
-    Export: Value: $JwlSupInvNo
-    Export: Value: $$DATE
-    Export: Value: $$PARTYNAME
-    Export: Value: $JwlPurKind
-    Export: Value: $$ITEMNAME
-    Export: Value: $JwlPlPurity
-    Export: Value: $JwlPlGross
-    Export: Value: $JwlPlNet
-    Export: Value: $JwlPlRate
-    Export: Value: $JwlPlTotal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpPurchaseRegisterExportForm
 
+[Form: JpPurchaseRegisterExportForm]
+    Parts : JpPurchaseRegisterExportPart
 
-; =============================================================================
-;  REPORT 5 - GST SUMMARY
-;  Reads Tally's own GST ledgers. No tax rate is written anywhere in this
-;  module: the rates live in the shop's own tax masters.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpPurchaseRegisterExportPart]
+    XMLTag : "Row"
+    Lines : JpPurchaseRegisterExportLine
+
+[Line: JpPurchaseRegisterExportLine]
+    Field : JpPurchaseRegisterExportF1
+    Field : JpPurchaseRegisterExportF2
+    Field : JpPurchaseRegisterExportF3
+    Field : JpPurchaseRegisterExportF4
+    Field : JpPurchaseRegisterExportF5
+    Field : JpPurchaseRegisterExportF6
+    Field : JpPurchaseRegisterExportF7
+    Field : JpPurchaseRegisterExportF8
+    Field : JpPurchaseRegisterExportF9
+    Field : JpPurchaseRegisterExportF10
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpPurchaseRegisterExportF1]
+    Set As : $JwlSupInvNo
+    XMLAttr : "JwlSupInvNo"
+
+[Field: JpPurchaseRegisterExportF2]
+    Set As : $$DATE
+    XMLAttr : "DATE"
+
+[Field: JpPurchaseRegisterExportF3]
+    Set As : $$PARTYNAME
+    XMLAttr : "PARTYNAME"
+
+[Field: JpPurchaseRegisterExportF4]
+    Set As : $JwlPurKind
+    XMLAttr : "JwlPurKind"
+
+[Field: JpPurchaseRegisterExportF5]
+    Set As : $$ITEMNAME
+    XMLAttr : "ITEMNAME"
+
+[Field: JpPurchaseRegisterExportF6]
+    Set As : $JwlPlPurity
+    XMLAttr : "JwlPlPurity"
+
+[Field: JpPurchaseRegisterExportF7]
+    Set As : $JwlPlGross
+    XMLAttr : "JwlPlGross"
+
+[Field: JpPurchaseRegisterExportF8]
+    Set As : $JwlPlNet
+    XMLAttr : "JwlPlNet"
+
+[Field: JpPurchaseRegisterExportF9]
+    Set As : $JwlPlRate
+    XMLAttr : "JwlPlRate"
+
+[Field: JpPurchaseRegisterExportF10]
+    Set As : $JwlPlTotal
+    XMLAttr : "JwlPlTotal"
+
 [Collection: Report: JpGSTReport]
     Source: JpGSTReportSQL
     Var: JpFromDate, JpToDate
@@ -1714,18 +1931,40 @@ JwlTotalPurchases : Number : 20216
 [Field: JpGSTReportPrintLine14F1]
     Set As : "Reconciliation: compare this with Tally's own GST reports (Gateway > Display > Statutory Reports > GST). JadePro deliberately does not restate Tally's GST computation."
     Style : JpFontBold
-[Export: JpGSTReportExport]
-    Title: <1000, "GST Summary">
+[Report: JpGSTReportExport]
+    Title : <1000, "GST Summary">
     Repeat: Over: JpGSTReport
-    Export Title: Detail
-    Export: Value: $$LEDGERNAME
-    Export: Value: $$JwlTaxAmt
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpGSTReportExportForm
 
-;  REPORT 6 - JEWELLERY STOCK BY PIECES AND WEIGHT
-;  Hybrid valuation as agreed: metal valued at the live rate for the purity,
-;  stones and diamonds at the item's own rates. Stock value therefore moves
-;  with the market without needing a stock revaluation voucher.
-; =============================================================================
+[Form: JpGSTReportExportForm]
+    Parts : JpGSTReportExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpGSTReportExportPart]
+    XMLTag : "Row"
+    Lines : JpGSTReportExportLine
+
+[Line: JpGSTReportExportLine]
+    Field : JpGSTReportExportF1
+    Field : JpGSTReportExportF2
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpGSTReportExportF1]
+    Set As : $$LEDGERNAME
+    XMLAttr : "LEDGERNAME"
+
+[Field: JpGSTReportExportF2]
+    Set As : $$JwlTaxAmt
+    XMLAttr : "JwlTaxAmt"
+
 [Collection: Report: JpStockReport]
     Source: JpStockReportSQL
     Var: JpFromDate, JpToDate, JpStockCat, JpStockPurity, JpStockMetal
@@ -2001,26 +2240,80 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpStockReportPrintLine49F1]
     Style : JpTotal
-[Export: JpStockReportExport]
-    Title: <1000, "Jewellery Stock">
+[Report: JpStockReportExport]
+    Title : <1000, "Jewellery Stock">
     Repeat: Over: JpStockReport
-    Export Title: Detail
-    Export: Value: $$NAME
-    Export: Value: $JwlBarcode
-    Export: Value: $JwlCategory
-    Export: Value: $JwlMetalType
-    Export: Value: $JwlPurity
-    Export: Value: $JwlDesignNo
-    Export: Value: $JwlLocation
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpStockReportExportForm
 
+[Form: JpStockReportExportForm]
+    Parts : JpStockReportExportPart
 
-; =============================================================================
-;  REPORT 7 - METAL-WISE STOCK
-;  Valued live: every gram of a metal at today's rate for its purity.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpStockReportExportPart]
+    XMLTag : "Row"
+    Lines : JpStockReportExportLine
+
+[Line: JpStockReportExportLine]
+    Field : JpStockReportExportF1
+    Field : JpStockReportExportF2
+    Field : JpStockReportExportF3
+    Field : JpStockReportExportF4
+    Field : JpStockReportExportF5
+    Field : JpStockReportExportF6
+    Field : JpStockReportExportF7
+    Field : JpStockReportExportF8
+    Field : JpStockReportExportF9
+    Field : JpStockReportExportF10
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpStockReportExportF1]
+    Set As : $$NAME
+    XMLAttr : "NAME"
+
+[Field: JpStockReportExportF2]
+    Set As : $JwlBarcode
+    XMLAttr : "JwlBarcode"
+
+[Field: JpStockReportExportF3]
+    Set As : $JwlCategory
+    XMLAttr : "JwlCategory"
+
+[Field: JpStockReportExportF4]
+    Set As : $JwlMetalType
+    XMLAttr : "JwlMetalType"
+
+[Field: JpStockReportExportF5]
+    Set As : $JwlPurity
+    XMLAttr : "JwlPurity"
+
+[Field: JpStockReportExportF6]
+    Set As : $JwlDesignNo
+    XMLAttr : "JwlDesignNo"
+
+[Field: JpStockReportExportF7]
+    Set As : $JwlLocation
+    XMLAttr : "JwlLocation"
+
+[Field: JpStockReportExportF8]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpStockReportExportF9]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpStockReportExportF10]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpMetalStockReport]
     Source: JpMetalStockSQL
     Title: <1000,###,#a##"  METAL-WISE STOCK VALUATION">
@@ -2264,25 +2557,80 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpMetalStockPrintLine43F1]
     Style : JpTotal
-[Export: JpMetalStockExport]
-    Title: <1000, "Metal-wise Stock">
+[Report: JpMetalStockExport]
+    Title : <1000, "Metal-wise Stock">
     Repeat: Over: JpMetalStockReport
-    Export Title: Detail
-    Export: Value: $$JwlMetal
-    Export: Value: $$JwlPur
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlMetalVal
-    Export: Value: $$JwlStoneVal
-    Export: Value: $$JwlDiaVal
-    Export: Value: $$JwlMetalVal
-    Export: Value: $$JwlStoneVal
-    Export: Value: $$JwlDiaVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpMetalStockExportForm
 
+[Form: JpMetalStockExportForm]
+    Parts : JpMetalStockExportPart
 
-; =============================================================================
-;  REPORT 8 - PURITY-WISE STOCK
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpMetalStockExportPart]
+    XMLTag : "Row"
+    Lines : JpMetalStockExportLine
+
+[Line: JpMetalStockExportLine]
+    Field : JpMetalStockExportF1
+    Field : JpMetalStockExportF2
+    Field : JpMetalStockExportF3
+    Field : JpMetalStockExportF4
+    Field : JpMetalStockExportF5
+    Field : JpMetalStockExportF6
+    Field : JpMetalStockExportF7
+    Field : JpMetalStockExportF8
+    Field : JpMetalStockExportF9
+    Field : JpMetalStockExportF10
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpMetalStockExportF1]
+    Set As : $$JwlMetal
+    XMLAttr : "JwlMetal"
+
+[Field: JpMetalStockExportF2]
+    Set As : $$JwlPur
+    XMLAttr : "JwlPur"
+
+[Field: JpMetalStockExportF3]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpMetalStockExportF4]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpMetalStockExportF5]
+    Set As : $$JwlMetalVal
+    XMLAttr : "JwlMetalVal"
+
+[Field: JpMetalStockExportF6]
+    Set As : $$JwlStoneVal
+    XMLAttr : "JwlStoneVal"
+
+[Field: JpMetalStockExportF7]
+    Set As : $$JwlDiaVal
+    XMLAttr : "JwlDiaVal"
+
+[Field: JpMetalStockExportF8]
+    Set As : $$JwlMetalVal
+    XMLAttr : "JwlMetalVal"
+
+[Field: JpMetalStockExportF9]
+    Set As : $$JwlStoneVal
+    XMLAttr : "JwlStoneVal"
+
+[Field: JpMetalStockExportF10]
+    Set As : $$JwlDiaVal
+    XMLAttr : "JwlDiaVal"
+
 [Collection: Report: JpPurityStockReport]
     Source: JpPurityStockSQL
     Var: JpFromDate, JpToDate
@@ -2527,20 +2875,55 @@ JwlTotalPurchases : Number : 20216
     Returns: Quantity : Any
     JpFineTotal = Sum($$JwlNetWt) * JpFineness($$JwlPur)
 
-[Export: JpPurityStockExport]
-    Title: <1000, "Purity-wise Stock">
+[Report: JpPurityStockExport]
+    Title : <1000, "Purity-wise Stock">
     Repeat: Over: JpPurityStockReport
-    Export Title: Detail
-    Export: Value: $$JwlPur
-    Export: Value: $$JwlQty
-    Export: Value: $JwlGrossWt
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpPurityStockExportForm
 
+[Form: JpPurityStockExportForm]
+    Parts : JpPurityStockExportPart
 
-; =============================================================================
-;  REPORT 9 - CATEGORY-WISE STOCK
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpPurityStockExportPart]
+    XMLTag : "Row"
+    Lines : JpPurityStockExportLine
+
+[Line: JpPurityStockExportLine]
+    Field : JpPurityStockExportF1
+    Field : JpPurityStockExportF2
+    Field : JpPurityStockExportF3
+    Field : JpPurityStockExportF4
+    Field : JpPurityStockExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpPurityStockExportF1]
+    Set As : $$JwlPur
+    XMLAttr : "JwlPur"
+
+[Field: JpPurityStockExportF2]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpPurityStockExportF3]
+    Set As : $JwlGrossWt
+    XMLAttr : "JwlGrossWt"
+
+[Field: JpPurityStockExportF4]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpPurityStockExportF5]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpCategoryStockReport]
     Source: JpCategoryStockSQL
     Var: JpFromDate, JpToDate
@@ -2737,19 +3120,50 @@ JwlTotalPurchases : Number : 20216
     }
     JpPcOfVal = JpRound($$JwlStockVal * 100 / t)
 
-[Export: JpCategoryStockExport]
-    Title: <1000, "Category-wise Stock">
+[Report: JpCategoryStockExport]
+    Title : <1000, "Category-wise Stock">
     Repeat: Over: JpCategoryStockReport
-    Export Title: Detail
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpCategoryStockExportForm
 
+[Form: JpCategoryStockExportForm]
+    Parts : JpCategoryStockExportPart
 
-; =============================================================================
-;  REPORT 10 - DESIGN-WISE STOCK
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpCategoryStockExportPart]
+    XMLTag : "Row"
+    Lines : JpCategoryStockExportLine
+
+[Line: JpCategoryStockExportLine]
+    Field : JpCategoryStockExportF1
+    Field : JpCategoryStockExportF2
+    Field : JpCategoryStockExportF3
+    Field : JpCategoryStockExportF4
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpCategoryStockExportF1]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpCategoryStockExportF2]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpCategoryStockExportF3]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpCategoryStockExportF4]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpDesignStockReport]
     Source: JpDesignStockSQL
     Var: JpFromDate, JpToDate
@@ -2955,21 +3369,60 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpDesignStockPrintLine35F1]
     Style : JpTotal
-[Export: JpDesignStockExport]
-    Title: <1000, "Design-wise Stock">
+[Report: JpDesignStockExport]
+    Title : <1000, "Design-wise Stock">
     Repeat: Over: JpDesignStockReport
-    Export Title: Detail
-    Export: Value: $$JwlDes
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlDesCount
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpDesignStockExportForm
 
+[Form: JpDesignStockExportForm]
+    Parts : JpDesignStockExportPart
 
-; =============================================================================
-;  REPORT 11 - COUNTER-WISE STOCK
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpDesignStockExportPart]
+    XMLTag : "Row"
+    Lines : JpDesignStockExportLine
+
+[Line: JpDesignStockExportLine]
+    Field : JpDesignStockExportF1
+    Field : JpDesignStockExportF2
+    Field : JpDesignStockExportF3
+    Field : JpDesignStockExportF4
+    Field : JpDesignStockExportF5
+    Field : JpDesignStockExportF6
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpDesignStockExportF1]
+    Set As : $$JwlDes
+    XMLAttr : "JwlDes"
+
+[Field: JpDesignStockExportF2]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpDesignStockExportF3]
+    Set As : $$JwlDesCount
+    XMLAttr : "JwlDesCount"
+
+[Field: JpDesignStockExportF4]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpDesignStockExportF5]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpDesignStockExportF6]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpCounterStockReport]
     Source: JpCounterStockSQL
     Var: JpFromDate, JpToDate
@@ -3125,19 +3578,50 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpCounterStockPrintLine25F1]
     Style : JpTotal
-[Export: JpCounterStockExport]
-    Title: <1000, "Counter-wise Stock">
+[Report: JpCounterStockExport]
+    Title : <1000, "Counter-wise Stock">
     Repeat: Over: JpCounterStockReport
-    Export Title: Detail
-    Export: Value: $$JwlCounter
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpCounterStockExportForm
 
+[Form: JpCounterStockExportForm]
+    Parts : JpCounterStockExportPart
 
-; =============================================================================
-;  REPORT 12 - STOCK AGEING (bucketed by last purchase date)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpCounterStockExportPart]
+    XMLTag : "Row"
+    Lines : JpCounterStockExportLine
+
+[Line: JpCounterStockExportLine]
+    Field : JpCounterStockExportF1
+    Field : JpCounterStockExportF2
+    Field : JpCounterStockExportF3
+    Field : JpCounterStockExportF4
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpCounterStockExportF1]
+    Set As : $$JwlCounter
+    XMLAttr : "JwlCounter"
+
+[Field: JpCounterStockExportF2]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpCounterStockExportF3]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpCounterStockExportF4]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpAgeingReport]
     Source: JpAgeingSQL
     Title: <1000,###,#a##"  STOCK AGEING - FAST, SLOW AND DEAD STOCK">
@@ -3381,22 +3865,60 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpAgeingPrintLine39F1]
     Style : JpTotal
-[Export: JpAgeingExport]
-    Title: <1000, "Stock Ageing">
+[Report: JpAgeingExport]
+    Title : <1000, "Stock Ageing">
     Repeat: Over: JpAgeingReport
-    Export Title: Detail
-    Export: Value: $$JwlItem
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlNetWt
-    Export: Value: $$JwlLastBuy
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpAgeingExportForm
 
+[Form: JpAgeingExportForm]
+    Parts : JpAgeingExportPart
 
-; =============================================================================
-;  REPORT 13 - FAST / SLOW / DEAD MOVEMENT
-;  Based on how many times each item was sold in the period.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpAgeingExportPart]
+    XMLTag : "Row"
+    Lines : JpAgeingExportLine
+
+[Line: JpAgeingExportLine]
+    Field : JpAgeingExportF1
+    Field : JpAgeingExportF2
+    Field : JpAgeingExportF3
+    Field : JpAgeingExportF4
+    Field : JpAgeingExportF5
+    Field : JpAgeingExportF6
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpAgeingExportF1]
+    Set As : $$JwlItem
+    XMLAttr : "JwlItem"
+
+[Field: JpAgeingExportF2]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpAgeingExportF3]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpAgeingExportF4]
+    Set As : $$JwlNetWt
+    XMLAttr : "JwlNetWt"
+
+[Field: JpAgeingExportF5]
+    Set As : $$JwlLastBuy
+    XMLAttr : "JwlLastBuy"
+
+[Field: JpAgeingExportF6]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"
+
 [Collection: Report: JpMovementReport]
     Source: JpMovementSQL
     Var: JpFromDate, JpToDate
@@ -3614,20 +4136,55 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpMovementPrintLine33F1]
     Style : JpTotal
-[Export: JpMovementExport]
-    Title: <1000, "Movement Analysis">
+[Report: JpMovementExport]
+    Title : <1000, "Movement Analysis">
     Repeat: Over: JpMovementReport
-    Export Title: Detail
-    Export: Value: $$JwlItem
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlSoldQty
-    Export: Value: $$JwlSoldWt
-    Export: Value: $$JwlSoldVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpMovementExportForm
 
-;  REPORT 14 - SALESPERSON PERFORMANCE
-;  Revenue, weight sold, discount given and gross profit against the monthly
-;  target held in the company master (see 13_Security.tdl).
-; =============================================================================
+[Form: JpMovementExportForm]
+    Parts : JpMovementExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpMovementExportPart]
+    XMLTag : "Row"
+    Lines : JpMovementExportLine
+
+[Line: JpMovementExportLine]
+    Field : JpMovementExportF1
+    Field : JpMovementExportF2
+    Field : JpMovementExportF3
+    Field : JpMovementExportF4
+    Field : JpMovementExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpMovementExportF1]
+    Set As : $$JwlItem
+    XMLAttr : "JwlItem"
+
+[Field: JpMovementExportF2]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpMovementExportF3]
+    Set As : $$JwlSoldQty
+    XMLAttr : "JwlSoldQty"
+
+[Field: JpMovementExportF4]
+    Set As : $$JwlSoldWt
+    XMLAttr : "JwlSoldWt"
+
+[Field: JpMovementExportF5]
+    Set As : $$JwlSoldVal
+    XMLAttr : "JwlSoldVal"
+
 [Collection: Report: JpSalespersonReport]
     Source: JpSalespersonSQL
     Var: JpFromDate, JpToDate
@@ -3916,22 +4473,65 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpSalespersonPrintLine47F1]
     Style : JpTotal
-[Export: JpSalespersonExport]
-    Title: <1000, "Salesperson Performance">
+[Report: JpSalespersonExport]
+    Title : <1000, "Salesperson Performance">
     Repeat: Over: JpSalespersonReport
-    Export Title: Detail
-    Export: Value: $$JwlSp
-    Export: Value: $$JwlBills
-    Export: Value: $JwlPiecesSold
-    Export: Value: $$JwlWeightSold
-    Export: Value: $$JwlRevenue
-    Export: Value: $$JwlDiscount
-    Export: Value: $$JwlCost
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpSalespersonExportForm
 
+[Form: JpSalespersonExportForm]
+    Parts : JpSalespersonExportPart
 
-; =============================================================================
-;  REPORT 15 - ITEM PROFITABILITY  (restricted to JADE_VIEW_PROFIT)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpSalespersonExportPart]
+    XMLTag : "Row"
+    Lines : JpSalespersonExportLine
+
+[Line: JpSalespersonExportLine]
+    Field : JpSalespersonExportF1
+    Field : JpSalespersonExportF2
+    Field : JpSalespersonExportF3
+    Field : JpSalespersonExportF4
+    Field : JpSalespersonExportF5
+    Field : JpSalespersonExportF6
+    Field : JpSalespersonExportF7
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpSalespersonExportF1]
+    Set As : $$JwlSp
+    XMLAttr : "JwlSp"
+
+[Field: JpSalespersonExportF2]
+    Set As : $$JwlBills
+    XMLAttr : "JwlBills"
+
+[Field: JpSalespersonExportF3]
+    Set As : $JwlPiecesSold
+    XMLAttr : "JwlPiecesSold"
+
+[Field: JpSalespersonExportF4]
+    Set As : $$JwlWeightSold
+    XMLAttr : "JwlWeightSold"
+
+[Field: JpSalespersonExportF5]
+    Set As : $$JwlRevenue
+    XMLAttr : "JwlRevenue"
+
+[Field: JpSalespersonExportF6]
+    Set As : $$JwlDiscount
+    XMLAttr : "JwlDiscount"
+
+[Field: JpSalespersonExportF7]
+    Set As : $$JwlCost
+    XMLAttr : "JwlCost"
+
 [Collection: Report: JpItemProfitReport]
     Source: JpItemProfitSQL
     Var: JpFromDate, JpToDate, JpProfitCat
@@ -4208,21 +4808,60 @@ JwlTotalPurchases : Number : 20216
     p = JpItemProfit()
     JpItemMargin = JpRound(p * 100 / r)
 
-[Export: JpItemProfitExport]
-    Title: <1000, "Item Profitability">
+[Report: JpItemProfitExport]
+    Title : <1000, "Item Profitability">
     Repeat: Over: JpItemProfitReport
-    Export Title: Detail
-    Export: Value: $$JwlItem
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlWt
-    Export: Value: $$JwlRevenue
-    Export: Value: $$JwlCost
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpItemProfitExportForm
 
+[Form: JpItemProfitExportForm]
+    Parts : JpItemProfitExportPart
 
-; =============================================================================
-;  REPORT 16 - CATEGORY PROFITABILITY
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpItemProfitExportPart]
+    XMLTag : "Row"
+    Lines : JpItemProfitExportLine
+
+[Line: JpItemProfitExportLine]
+    Field : JpItemProfitExportF1
+    Field : JpItemProfitExportF2
+    Field : JpItemProfitExportF3
+    Field : JpItemProfitExportF4
+    Field : JpItemProfitExportF5
+    Field : JpItemProfitExportF6
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpItemProfitExportF1]
+    Set As : $$JwlItem
+    XMLAttr : "JwlItem"
+
+[Field: JpItemProfitExportF2]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpItemProfitExportF3]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpItemProfitExportF4]
+    Set As : $$JwlWt
+    XMLAttr : "JwlWt"
+
+[Field: JpItemProfitExportF5]
+    Set As : $$JwlRevenue
+    XMLAttr : "JwlRevenue"
+
+[Field: JpItemProfitExportF6]
+    Set As : $$JwlCost
+    XMLAttr : "JwlCost"
+
 [Collection: Report: JpCategoryProfitReport]
     Source: JpCategoryProfitSQL
     Var: JpFromDate, JpToDate
@@ -4458,20 +5097,55 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpCategoryProfitPrintLine41F1]
     Style : JpTotal
-[Export: JpCategoryProfitExport]
-    Title: <1000, "Category Profitability">
+[Report: JpCategoryProfitExport]
+    Title : <1000, "Category Profitability">
     Repeat: Over: JpCategoryProfitReport
-    Export Title: Detail
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlQty
-    Export: Value: $$JwlWt
-    Export: Value: $$JwlRevenue
-    Export: Value: $$JwlCost
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpCategoryProfitExportForm
 
+[Form: JpCategoryProfitExportForm]
+    Parts : JpCategoryProfitExportPart
 
-; =============================================================================
-;  REPORT 17 - CUSTOMER PURCHASE HISTORY (drill-down per bill)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpCategoryProfitExportPart]
+    XMLTag : "Row"
+    Lines : JpCategoryProfitExportLine
+
+[Line: JpCategoryProfitExportLine]
+    Field : JpCategoryProfitExportF1
+    Field : JpCategoryProfitExportF2
+    Field : JpCategoryProfitExportF3
+    Field : JpCategoryProfitExportF4
+    Field : JpCategoryProfitExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpCategoryProfitExportF1]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpCategoryProfitExportF2]
+    Set As : $$JwlQty
+    XMLAttr : "JwlQty"
+
+[Field: JpCategoryProfitExportF3]
+    Set As : $$JwlWt
+    XMLAttr : "JwlWt"
+
+[Field: JpCategoryProfitExportF4]
+    Set As : $$JwlRevenue
+    XMLAttr : "JwlRevenue"
+
+[Field: JpCategoryProfitExportF5]
+    Set As : $$JwlCost
+    XMLAttr : "JwlCost"
+
 [Collection: Report: JpCustomerHistory]
     Source: JpCustomerHistorySQL
     Var: JpFromDate, JpToDate, JpCustFilter
@@ -4713,22 +5387,65 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpCustomerHistoryPrintLine43F1]
     Style : JpTotal
-[Export: JpCustomerHistoryExport]
-    Title: <1000, "Customer Purchase History">
+[Report: JpCustomerHistoryExport]
+    Title : <1000, "Customer Purchase History">
     Repeat: Over: JpCustomerHistory
-    Export Title: Detail
-    Export: Value: $$DATE
-    Export: Value: $JwlInvNo
-    Export: Value: $$PARTYNAME
-    Export: Value: $JwlSalesperson
-    Export: Value: $JwlLnNet
-    Export: Value: $JwlLnTotal
-    Export: Value: $JwlPayBalance
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpCustomerHistoryExportForm
 
+[Form: JpCustomerHistoryExportForm]
+    Parts : JpCustomerHistoryExportPart
 
-; =============================================================================
-;  REPORT 18 - TOP AND REPEAT CUSTOMERS
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpCustomerHistoryExportPart]
+    XMLTag : "Row"
+    Lines : JpCustomerHistoryExportLine
+
+[Line: JpCustomerHistoryExportLine]
+    Field : JpCustomerHistoryExportF1
+    Field : JpCustomerHistoryExportF2
+    Field : JpCustomerHistoryExportF3
+    Field : JpCustomerHistoryExportF4
+    Field : JpCustomerHistoryExportF5
+    Field : JpCustomerHistoryExportF6
+    Field : JpCustomerHistoryExportF7
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpCustomerHistoryExportF1]
+    Set As : $$DATE
+    XMLAttr : "DATE"
+
+[Field: JpCustomerHistoryExportF2]
+    Set As : $JwlInvNo
+    XMLAttr : "JwlInvNo"
+
+[Field: JpCustomerHistoryExportF3]
+    Set As : $$PARTYNAME
+    XMLAttr : "PARTYNAME"
+
+[Field: JpCustomerHistoryExportF4]
+    Set As : $JwlSalesperson
+    XMLAttr : "JwlSalesperson"
+
+[Field: JpCustomerHistoryExportF5]
+    Set As : $JwlLnNet
+    XMLAttr : "JwlLnNet"
+
+[Field: JpCustomerHistoryExportF6]
+    Set As : $JwlLnTotal
+    XMLAttr : "JwlLnTotal"
+
+[Field: JpCustomerHistoryExportF7]
+    Set As : $JwlPayBalance
+    XMLAttr : "JwlPayBalance"
+
 [Collection: Report: JpTopCustomerReport]
     Source: JpTopCustomerSQL
     Var: JpFromDate, JpToDate
@@ -4941,22 +5658,55 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpTopCustomerPrintLine33F1]
     Style : JpTotal
-[Export: JpTopCustomerExport]
-    Title: <1000, "Top Customers">
+[Report: JpTopCustomerExport]
+    Title : <1000, "Top Customers">
     Repeat: Over: JpTopCustomerReport
-    Export Title: Detail
-    Export: Value: $$JwlCust
-    Export: Value: $$JwlVisits
-    Export: Value: $$JwlWt
-    Export: Value: $$JwlSpend
-    Export: Value: $$JwlLastBuy
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpTopCustomerExportForm
 
+[Form: JpTopCustomerExportForm]
+    Parts : JpTopCustomerExportPart
 
-; =============================================================================
-;  REPORT 19 - BIRTHDAY AND ANNIVERSARY CUSTOMERS
-;  CRM fields live on the Ledger master; a SQL month/day comparison means the
-;  report stays instant even with tens of thousands of customers.
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpTopCustomerExportPart]
+    XMLTag : "Row"
+    Lines : JpTopCustomerExportLine
+
+[Line: JpTopCustomerExportLine]
+    Field : JpTopCustomerExportF1
+    Field : JpTopCustomerExportF2
+    Field : JpTopCustomerExportF3
+    Field : JpTopCustomerExportF4
+    Field : JpTopCustomerExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpTopCustomerExportF1]
+    Set As : $$JwlCust
+    XMLAttr : "JwlCust"
+
+[Field: JpTopCustomerExportF2]
+    Set As : $$JwlVisits
+    XMLAttr : "JwlVisits"
+
+[Field: JpTopCustomerExportF3]
+    Set As : $$JwlWt
+    XMLAttr : "JwlWt"
+
+[Field: JpTopCustomerExportF4]
+    Set As : $$JwlSpend
+    XMLAttr : "JwlSpend"
+
+[Field: JpTopCustomerExportF5]
+    Set As : $$JwlLastBuy
+    XMLAttr : "JwlLastBuy"
+
 [Collection: Report: JpBirthdayReport]
     Source: JpBirthdaySQL
     Var: JpFromDate, JpToDate, JpCrmEvent
@@ -5150,21 +5900,60 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpBirthdayPrintLine29F1]
     Style : JpTotal
-[Export: JpBirthdayExport]
-    Title: <1000, "Birthday and Anniversary Customers">
+[Report: JpBirthdayExport]
+    Title : <1000, "Birthday and Anniversary Customers">
     Repeat: Over: JpBirthdayReport
-    Export Title: Detail
-    Export: Value: $$JwlCust
-    Export: Value: $$MOBILE
-    Export: Value: $$JwlDob
-    Export: Value: $$JwlAnniv
-    Export: Value: $$JwlSpend
-    Export: Value: $$JwlPts
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpBirthdayExportForm
 
+[Form: JpBirthdayExportForm]
+    Parts : JpBirthdayExportPart
 
-; =============================================================================
-;  REPORT 20 - OLD GOLD EXCHANGE REGISTER
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpBirthdayExportPart]
+    XMLTag : "Row"
+    Lines : JpBirthdayExportLine
+
+[Line: JpBirthdayExportLine]
+    Field : JpBirthdayExportF1
+    Field : JpBirthdayExportF2
+    Field : JpBirthdayExportF3
+    Field : JpBirthdayExportF4
+    Field : JpBirthdayExportF5
+    Field : JpBirthdayExportF6
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpBirthdayExportF1]
+    Set As : $$JwlCust
+    XMLAttr : "JwlCust"
+
+[Field: JpBirthdayExportF2]
+    Set As : $$MOBILE
+    XMLAttr : "MOBILE"
+
+[Field: JpBirthdayExportF3]
+    Set As : $$JwlDob
+    XMLAttr : "JwlDob"
+
+[Field: JpBirthdayExportF4]
+    Set As : $$JwlAnniv
+    XMLAttr : "JwlAnniv"
+
+[Field: JpBirthdayExportF5]
+    Set As : $$JwlSpend
+    XMLAttr : "JwlSpend"
+
+[Field: JpBirthdayExportF6]
+    Set As : $$JwlPts
+    XMLAttr : "JwlPts"
+
 [Collection: Report: JpOldGoldRegister]
     Source: JpOldGoldSQL
     Var: JpFromDate, JpToDate, JpOgMetalFilter
@@ -5540,21 +6329,96 @@ JwlTotalPurchases : Number : 20216
 
 [Field: JpOldGoldPrintLine69F1]
     Style : JpTotal
-[Export: JpOldGoldExport]
-    Title: <1000, "Old Gold Exchange Register">
+[Report: JpOldGoldExport]
+    Title : <1000, "Old Gold Exchange Register">
     Repeat: Over: JpOldGoldRegister
-    Export Title: Detail
-    Export: Value: $$JwlOgRef
-    Export: Value: $$JwlOgDate
-    Export: Value: $$JwlOgCust
-    Export: Value: $JwlOgMetal
-    Export: Value: $$JwlOgPur
-    Export: Value: $$JwlOgGross
-    Export: Value: $$JwlOgStone
-    Export: Value: $$JwlOgNet
-    Export: Value: $$JwlOgFine
-    Export: Value: $JwlOgRate
-    Export: Value: $$JwlOgDed
-    Export: Value: $JwlOgValue
-    Export: Value: $$JwlOgAdj
-    Export: Value: $$JwlOgBal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpOldGoldExportForm
+
+[Form: JpOldGoldExportForm]
+    Parts : JpOldGoldExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpOldGoldExportPart]
+    XMLTag : "Row"
+    Lines : JpOldGoldExportLine
+
+[Line: JpOldGoldExportLine]
+    Field : JpOldGoldExportF1
+    Field : JpOldGoldExportF2
+    Field : JpOldGoldExportF3
+    Field : JpOldGoldExportF4
+    Field : JpOldGoldExportF5
+    Field : JpOldGoldExportF6
+    Field : JpOldGoldExportF7
+    Field : JpOldGoldExportF8
+    Field : JpOldGoldExportF9
+    Field : JpOldGoldExportF10
+    Field : JpOldGoldExportF11
+    Field : JpOldGoldExportF12
+    Field : JpOldGoldExportF13
+    Field : JpOldGoldExportF14
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpOldGoldExportF1]
+    Set As : $$JwlOgRef
+    XMLAttr : "JwlOgRef"
+
+[Field: JpOldGoldExportF2]
+    Set As : $$JwlOgDate
+    XMLAttr : "JwlOgDate"
+
+[Field: JpOldGoldExportF3]
+    Set As : $$JwlOgCust
+    XMLAttr : "JwlOgCust"
+
+[Field: JpOldGoldExportF4]
+    Set As : $JwlOgMetal
+    XMLAttr : "JwlOgMetal"
+
+[Field: JpOldGoldExportF5]
+    Set As : $$JwlOgPur
+    XMLAttr : "JwlOgPur"
+
+[Field: JpOldGoldExportF6]
+    Set As : $$JwlOgGross
+    XMLAttr : "JwlOgGross"
+
+[Field: JpOldGoldExportF7]
+    Set As : $$JwlOgStone
+    XMLAttr : "JwlOgStone"
+
+[Field: JpOldGoldExportF8]
+    Set As : $$JwlOgNet
+    XMLAttr : "JwlOgNet"
+
+[Field: JpOldGoldExportF9]
+    Set As : $$JwlOgFine
+    XMLAttr : "JwlOgFine"
+
+[Field: JpOldGoldExportF10]
+    Set As : $JwlOgRate
+    XMLAttr : "JwlOgRate"
+
+[Field: JpOldGoldExportF11]
+    Set As : $$JwlOgDed
+    XMLAttr : "JwlOgDed"
+
+[Field: JpOldGoldExportF12]
+    Set As : $JwlOgValue
+    XMLAttr : "JwlOgValue"
+
+[Field: JpOldGoldExportF13]
+    Set As : $$JwlOgAdj
+    XMLAttr : "JwlOgAdj"
+
+[Field: JpOldGoldExportF14]
+    Set As : $$JwlOgBal
+    XMLAttr : "JwlOgBal"

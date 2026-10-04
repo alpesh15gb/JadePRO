@@ -243,24 +243,32 @@ JwlOrdNote : String : 20190
 [Variable: JpOrdNoteTx    : String]
 [Variable: JpOrdMsg       : String]
 
-[Screen: JpOrderScreen]
-    Caption: "JadePro  ::  Advance / Custom Order"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpOrderScreen]
+    Title : "JadePro  ::  Advance / Custom Order"
+    Form : JpOrderScreenForm
+
+[Form: JpOrderScreenForm]
+    Parts : JpOrderScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpOrderScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           ADVANCE  /  CUSTOM ORDER"
-    Style: JpTitle
-    Line Height: 1
-    Text: "New  ->  Design Approved  ->  In Production  ->  Ready  ->  Delivered   (or Cancelled)"
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpOrderScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpOrderScreenT2
+    Field : JpOrderScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " ORDER DETAILS"
-    Style: JpSectionBox
+    Field : JpOrderScreenT4
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpOrdNo, Label: "Order Number *">
         Width: 250
@@ -285,8 +293,7 @@ JwlOrdNote : String : 20190
 
     Line: Spacing
     Lines: 1
-    Text: " MONEY"
-    Style: JpSectionBox
+    Field : JpOrderScreenT5
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpOrdExpPrice, Label: "Expected Price">
         Width: 250
@@ -311,8 +318,7 @@ JwlOrdNote : String : 20190
 
     Line: Spacing
     Lines: 1
-    Text: " STATUS"
-    Style: JpSectionBox
+    Field : JpOrderScreenT6
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpOrdStatusTx, Label: "Order Status *">
         Width: 250
@@ -335,6 +341,33 @@ JwlOrdNote : String : 20190
     Button: <Save Order (F2), Key: F2, Action: JpOrdSave>
     Button: <Custom Order Register (F4), Key: F4, Action: JpOrdRegister>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpOrderScreenT1]
+    Set As : "           ADVANCE  /  CUSTOM ORDER"
+    Style : JpTitle
+
+[Field: JpOrderScreenT2]
+    Set As : "New  ->  Design Approved  ->  In Production  ->  Ready  ->  Delivered   (or Cancelled)"
+    Style : JpMuted
+
+[Field: JpOrderScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpOrderScreenT4]
+    Set As : " ORDER DETAILS"
+    Style : JpSectionBox
+
+[Field: JpOrderScreenT5]
+    Set As : " MONEY"
+    Style : JpSectionBox
+
+[Field: JpOrderScreenT6]
+    Set As : " STATUS"
+    Style : JpSectionBox
 
 [Collection: Source: JpOrdStatusPick]
     Data: JpOrdStatusPickRow
@@ -742,16 +775,71 @@ JwlOrdNote : String : 20190
 
 [Field: JpOrderRegisterPrintLine55F1]
     Style : JpTotal
-[Export: JpOrderRegisterExport]
-    Title: <1000, "Custom Order Register">
+[Report: JpOrderRegisterExport]
+    Title : <1000, "Custom Order Register">
     Repeat: Over: JpOrderRegister
-    Export Title: Detail
-    Export: Value: $JwlOrdNo
-    Export: Value: $JwlOrdCust
-    Export: Value: $JwlOrdType
-    Export: Value: $JwlOrdExpWt
-    Export: Value: $JwlOrdExpPrice
-    Export: Value: $JwlOrdAdvance
-    Export: Value: $JwlOrdAdvBalance
-    Export: Value: $JwlOrdDelivDate
-    Export: Value: $JwlOrdStatus
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpOrderRegisterExportForm
+
+[Form: JpOrderRegisterExportForm]
+    Parts : JpOrderRegisterExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpOrderRegisterExportPart]
+    XMLTag : "Row"
+    Lines : JpOrderRegisterExportLine
+
+[Line: JpOrderRegisterExportLine]
+    Field : JpOrderRegisterExportF1
+    Field : JpOrderRegisterExportF2
+    Field : JpOrderRegisterExportF3
+    Field : JpOrderRegisterExportF4
+    Field : JpOrderRegisterExportF5
+    Field : JpOrderRegisterExportF6
+    Field : JpOrderRegisterExportF7
+    Field : JpOrderRegisterExportF8
+    Field : JpOrderRegisterExportF9
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpOrderRegisterExportF1]
+    Set As : $JwlOrdNo
+    XMLAttr : "JwlOrdNo"
+
+[Field: JpOrderRegisterExportF2]
+    Set As : $JwlOrdCust
+    XMLAttr : "JwlOrdCust"
+
+[Field: JpOrderRegisterExportF3]
+    Set As : $JwlOrdType
+    XMLAttr : "JwlOrdType"
+
+[Field: JpOrderRegisterExportF4]
+    Set As : $JwlOrdExpWt
+    XMLAttr : "JwlOrdExpWt"
+
+[Field: JpOrderRegisterExportF5]
+    Set As : $JwlOrdExpPrice
+    XMLAttr : "JwlOrdExpPrice"
+
+[Field: JpOrderRegisterExportF6]
+    Set As : $JwlOrdAdvance
+    XMLAttr : "JwlOrdAdvance"
+
+[Field: JpOrderRegisterExportF7]
+    Set As : $JwlOrdAdvBalance
+    XMLAttr : "JwlOrdAdvBalance"
+
+[Field: JpOrderRegisterExportF8]
+    Set As : $JwlOrdDelivDate
+    XMLAttr : "JwlOrdDelivDate"
+
+[Field: JpOrderRegisterExportF9]
+    Set As : $JwlOrdStatus
+    XMLAttr : "JwlOrdStatus"

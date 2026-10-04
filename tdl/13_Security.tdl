@@ -352,40 +352,46 @@ JwlRoleSetupDone : Logical : 20218
 [Variable: JpRoleMsg     : String]
 [Variable: JpRoleSelf    : String]
 
-[Screen: JpRoleSetupScreen]
-    Caption: "JadePro  ::  Role Setup"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpRoleSetupScreen]
+    Title : "JadePro  ::  Role Setup"
+    Form : JpRoleSetupScreenForm
+
+[Form: JpRoleSetupScreenForm]
+    Parts : JpRoleSetupScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpRoleSetupScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JADEPRO ROLE SETUP"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Map each Tally user name to a role:  TallyUserName|Role|TallyUserName|Role"
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpRoleSetupScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpRoleSetupScreenT2
+    Field : JpRoleSetupScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " CURRENT SESSION"
-    Style: JpSectionBox
+    Field : JpRoleSetupScreenT4
     Lines: 1, 1, 1
-    Text: "   Detected Tally user : " + JpBlankIfNull(JpUserName)
-    Text: "   Assigned role ...... : " + JpRoleSummary(JpBlankIfNull(JpUserRole))
-    Text: "   Detection source ... : " + JpRoleSource
-    Style: JpWarn
+    Field : JpRoleSetupScreenT5
+    Field : JpRoleSetupScreenT6
+    Field : JpRoleSetupScreenT7
 
     Line: Spacing
     Lines: 1
-    Text: " ROLE DEFINITIONS"
-    Style: JpSectionBox
+    Field : JpRoleSetupScreenT8
     Lines: 1, 1, 1, 1, 1
-    Text: "   Owner        - everything"
-    Text: "   Manager      - change rate, override rate, high discount, delete, view profit, barcode"
-    Text: "   Accountant   - purchase, karigar, reports, change rate, delete, barcode"
-    Text: "   Salesperson  - sell and close counter only. No cost, no profit, no rates."
-    Text: "   Cashier      - billing and collections only."
+    Field : JpRoleSetupScreenT9
+    Field : JpRoleSetupScreenT10
+    Field : JpRoleSetupScreenT11
+    Field : JpRoleSetupScreenT12
+    Field : JpRoleSetupScreenT13
 
     Line: Spacing
     Lines: 1, 1
@@ -398,12 +404,65 @@ JwlRoleSetupDone : Logical : 20218
 
     Line: Spacing
     Lines: 1
-    Text: "Example:  Owner,Owner|Meera,Manager|Ravi,Salesperson|Priya,Cashier"
-    Style: JpMuted
+    Field : JpRoleSetupScreenT14
     Lines: 1
     Button: <Save Mapping (F2), Key: F2, Action: JpRoleSave>
     Button: <Reload My Role (F7), Key: F7, Action: JpRoleReload>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpRoleSetupScreenT1]
+    Set As : "           JADEPRO ROLE SETUP"
+    Style : JpTitle
+
+[Field: JpRoleSetupScreenT2]
+    Set As : "Map each Tally user name to a role:  TallyUserName|Role|TallyUserName|Role"
+    Style : JpMuted
+
+[Field: JpRoleSetupScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpRoleSetupScreenT4]
+    Set As : " CURRENT SESSION"
+    Style : JpSectionBox
+
+[Field: JpRoleSetupScreenT5]
+    Set As : "   Detected Tally user : " + JpBlankIfNull(JpUserName)
+    Style : JpWarn
+
+[Field: JpRoleSetupScreenT6]
+    Set As : "   Assigned role ...... : " + JpRoleSummary(JpBlankIfNull(JpUserRole))
+    Style : JpWarn
+
+[Field: JpRoleSetupScreenT7]
+    Set As : "   Detection source ... : " + JpRoleSource
+    Style : JpWarn
+
+[Field: JpRoleSetupScreenT8]
+    Set As : " ROLE DEFINITIONS"
+    Style : JpSectionBox
+
+[Field: JpRoleSetupScreenT9]
+    Set As : "   Owner        - everything"
+
+[Field: JpRoleSetupScreenT10]
+    Set As : "   Manager      - change rate, override rate, high discount, delete, view profit, barcode"
+
+[Field: JpRoleSetupScreenT11]
+    Set As : "   Accountant   - purchase, karigar, reports, change rate, delete, barcode"
+
+[Field: JpRoleSetupScreenT12]
+    Set As : "   Salesperson  - sell and close counter only. No cost, no profit, no rates."
+
+[Field: JpRoleSetupScreenT13]
+    Set As : "   Cashier      - billing and collections only."
+
+[Field: JpRoleSetupScreenT14]
+    Set As : "Example:  Owner,Owner|Meera,Manager|Ravi,Salesperson|Priya,Cashier"
+    Style : JpMuted
 
 [Function: JpRoleSave]
     Returns: Integer : Any
@@ -466,19 +525,28 @@ JwlSalesTargets : String : 20219
 [Variable: JpTargetMapEdit : String]
 [Variable: JpTargetMsg     : String]
 
-[Screen: JpTargetScreen]
-    Caption: "JadePro  ::  Salesperson Monthly Targets"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpTargetScreen]
+    Title : "JadePro  ::  Salesperson Monthly Targets"
+    Form : JpTargetScreenForm
+
+[Form: JpTargetScreenForm]
+    Parts : JpTargetScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpTargetScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           SALESPERSON MONTHLY TARGETS"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Format:  SalespersonName,Target|SalespersonName,Target"
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpTargetScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpTargetScreenT2
+    Field : JpTargetScreenT3
     Lines: 1, 1, 1
     Field: <Field-Id: JpTargetMapEdit, Label: "Target Map">
         Width: 100
@@ -486,11 +554,29 @@ JwlSalesTargets : String : 20219
     Field: <Field-Id: JpTargetMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "Example:  Ravi,250000|Priya,180000"
-    Style: JpMuted
+    Field : JpTargetScreenT4
     Lines: 1
     Button: <Save Targets (F2), Key: F2, Action: JpTargetSave>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpTargetScreenT1]
+    Set As : "           SALESPERSON MONTHLY TARGETS"
+    Style : JpTitle
+
+[Field: JpTargetScreenT2]
+    Set As : "Format:  SalespersonName,Target|SalespersonName,Target"
+    Style : JpMuted
+
+[Field: JpTargetScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpTargetScreenT4]
+    Set As : "Example:  Ravi,250000|Priya,180000"
+    Style : JpMuted
 
 [Function: JpTargetSave]
     Returns: Integer : Any

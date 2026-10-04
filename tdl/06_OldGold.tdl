@@ -229,19 +229,28 @@ JwlOgNote : String : 20152
 [Variable: JpOgNote        : String]
 [Variable: JpOgMsg         : String]
 
-[Screen: JpOldGoldScreen]
-    Caption: "JadePro  ::  Old Gold Exchange"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpOldGoldScreen]
+    Title : "JadePro  ::  Old Gold Exchange"
+    Form : JpOldGoldScreenForm
+
+[Form: JpOldGoldScreenForm]
+    Parts : JpOldGoldScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpOldGoldScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           OLD GOLD  /  GOLD EXCHANGE"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Fine Weight = Net Weight x Purity %      Exchange Value = Fine Weight x Today's Rate for that purity"
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpOldGoldScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpOldGoldScreenT2
+    Field : JpOldGoldScreenT3
 
     Line: Spacing
     Lines: 1, 1, 1, 1
@@ -268,8 +277,7 @@ JwlOgNote : String : 20152
 
     Line: Spacing
     Lines: 1
-    Text: " WEIGHTS  AND  VALUATION"
-    Style: JpSectionBox
+    Field : JpOldGoldScreenT4
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpOgGross, Label: "Gross Weight *">
         Width: 250
@@ -299,8 +307,7 @@ JwlOgNote : String : 20152
 
     Line: Spacing
     Lines: 1
-    Text: " SETTLEMENT"
-    Style: JpSectionBox
+    Field : JpOldGoldScreenT5
     Lines: 1, 1, 1
     Field: <Field-Id: JpOgAdjusted, Label: "Adjusted Against New Purchase">
         Width: 250
@@ -323,8 +330,7 @@ JwlOgNote : String : 20152
     Field: <Field-Id: JpOgMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "The exchange voucher can be printed on the sales invoice by entering its reference in JwlOldGoldRef on the Sales voucher."
-    Style: JpMuted
+    Field : JpOldGoldScreenT6
 
     Line: Spacing
     Lines: 1
@@ -336,6 +342,33 @@ JwlOgNote : String : 20152
 ; =============================================================================
 ;  SECTION E - ACTIONS
 ; =============================================================================
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpOldGoldScreenT1]
+    Set As : "           OLD GOLD  /  GOLD EXCHANGE"
+    Style : JpTitle
+
+[Field: JpOldGoldScreenT2]
+    Set As : "Fine Weight = Net Weight x Purity %      Exchange Value = Fine Weight x Today's Rate for that purity"
+    Style : JpMuted
+
+[Field: JpOldGoldScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpOldGoldScreenT4]
+    Set As : " WEIGHTS  AND  VALUATION"
+    Style : JpSectionBox
+
+[Field: JpOldGoldScreenT5]
+    Set As : " SETTLEMENT"
+    Style : JpSectionBox
+
+[Field: JpOldGoldScreenT6]
+    Set As : "The exchange voucher can be printed on the sales invoice by entering its reference in JwlOldGoldRef on the Sales voucher."
+    Style : JpMuted
 
 [Function: JpOgCalc]
     Returns: Integer : Any

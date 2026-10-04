@@ -423,10 +423,9 @@ What remains, with the probe that settles each:
 | `Style: Colour` / `Border` / `Background Colour` / `Align` | 52 | `p25` |
 | `Collection: Source: Data` | 11 | `p29` |
 | `Menu: Title` | 1 | `p30` |
-| Non-existent definition types (`Export` 30, `Screen` 15) | 45 | `p29`, `p30` |
 
-Two of the four T0006 classes are now closed against the reference rather than a
-probe:
+Four T0006 classes are now closed — two against the reference, two against Tally's
+own error:
 
 - **`[Keys:]` (3) — deleted.** `Key` is a *Menu* attribute, not a definition type.
   TallyHelp's Menu page: for `Item`, *"the system automatically assigns the next
@@ -436,6 +435,30 @@ probe:
   print layout is a Form, so `[Print: X]` became `[Form: X]` (plus a generated
   `[Part: XLines]` where the block listed Lines). The Form deliberately keeps the
   original name, so every existing `Print : X` reference still resolves.
+- **`[Screen:]` (15) — rewritten as Report + Form + Part.** Tally confirmed this
+  one directly: `error T0006 ... (2366)` on `[Screen: JpItemCreateScreen]`. The
+  bodies were already Part grammar, so they moved across under a new
+  `[Report: X]` + `[Form: XForm]` wrapper. 124 `Text:` lines became generated
+  `[Field:]` definitions (`Set As` + the run's `Style`), because Part has no
+  `text`; `Caption` moved to the Report's `Title`; `Key` and `Line Height` were
+  dropped — see `fix-screen-export-types.mjs` for why each.
+- **`[Export:]` (30) — rewritten as a `Plain XML` Report.** 244 `Export: Value:`
+  lines became generated `[Field:]` definitions setting the same payload verbatim,
+  with `XMLTag` on the Part and a derived `XMLAttr` per Field. `Repeat: Over:` was
+  left verbatim on the Report (Report accepts `repeat`); `Export Title: Detail` was
+  dropped.
+
+  This is the **least verified** change in the project. It was read off probe
+  `p29`, which has never actually been loaded, and probe `p06` already warns that
+  if `[Export:]` proves unusable "the CSV has to come from elsewhere — a redesign,
+  not a syntax patch". Note that 21 of the 244 payloads are function calls feeding
+  the Zebra ZPL pipeline. If the next Tally error lands in one of these blocks,
+  believe it over this section.
+
+Both rewrites keep the original definition name, so the 15 menu `Display:`
+references and the 30 `[Collection: Report:]` `Export:` references resolve
+unchanged and needed no edits. `[Barcode:]` also fails T0006, but lives only in
+`08c_BarcodeSection.tdl`, which is deliberately excluded from the bundle.
 
 Per decision: the **587 bare `Width:` column widths** were dropped rather than
 mapped positionally onto Fields, and `Paper:` / `Margin-*` (34 layouts) were
@@ -469,10 +492,11 @@ rather than keywords. The report is capped at 400 lines by default; set
    sizing falls back to Tally defaults. The 587 positional column widths in the
    print layouts were dropped for the same reason.
 3. **Attribute routing** — see §10.2. The table, the oracle, the Line→Field
-   migration and the `[Keys:]` / `[Print:]` rewrites are done. 1,111 attributes
-   and 45 definition types (`Export` 30, `Screen` 15) remain. The next error is
-   `[Screen: JpItemCreateScreen]`; the two Screen/Export classes need the p29/p30
-   shapes before 45 blocks are rewritten.
+   migration and the `[Keys:]` / `[Print:]` / `[Screen:]` / `[Export:]` rewrites
+   are done — no illegal definition type remains in the bundle. 1,111 attributes
+   remain, the largest class being the 171 invented `[Collection: Report:]`
+   attributes (`Print` / `Export` / `Source` / `Key` / `Var` / `Filters`), which
+   is the most likely next error Tally reports.
 4. **Voucher customisation.** The TDL 9 chapter shows default definitions being
    extended with definition modifiers — `[#Part : VCH Narration]` +
    `Add : Option : …`, `[#Field : PPR Narr]`, `[#Part : X] Add : Lines : After : A : B`

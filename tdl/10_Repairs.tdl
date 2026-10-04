@@ -232,24 +232,32 @@ JwlRepRecvDate : Date : 20208
 [Variable: JpRepStatusTx  : String]
 [Variable: JpRepMsg       : String]
 
-[Screen: JpRepairScreen]
-    Caption: "JadePro  ::  Jewellery Repair"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpRepairScreen]
+    Title : "JadePro  ::  Jewellery Repair"
+    Form : JpRepairScreenForm
+
+[Form: JpRepairScreenForm]
+    Parts : JpRepairScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpRepairScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           JEWELLERY REPAIR"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Received  ->  Sent to Karigar  ->  Repairing  ->  Ready  ->  Delivered"
-    Style: JpSub
-    Text: "Repairs never change stock - only the karigar's metal accountability is affected."
-    Style: JpMuted
+    Field : JpRepairScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpRepairScreenT2
+    Field : JpRepairScreenT3
 
     Line: Spacing
     Lines: 1
-    Text: " CUSTOMER  AND  PIECE"
-    Style: JpSectionBox
+    Field : JpRepairScreenT4
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpRepNo, Label: "Repair Number *">
         Width: 250
@@ -274,8 +282,7 @@ JwlRepRecvDate : Date : 20208
 
     Line: Spacing
     Lines: 1
-    Text: " WEIGHTS  AND  STONES"
-    Style: JpSectionBox
+    Field : JpRepairScreenT5
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpRepGrossWt, Label: "Gross Weight *">
         Width: 250
@@ -293,8 +300,7 @@ JwlRepRecvDate : Date : 20208
 
     Line: Spacing
     Lines: 1
-    Text: " WORK  AND  MONEY"
-    Style: JpSectionBox
+    Field : JpRepairScreenT6
     Lines: 1, 1, 1, 1, 1, 1
     Field: <Field-Id: JpRepWorkTx, Label: "Repair Work *">
         Width: 250
@@ -319,8 +325,7 @@ JwlRepRecvDate : Date : 20208
 
     Line: Spacing
     Lines: 1
-    Text: " STATUS"
-    Style: JpSectionBox
+    Field : JpRepairScreenT7
     Lines: 1, 1
     Field: <Field-Id: JpRepStatusTx, Label: "Repair Status *">
         Width: 250
@@ -337,6 +342,37 @@ JwlRepRecvDate : Date : 20208
     Button: <Save Repair (F2), Key: F2, Action: JpRepSave>
     Button: <Repair Register (F4), Key: F4, Action: JpRepRegister>
     Button: <Quit (Esc), Key: Esc, Action: System: Quit>
+
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpRepairScreenT1]
+    Set As : "           JEWELLERY REPAIR"
+    Style : JpTitle
+
+[Field: JpRepairScreenT2]
+    Set As : "Received  ->  Sent to Karigar  ->  Repairing  ->  Ready  ->  Delivered"
+    Style : JpMuted
+
+[Field: JpRepairScreenT3]
+    Set As : "Repairs never change stock - only the karigar's metal accountability is affected."
+    Style : JpMuted
+
+[Field: JpRepairScreenT4]
+    Set As : " CUSTOMER  AND  PIECE"
+    Style : JpSectionBox
+
+[Field: JpRepairScreenT5]
+    Set As : " WEIGHTS  AND  STONES"
+    Style : JpSectionBox
+
+[Field: JpRepairScreenT6]
+    Set As : " WORK  AND  MONEY"
+    Style : JpSectionBox
+
+[Field: JpRepairScreenT7]
+    Set As : " STATUS"
+    Style : JpSectionBox
 
 [Collection: Source: JpRepStatusPick]
     Data: JpRepStatusPickRow
@@ -741,17 +777,76 @@ JwlRepRecvDate : Date : 20208
 
 [Field: JpRepairRegisterPrintLine53F1]
     Style : JpTotal
-[Export: JpRepairRegisterExport]
-    Title: <1000, "Repair Register">
+[Report: JpRepairRegisterExport]
+    Title : <1000, "Repair Register">
     Repeat: Over: JpRepairRegister
-    Export Title: Detail
-    Export: Value: $JwlRepNo
-    Export: Value: $JwlRepCust
-    Export: Value: $JwlRepDesc
-    Export: Value: $JwlRepGrossWt
-    Export: Value: $JwlRepNetWt
-    Export: Value: $JwlRepEstAmt
-    Export: Value: $JwlRepAdvance
-    Export: Value: $JwlRepBalance
-    Export: Value: $JwlRepDelivDate
-    Export: Value: $JwlRepStatus
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpRepairRegisterExportForm
+
+[Form: JpRepairRegisterExportForm]
+    Parts : JpRepairRegisterExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpRepairRegisterExportPart]
+    XMLTag : "Row"
+    Lines : JpRepairRegisterExportLine
+
+[Line: JpRepairRegisterExportLine]
+    Field : JpRepairRegisterExportF1
+    Field : JpRepairRegisterExportF2
+    Field : JpRepairRegisterExportF3
+    Field : JpRepairRegisterExportF4
+    Field : JpRepairRegisterExportF5
+    Field : JpRepairRegisterExportF6
+    Field : JpRepairRegisterExportF7
+    Field : JpRepairRegisterExportF8
+    Field : JpRepairRegisterExportF9
+    Field : JpRepairRegisterExportF10
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpRepairRegisterExportF1]
+    Set As : $JwlRepNo
+    XMLAttr : "JwlRepNo"
+
+[Field: JpRepairRegisterExportF2]
+    Set As : $JwlRepCust
+    XMLAttr : "JwlRepCust"
+
+[Field: JpRepairRegisterExportF3]
+    Set As : $JwlRepDesc
+    XMLAttr : "JwlRepDesc"
+
+[Field: JpRepairRegisterExportF4]
+    Set As : $JwlRepGrossWt
+    XMLAttr : "JwlRepGrossWt"
+
+[Field: JpRepairRegisterExportF5]
+    Set As : $JwlRepNetWt
+    XMLAttr : "JwlRepNetWt"
+
+[Field: JpRepairRegisterExportF6]
+    Set As : $JwlRepEstAmt
+    XMLAttr : "JwlRepEstAmt"
+
+[Field: JpRepairRegisterExportF7]
+    Set As : $JwlRepAdvance
+    XMLAttr : "JwlRepAdvance"
+
+[Field: JpRepairRegisterExportF8]
+    Set As : $JwlRepBalance
+    XMLAttr : "JwlRepBalance"
+
+[Field: JpRepairRegisterExportF9]
+    Set As : $JwlRepDelivDate
+    XMLAttr : "JwlRepDelivDate"
+
+[Field: JpRepairRegisterExportF10]
+    Set As : $JwlRepStatus
+    XMLAttr : "JwlRepStatus"

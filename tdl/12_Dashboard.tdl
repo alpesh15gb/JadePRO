@@ -197,23 +197,70 @@
 [Field: JpDashboardPrintLine21F1]
     Set As : "  Silver " + JpFmtAmt(JpCacheSilver) + "      Platinum " + JpFmtAmt(JpCachePlatinum)
     Style : JpFontBold
-[Export: JpDashboardExport]
-    Title: <1000, "Dashboard - Sales and Collections">
+[Report: JpDashboardExport]
+    Title : <1000, "Dashboard - Sales and Collections">
     Repeat: Over: JpDashboard
-    Export Title: Detail
-    Export: Value: $$JwlVchType
-    Export: Value: $$JwlSales
-    Export: Value: $$JwlPurch
-    Export: Value: $$JwlCash
-    Export: Value: $$JwlCard
-    Export: Value: $$JwlUpi
-    Export: Value: $$JwlBank
-    Export: Value: $$JwlBills
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpDashboardExportForm
 
+[Form: JpDashboardExportForm]
+    Parts : JpDashboardExportPart
 
-; =============================================================================
-;  CARD 2 - WEIGHT AND RANKING  (line level)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpDashboardExportPart]
+    XMLTag : "Row"
+    Lines : JpDashboardExportLine
+
+[Line: JpDashboardExportLine]
+    Field : JpDashboardExportF1
+    Field : JpDashboardExportF2
+    Field : JpDashboardExportF3
+    Field : JpDashboardExportF4
+    Field : JpDashboardExportF5
+    Field : JpDashboardExportF6
+    Field : JpDashboardExportF7
+    Field : JpDashboardExportF8
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpDashboardExportF1]
+    Set As : $$JwlVchType
+    XMLAttr : "JwlVchType"
+
+[Field: JpDashboardExportF2]
+    Set As : $$JwlSales
+    XMLAttr : "JwlSales"
+
+[Field: JpDashboardExportF3]
+    Set As : $$JwlPurch
+    XMLAttr : "JwlPurch"
+
+[Field: JpDashboardExportF4]
+    Set As : $$JwlCash
+    XMLAttr : "JwlCash"
+
+[Field: JpDashboardExportF5]
+    Set As : $$JwlCard
+    XMLAttr : "JwlCard"
+
+[Field: JpDashboardExportF6]
+    Set As : $$JwlUpi
+    XMLAttr : "JwlUpi"
+
+[Field: JpDashboardExportF7]
+    Set As : $$JwlBank
+    XMLAttr : "JwlBank"
+
+[Field: JpDashboardExportF8]
+    Set As : $$JwlBills
+    XMLAttr : "JwlBills"
+
 [Collection: Report: JpWeightDashboard]
     Source: JpWeightDashboardSQL
     Var: JpDashFrom, JpDashTo
@@ -441,20 +488,55 @@
 
 [Field: JpWeightDashboardPrintLine38F1]
     Style : JpTotal
-[Export: JpWeightDashboardExport]
-    Title: <1000, "Dashboard - Gold Sold and Top Performers">
+[Report: JpWeightDashboardExport]
+    Title : <1000, "Dashboard - Gold Sold and Top Performers">
     Repeat: Over: JpWeightDashboard
-    Export Title: Detail
-    Export: Value: $$JwlCat
-    Export: Value: $$JwlSp
-    Export: Value: $$JwlPcs
-    Export: Value: $$JwlWtSold
-    Export: Value: $$JwlRev
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpWeightDashboardExportForm
 
+[Form: JpWeightDashboardExportForm]
+    Parts : JpWeightDashboardExportPart
 
-; =============================================================================
-;  CARD 3 - ALERTS  (journal level: orders, repairs, karigar metal)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpWeightDashboardExportPart]
+    XMLTag : "Row"
+    Lines : JpWeightDashboardExportLine
+
+[Line: JpWeightDashboardExportLine]
+    Field : JpWeightDashboardExportF1
+    Field : JpWeightDashboardExportF2
+    Field : JpWeightDashboardExportF3
+    Field : JpWeightDashboardExportF4
+    Field : JpWeightDashboardExportF5
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpWeightDashboardExportF1]
+    Set As : $$JwlCat
+    XMLAttr : "JwlCat"
+
+[Field: JpWeightDashboardExportF2]
+    Set As : $$JwlSp
+    XMLAttr : "JwlSp"
+
+[Field: JpWeightDashboardExportF3]
+    Set As : $$JwlPcs
+    XMLAttr : "JwlPcs"
+
+[Field: JpWeightDashboardExportF4]
+    Set As : $$JwlWtSold
+    XMLAttr : "JwlWtSold"
+
+[Field: JpWeightDashboardExportF5]
+    Set As : $$JwlRev
+    XMLAttr : "JwlRev"
+
 [Collection: Report: JpAlertDashboard]
     Source: JpAlertDashboardSQL
     Title: <1000,###,#a##"  DASHBOARD 3 of 4  -  PENDING WORK AND ATTENTION">
@@ -764,22 +846,65 @@
     Returns: Number : Any
     JpCountKind = Count($$JwlRef)
 
-[Export: JpAlertDashboardExport]
-    Title: <1000, "Dashboard - Pending Work">
+[Report: JpAlertDashboardExport]
+    Title : <1000, "Dashboard - Pending Work">
     Repeat: Over: JpAlertDashboard
-    Export Title: Detail
-    Export: Value: $$JwlKind
-    Export: Value: $$JwlRef
-    Export: Value: $$JwlRepRef
-    Export: Value: $$JwlJobRef
-    Export: Value: $JwlOrdStatus
-    Export: Value: $JwlRepStatus
-    Export: Value: $JwlJobBalWt
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpAlertDashboardExportForm
 
+[Form: JpAlertDashboardExportForm]
+    Parts : JpAlertDashboardExportPart
 
-; =============================================================================
-;  CARD 4 - INVENTORY  (item level)
-; =============================================================================
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpAlertDashboardExportPart]
+    XMLTag : "Row"
+    Lines : JpAlertDashboardExportLine
+
+[Line: JpAlertDashboardExportLine]
+    Field : JpAlertDashboardExportF1
+    Field : JpAlertDashboardExportF2
+    Field : JpAlertDashboardExportF3
+    Field : JpAlertDashboardExportF4
+    Field : JpAlertDashboardExportF5
+    Field : JpAlertDashboardExportF6
+    Field : JpAlertDashboardExportF7
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpAlertDashboardExportF1]
+    Set As : $$JwlKind
+    XMLAttr : "JwlKind"
+
+[Field: JpAlertDashboardExportF2]
+    Set As : $$JwlRef
+    XMLAttr : "JwlRef"
+
+[Field: JpAlertDashboardExportF3]
+    Set As : $$JwlRepRef
+    XMLAttr : "JwlRepRef"
+
+[Field: JpAlertDashboardExportF4]
+    Set As : $$JwlJobRef
+    XMLAttr : "JwlJobRef"
+
+[Field: JpAlertDashboardExportF5]
+    Set As : $JwlOrdStatus
+    XMLAttr : "JwlOrdStatus"
+
+[Field: JpAlertDashboardExportF6]
+    Set As : $JwlRepStatus
+    XMLAttr : "JwlRepStatus"
+
+[Field: JpAlertDashboardExportF7]
+    Set As : $JwlJobBalWt
+    XMLAttr : "JwlJobBalWt"
+
 [Collection: Report: JpInvDashboard]
     Source: JpInvDashboardSQL
     Title: <1000,###,#a##"  DASHBOARD 4 of 4  -  INVENTORY AND STOCK VALUE">
@@ -1054,13 +1179,56 @@
 [Field: JpInvDashboardPrintLine48F1]
     Set As : "Gold, Silver and Platinum weights individually: see the Metal / Purity rows above, or Gateway > Jewellery > Inventory Reports > Metal-wise Stock."
     Style : JpFontBold
-[Export: JpInvDashboardExport]
-    Title: <1000, "Dashboard - Inventory">
+[Report: JpInvDashboardExport]
+    Title : <1000, "Dashboard - Inventory">
     Repeat: Over: JpInvDashboard
-    Export Title: Detail
-    Export: Value: $$JwlMetal
-    Export: Value: $$JwlPur
-    Export: Value: $$JwlPcs
-    Export: Value: $$JwlWt
-    Export: Value: $$JwlCarat
-    Export: Value: $$JwlStockVal
+    Plain XML : Yes
+    Export Header : Yes
+    Form : JpInvDashboardExportForm
+
+[Form: JpInvDashboardExportForm]
+    Parts : JpInvDashboardExportPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Export:] is not a Tally definition type. Bulk output is a Report
+    ; declared Plain XML, with XMLTag on the Part and XMLAttr on the Fields.
+    ; "Export Title: Detail" (30 sites) was dropped - Report has Export Header,
+    ; and detail-vs-header is not a Part-level concept.
+[Part: JpInvDashboardExportPart]
+    XMLTag : "Row"
+    Lines : JpInvDashboardExportLine
+
+[Line: JpInvDashboardExportLine]
+    Field : JpInvDashboardExportF1
+    Field : JpInvDashboardExportF2
+    Field : JpInvDashboardExportF3
+    Field : JpInvDashboardExportF4
+    Field : JpInvDashboardExportF5
+    Field : JpInvDashboardExportF6
+
+    ; "Export: Value:" had no TDL equivalent. Each became a Field
+    ; setting the same payload verbatim; the tag name is derived from it.
+
+[Field: JpInvDashboardExportF1]
+    Set As : $$JwlMetal
+    XMLAttr : "JwlMetal"
+
+[Field: JpInvDashboardExportF2]
+    Set As : $$JwlPur
+    XMLAttr : "JwlPur"
+
+[Field: JpInvDashboardExportF3]
+    Set As : $$JwlPcs
+    XMLAttr : "JwlPcs"
+
+[Field: JpInvDashboardExportF4]
+    Set As : $$JwlWt
+    XMLAttr : "JwlWt"
+
+[Field: JpInvDashboardExportF5]
+    Set As : $$JwlCarat
+    XMLAttr : "JwlCarat"
+
+[Field: JpInvDashboardExportF6]
+    Set As : $$JwlStockVal
+    XMLAttr : "JwlStockVal"

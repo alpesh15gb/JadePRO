@@ -76,19 +76,28 @@ JwlRateNote : String : 20053
 ; =============================================================================
 ;  RATE SCREEN
 ; =============================================================================
-[Screen: JpRateScreen]
-    Caption: "JadePro  ::  Daily Gold / Silver / Platinum Rate"
-    Key: <Ctrl+Q: System: Quit>
+[Report: JpRateScreen]
+    Title : "JadePro  ::  Daily Gold / Silver / Platinum Rate"
+    Form : JpRateScreenForm
+
+[Form: JpRateScreenForm]
+    Parts : JpRateScreenPart
+
+; ---------- fixed-screen-export-types.mjs ----------
+    ; [Screen:] is not a Tally definition type. The body below was already
+    ; Part grammar, so it became a Part behind a Report + Form.
+[Part: JpRateScreenPart]
+    ; Caption moved to the Report's Title by fix-screen-export-types.mjs
+    ; Key dropped by fix-screen-export-types.mjs - Part has no Key;
+    ; this was a menu-level shortcut, not a layout attribute.
 
     Line: Spacing
     Lines: 1
-    Text: "           DAILY RATE MASTER"
-    Style: JpTitle
-    Line Height: 1
-    Text: "Rates entered here are used automatically on every sales, purchase and old-gold entry."
-    Style: JpSub
-    Text: " "
-    Style: JpMuted
+    Field : JpRateScreenT1
+    ; Line Height dropped by fix-screen-export-types.mjs - Part: Height
+    ; means the height of the whole Part, not of each Line.
+    Field : JpRateScreenT2
+    Field : JpRateScreenT3
     Lines: 1, 1
     Field: <Field-Id: JpRateDate, Label: "Rate Date">
         Width: 180
@@ -96,8 +105,7 @@ JwlRateNote : String : 20053
 
     Line: Spacing
     Lines: 1
-    Text: " GOLD  (rate per 10 grams is converted to per gram on save)"
-    Style: JpSectionBox
+    Field : JpRateScreenT4
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpRateIn24K, Label: "24K  (995)">
         Width: 250
@@ -114,8 +122,7 @@ JwlRateNote : String : 20053
 
     Line: Spacing
     Lines: 1
-    Text: " SILVER,  PLATINUM"
-    Style: JpSectionBox
+    Field : JpRateScreenT5
     Lines: 1, 1, 1
     Field: <Field-Id: JpRateInSilver, Label: "Silver 925">
         Width: 250
@@ -129,8 +136,7 @@ JwlRateNote : String : 20053
 
     Line: Spacing
     Lines: 1
-    Text: " APPROVAL"
-    Style: JpSectionBox
+    Field : JpRateScreenT6
     Lines: 1, 1, 1, 1
     Field: <Field-Id: JpRateApproved, Label: "Approved By">
         Width: 250
@@ -151,8 +157,7 @@ JwlRateNote : String : 20053
     Field: <Field-Id: JpRateMsg, Label: " ">
         Width: 100
         Style: JpWarn
-    Text: "Enter rates PER GRAM. Saving requires the JADE_CHANGE_RATE permission (Owner / Manager)."
-    Style: JpMuted
+    Field : JpRateScreenT7
 
     Line: Spacing
     Lines: 1
@@ -166,6 +171,37 @@ JwlRateNote : String : 20053
 
 ; Consistency check between purities. If the shop types rates out of order
 ; (22K above 24K) almost always a digit was dropped, so we warn before saving.
+
+    ; Text: lines become Fields - Part has no Text attribute.
+
+[Field: JpRateScreenT1]
+    Set As : "           DAILY RATE MASTER"
+    Style : JpTitle
+
+[Field: JpRateScreenT2]
+    Set As : "Rates entered here are used automatically on every sales, purchase and old-gold entry."
+    Style : JpMuted
+
+[Field: JpRateScreenT3]
+    Set As : " "
+    Style : JpMuted
+
+[Field: JpRateScreenT4]
+    Set As : " GOLD  (rate per 10 grams is converted to per gram on save)"
+    Style : JpSectionBox
+
+[Field: JpRateScreenT5]
+    Set As : " SILVER,  PLATINUM"
+    Style : JpSectionBox
+
+[Field: JpRateScreenT6]
+    Set As : " APPROVAL"
+    Style : JpSectionBox
+
+[Field: JpRateScreenT7]
+    Set As : "Enter rates PER GRAM. Saving requires the JADE_CHANGE_RATE permission (Owner / Manager)."
+    Style : JpMuted
+
 [Function: JpRateConsistency]
     Returns: String : Any
     Var: m : String
